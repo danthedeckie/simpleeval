@@ -58,7 +58,7 @@ You can add operators yourself, using the `operators` argument, but these are th
 
  +----+-------------------------------+
  | +  | add two things. `x + y`       |
- |    | `1 + 1` -> `2`
+ |    | `1 + 1` -> `2`                |
  +----+-------------------------------+
  | -  | subtract two things `x - y`   |
  |    | `100 - 1` -> `99`             |
