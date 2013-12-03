@@ -103,6 +103,26 @@ class TestTryingToBreakOut(DRYTest):
         with self.assertRaises(AttributeError):
             self.t("import sys", None)
 
+    def test_long_running(self):
+        ''' exponent operations can take a long time. '''
+        old_max = simpleeval.POWER_MAX
+
+        self.t("9**9**5", 9**9**5)
+
+        with self.assertRaises(simpleeval.NumberTooHigh):
+            self.t("9**9**8", 0)
+
+        # and does limiting work?
+
+        simpleeval.POWER_MAX = 100
+
+        with self.assertRaises(simpleeval.NumberTooHigh):
+            self.t("101**2", 0)
+
+        # good, so set it back:
+
+        simpleeval.POWER_MAX = old_max
+
     def test_python_stuff(self):
         ''' other various pythony things. '''
         # it only evaluates the first statement:

@@ -14,13 +14,17 @@ from pypi (pip or easy_install).
 
 Internally, it's using the amazing python ``ast`` module to parse the expression, which
 allows very fine control of what is and isn't allowed.  It should be completely safe in terms
-of what operations can be performed by the expression.  The only issue I know to be aware of
-is that you could, theroretically, create an expression which takes a long time to evaluate,
-which leaves the potential for DOS attacks.  You should be aware of this when deploying in
-a public setting.
+of what operations can be performed by the expression.
 
-The defaults are pretty locked down and basic, and it's very easy to add whatever extra specific
-functionality you need (your own functions, variable/name lookup, etc).
+The only issue I know to be aware of is that you can create an expression which
+takes a long time to evaluate, or which evaluating requires an awful lot of memory,
+which leaves the potential for DOS attacks.  There is basic protection against this,
+and you can lock it down further if you desire. (see the `Operators` section below)
+
+You should be aware of this when deploying in a public setting.
+
+The defaults are pretty locked down and basic, and it's very easy to add whatever
+extra specific functionality you need (your own functions, variable/name lookup, etc).
 
 Basic Usage
 -----------
@@ -90,6 +94,20 @@ if you wish (using the class based evaluator explained below): ::
 
     >>> s.eval("2 ^ 10")
     8
+
+Limited Power
+~~~~~~~~~~~~~
+
+Also note, the ``**`` operator has been locked down by default to have a maximum input value
+of ``5000000``, which makes it somewhat harder to make expressions which go on for ever.  You
+can change this limit by changing the ``simpleeval.POWER_MAX`` module level value to whatever
+is an appropriate value for you (and the hardware that you're running on) or if you want to
+completely remove all limitations, you can set the ``s.operators[ast.Pow] = op.pow`` or make
+your own function.
+
+On my computer, ``9**9**5`` evaluates almost instantly, but ``9**9**6`` takes over 10 seconds,
+and ``9**9**7`` takes over a minute. ``9**9**8`` is limited by the ``POWER_MAX``, and throws a 
+``NumberTooHigh`` exception for you.
 
 If Expressions
 --------------

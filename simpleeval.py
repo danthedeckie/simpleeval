@@ -76,6 +76,11 @@ import operator as op
 from random import random
 
 ########################################
+# Module wide 'globals'
+
+POWER_MAX = 5000000
+
+########################################
 # Exceptions:
 
 class InvalidExpression(Exception):
@@ -104,8 +109,13 @@ class NameNotDefined(InvalidExpression):
         # pylint: disable=bad-super-call
         super(InvalidExpression, self).__init__(self.message)
 
-class FeatureNotAvailable(Exception):
+class FeatureNotAvailable(InvalidExpression):
     ''' What you're trying to do is not allowed. '''
+    pass
+
+class NumberTooHigh(InvalidExpression):
+    ''' Sorry! That number is too high. I don't want to spend the
+        next 10 years evaluating this expression! '''
     pass
 
 ########################################
@@ -115,11 +125,18 @@ def random_int(top):
     ''' return a random int below <top> '''
     return int(random() * top)
 
+def safe_power(a, b): # pylint: disable=invalid-name
+    ''' a limited exponent/to-the-power-of function, for safety reasons '''
+    if abs(a) > POWER_MAX or abs(b) > POWER_MAX:
+        raise NumberTooHigh("Sorry! I don't want to evaluate {0} ** {1}"
+                            .format(a, b))
+    return a ** b
+
 ########################################
 # Defaults for the evaluator:
 
 DEFAULT_OPERATORS = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
-                     ast.Div: op.truediv, ast.Pow: op.pow, ast.Mod: op.mod,
+                     ast.Div: op.truediv, ast.Pow: safe_power, ast.Mod: op.mod,
                      ast.Eq: op.eq, ast.Gt: op.gt, ast.Lt: op.lt}
 
 DEFAULT_FUNCTIONS = {"rand": random, "randint": random_int,
