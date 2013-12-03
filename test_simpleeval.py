@@ -5,6 +5,7 @@
     Most of this stuff is pretty basic.
 
 '''
+# pylint: disable=too-many-public-methods
 
 import unittest
 import simpleeval
@@ -18,7 +19,7 @@ class DRYTest(unittest.TestCase):
         ''' initialize a SimpleEval '''
         self.s = SimpleEval()
 
-    def t(self, expr, shouldbe):
+    def t(self, expr, shouldbe): #pylint: disable=invalid-name
         ''' test an evaluation of an expression against an expected answer '''
         return self.assertEqual(self.s.eval(expr), shouldbe)
 
@@ -26,6 +27,8 @@ class TestBasic(DRYTest):
     ''' Simple expressions. '''
 
     def test_maths_exprs(self):
+        ''' simple maths expressions '''
+
         self.t("21 + 21", 42)
         self.t("6*7", 42)
         self.t("20 + 1 + (10*2) + 1", 42)
@@ -33,6 +36,9 @@ class TestBasic(DRYTest):
         self.t("12*12", 144)
         self.t("2 ** 10", 1024)
         self.t("100 % 9", 1)
+
+    def test_if_else(self):
+        ''' x if y else z '''
 
         # and test if/else expressions:
         self.t("'a' if 1 == 1 else 'b'", 'a')
@@ -42,11 +48,14 @@ class TestBasic(DRYTest):
         self.t("'a' if 4 < 1 else 'b' if 1 == 2 else 'c'", 'c')
 
     def test_default_conversions(self):
+        ''' conversion between types '''
+
         self.t('int("20") + int(0.22*100)', 42)
         self.t('float("42")', 42.0)
         self.t('"Test Stuff!" + str(11)', u"Test Stuff!11")
 
 class TestFunctions(DRYTest):
+    ''' Functions for expressions to play with '''
 
     def test_load_file(self):
         ''' add in a function which loads data from an external file. '''
@@ -82,26 +91,31 @@ class TestFunctions(DRYTest):
         self.t("int(read('file.txt'))", 42)
 
 class TestOperators(DRYTest):
+    ''' Test adding in new operators, removing them, make sure it works. '''
     pass
 
 class TestTryingToBreakOut(DRYTest):
+    ''' Test various weird methods to break the security sandbox... '''
+
     def test_import(self):
-        pass
+        ''' usual suspect. import '''
+        # cannot import things:
+        with self.assertRaises(AttributeError):
+            self.t("import sys", None)
 
     def test_python_stuff(self):
+        ''' other various pythony things. '''
         # it only evaluates the first statement:
         self.t("a = 11; x = 21; x + x", 11)
 
         # list comprehensions don't work:
         # this could be changed in a future release, if people want...
         with self.assertRaises(simpleeval.FeatureNotAvailable):
-            self.t("[x for x in (1,2,3)]", (1,2,3))
-
-        # cannot import things:
-        with self.assertRaises(AttributeError):
-            self.t("import sys", None)
+            self.t("[x for x in (1, 2, 3)]", (1, 2, 3))
 
 class TestNames(DRYTest):
+    ''' 'names', what other languages call variables... '''
+
     def test_none(self):
         ''' what to do when names isn't defined, or is 'none' '''
         pass
@@ -158,7 +172,9 @@ class TestNames(DRYTest):
 
     def test_func(self):
         ''' using a function for 'names lookup' '''
-        def resolver(node):
+
+        def resolver(node): # pylint: disable=unused-argument
+            ''' all names now equal 1024! '''
             return 1024
 
         self.s.names = resolver
@@ -169,6 +185,7 @@ class TestNames(DRYTest):
         # the function can do stuff with the value it's sent:
 
         def my_name(node):
+            ''' all names equal their textual name, twice. '''
             return node.id + node.id
 
         self.s.names = my_name
@@ -179,12 +196,13 @@ class TestNames(DRYTest):
         ''' the 'name first letter as value' example from the docs '''
 
         def name_handler(node):
+            ''' return the alphabet number of the first letter of
+                the name's textual name '''
             return ord(node.id[0].lower())-96
 
-        self.s.names=name_handler
+        self.s.names = name_handler
         self.t('a', 1)
         self.t('a + b', 3)
-        
 
 if __name__ == '__main__':
     try:

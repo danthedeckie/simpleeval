@@ -72,7 +72,6 @@ well:
 
 import ast
 import operator as op
-import math
 from random import random
 
 ########################################
@@ -90,7 +89,8 @@ class FunctionNotDefined(InvalidExpression):
         self.func_name = func_name
         self.expression = expression
 
-        super(Exception, self).__init__(self.message)
+        # pylint: disable=bad-super-call
+        super(InvalidExpression, self).__init__(self.message)
 
 class NameNotDefined(InvalidExpression):
     ''' a name isn't defined. '''
@@ -100,7 +100,8 @@ class NameNotDefined(InvalidExpression):
         self.name = name
         self.expression = expression
 
-        super(Exception, self).__init__(self.message)
+        # pylint: disable=bad-super-call
+        super(InvalidExpression, self).__init__(self.message)
 
 class FeatureNotAvailable(Exception):
     ''' What you're trying to do is not allowed. '''
@@ -120,8 +121,6 @@ DEFAULT_OPERATORS = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
                      ast.Div: op.truediv, ast.Pow: op.pow, ast.Mod: op.mod,
                      ast.Eq: op.eq, ast.Gt: op.gt, ast.Lt: op.lt}
 
-DEFAULT_CONSTANTS = {"pi": math.pi}
-
 DEFAULT_FUNCTIONS = {"rand": random, "randint": random_int,
                      "int": int, "float": float, "str": unicode}
 
@@ -134,6 +133,7 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
         >>> s.eval("20 + 30 - ( 10 * 5)")
         0
         '''
+    expr = ""
 
     def __init__(self, operators=None, functions=None, names=None):
         '''
@@ -160,30 +160,33 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
         # and evaluate:
         return self._eval(ast.parse(expr).body[0].value)
 
+    # pylint: disable=too-many-return-statements, too-many-branches
     def _eval(self, node):
         ''' The internal eval function used on each node in the parsed tree. '''
+
+        # literals:
+
         if isinstance(node, ast.Num): # <number>
             return node.n
         elif isinstance(node, ast.Str): # <string>
             return node.s
 
+        # operators, functions, etc:
+
         elif isinstance(node, ast.BinOp): # <left> <operator> <right>
             return self.operators[type(node.op)](self._eval(node.left),
                                        self._eval(node.right))
-
         elif isinstance(node, ast.BoolOp): # and & or...
             if isinstance(node.op, ast.And):
                 return all((self._eval(v) for v in node.values))
             elif isinstance(node.op, ast.Or):
                 return any((self._eval(v) for v in node.values))
-
         elif isinstance(node, ast.Compare): # 1 < 2, a == b...
             return self.operators[type(node.ops[0])](self._eval(node.left),
                                                      self._eval(node.comparators[0]))
         elif isinstance(node, ast.IfExp): # x if y else z
             return self._eval(node.body) if self._eval(node.test) \
                                          else self._eval(node.orelse)
-
         elif isinstance(node, ast.Call): # function...
             try:
                 return self.functions[node.func.id](*(self._eval(a)
@@ -191,7 +194,6 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
             except KeyError:
                 raise FunctionNotDefined(node.func.id, self.expr)
 
-        ##########################
         # variables/names:
 
         elif isinstance(node, ast.Name): # a, b, c...
@@ -218,15 +220,3 @@ def simple_eval(expr, operators=None, functions=None, names=None):
                    functions=functions,
                    names=names)
     return s.eval(expr)
-
-if __name__ == '__main__':
-    s = SimpleEval()
-    while True:
-        expr = raw_input(">")
-        try:
-            print(s.eval(expr))
-        except Exception as e:
-            print "oh"
-            print dir(e)
-            print(e)
-

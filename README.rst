@@ -11,6 +11,9 @@ is music playing at the time.
 Or if you want to allow simple formulae in a web application, but don't want to
 give full eval() access, or don't want to run in javascript on the client side.
 
+It's deliberately very simple, just a single file you can dump into a project, or import
+from pypi (pip or easy_install).
+
 Basic Usage
 -----------
 
@@ -115,11 +118,6 @@ You can also hand the handling of names over to a function, if you prefer: ::
 
 That was a bit of a silly example, but you could use this for pulling values from a database or file, say, or doing some kind of caching system.
 
-Constants
----------
-
-You can also use 'constants', which are replaced before evaluation.  This can be useful for bringing your own 'style' into expressions, or making things feel a bit less programmy for non-techy end users
-
 Creating an Evaluator Class
 ---------------------------
 
@@ -151,3 +149,8 @@ this actually means you can modify names (or functions) with functions, if you r
     s.eval("set('age', 111)")
 
 Say.  This would allow a certain level of 'scriptyness' if you had these evaluations happening as callbacks in a program.  Although you really are reaching the end of what this library is intended for at this stage.
+
+Other...
+--------
+
+Please read the `test_simpleeval.py` file for other various details.  I'm very happy to accept pull requests, suggestions, or other issues.  Enjoy!
