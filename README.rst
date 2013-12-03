@@ -12,7 +12,7 @@ give full eval() access, or don't want to run in javascript on the client side.
 It's deliberately very simple, just a single file you can dump into a project, or import
 from pypi (pip or easy_install).
 
-Internally, it's using the amazing python `ast` module to parse the expression, which
+Internally, it's using the amazing python ``ast`` module to parse the expression, which
 allows very fine control of what is and isn't allowed.  It should be completely safe in terms
 of what operations can be performed by the expression.  The only issue I know to be aware of
 is that you could, theroretically, create an expression which takes a long time to evaluate,
@@ -31,55 +31,55 @@ To get very simple evaluating: ::
 
     simple_eval("21 + 21")
 
-returns `42`.
+returns ``42``.
 
 Expressions can be as complex and convoluted as you want: ::
 
     simple_eval("21 + 19 / 7 + (8 % 3) ** 9")
 
-returns `535.714285714`.
+returns ``535.714285714``.
 
 You can add your own functions in as well. ::
 
     simple_eval("square(11)", functions={"square": lambda x: x*x})
 
-returns `121`.
+returns ``121``.
 
 For more details of working with functions, read further down.
 
 Note:
 ~~~~~
-all further examples use `>>>` to designate python code, as if you are using the python interactive
+all further examples use ``>>>`` to designate python code, as if you are using the python interactive
 prompt.
 
 Operators
 ---------
-You can add operators yourself, using the `operators` argument, but these are the defaults:
+You can add operators yourself, using the ``operators`` argument, but these are the defaults:
 
- +----+-------------------------------+
- | +  | add two things. `x + y`       |
- |    | `1 + 1` -> `2`                |
- +----+-------------------------------+
- | -  | subtract two things `x - y`   |
- |    | `100 - 1` -> `99`             |
- +----+-------------------------------+
- | /  | divide one thing by another   |
- |    | `x / y`                       |
- |    | `100/10` -> `10`              |
- +----+-------------------------------+
- | *  | multiple one thing by another |
- |    | `x * y`                       |
- |    | `10 * 10` -> `100`            |
- +----+-------------------------------+
- | ** | 'to the power of' `x**y`      |
- |    | `2 ** 10` -> `1024`           |
- +----+-------------------------------+
- | %  | modulus. (remainder)  `x % y` |
- |    | `15 % 4` -> `3`               |
- +----+-------------------------------+
+ +----+---------------------------------+
+ | \+ | add two things. ``x + y``       |
+ |    | ``1 + 1`` -> ``2``              |
+ +----+---------------------------------+
+ | \- | subtract two things ``x - y``   |
+ |    | ``100 - 1`` -> ``99``           |
+ +----+---------------------------------+
+ | \/ | divide one thing by another     |
+ |    | ``x / y``                       |
+ |    | ``100/10`` -> ``10``            |
+ +----+---------------------------------+
+ | \* | multiple one thing by another   |
+ |    | ``x * y``                       |
+ |    | ``10 * 10`` -> ``100``          |
+ +----+---------------------------------+
+ | ** | 'to the power of' ``x**y``      |
+ |    | ``2 ** 10`` -> ``1024``         |
+ +----+---------------------------------+
+ | %  | modulus. (remainder)  ``x % y`` |
+ |    | ``15 % 4`` -> ``3``             |
+ +----+---------------------------------+
 
-The `^` operator is notably missing - not because it's hard, but because it is often mistaken for
-a exponent operator, not the bitwise shift that it is in python.  It's trivial to add back in again
+The ``^`` operator is notably missing - not because it's hard, but because it is often mistaken for
+a exponent operator, not the bitwise operation that it is in python.  It's trivial to add back in again
 if you wish (using the class based evaluator explained below): ::
 
     >>> import ast
@@ -94,7 +94,7 @@ if you wish (using the class based evaluator explained below): ::
 If Expressions
 --------------
 
-You can use python style `if x then y else z` type expressions: ::
+You can use python style ``if x then y else z`` type expressions: ::
 
     >>> simple_eval("'equal' if x == y else 'not equal'",
                     names={"x": 1, "y": 2})
@@ -149,8 +149,8 @@ you can create a SimpleEval object, and pass it expressions each time (which sho
     s.eval("1 + 1")
     # and so on...
 
-You can assign / edit the various options of the `SimpleEval` object if you want to.
-Eithe assign them during creation (like the `simple_eval` function) ::
+You can assign / edit the various options of the ``SimpleEval`` object if you want to.
+Eithe assign them during creation (like the ``simple_eval`` function) ::
 
     s = SimpleEval(functions={"boo": boo})
 
@@ -176,4 +176,4 @@ Other...
 
 This is written using python 2.7, but should be trivial to convert to python3 with the 2to3 converter.  It totals around 100 lines of code, so it isn't a complex beast.
 
-Please read the `test_simpleeval.py` file for other potential gotchas or details.  I'm very happy to accept pull requests, suggestions, or other issues.  Enjoy!
+Please read the ``test_simpleeval.py`` file for other potential gotchas or details.  I'm very happy to accept pull requests, suggestions, or other issues.  Enjoy!
