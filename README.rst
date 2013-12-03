@@ -87,10 +87,10 @@ a exponent operator, not the bitwise operation that it is in python.  It's trivi
 if you wish (using the class based evaluator explained below): ::
 
     >>> import ast
-    >>> import op
+    >>> import operator
 
     >>> s = SimpleEval()
-    >>> s.operators[ast.BitXor] = op.xor
+    >>> s.operators[ast.BitXor] = operator.xor
 
     >>> s.eval("2 ^ 10")
     8
@@ -102,7 +102,7 @@ Also note, the ``**`` operator has been locked down by default to have a maximum
 of ``5000000``, which makes it somewhat harder to make expressions which go on for ever.  You
 can change this limit by changing the ``simpleeval.POWER_MAX`` module level value to whatever
 is an appropriate value for you (and the hardware that you're running on) or if you want to
-completely remove all limitations, you can set the ``s.operators[ast.Pow] = op.pow`` or make
+completely remove all limitations, you can set the ``s.operators[ast.Pow] = operator.pow`` or make
 your own function.
 
 On my computer, ``9**9**5`` evaluates almost instantly, but ``9**9**6`` takes over 10 seconds,
