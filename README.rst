@@ -99,15 +99,22 @@ Limited Power
 ~~~~~~~~~~~~~
 
 Also note, the ``**`` operator has been locked down by default to have a maximum input value
-of ``5000000``, which makes it somewhat harder to make expressions which go on for ever.  You
+of ``4000000``, which makes it somewhat harder to make expressions which go on for ever.  You
 can change this limit by changing the ``simpleeval.POWER_MAX`` module level value to whatever
 is an appropriate value for you (and the hardware that you're running on) or if you want to
 completely remove all limitations, you can set the ``s.operators[ast.Pow] = operator.pow`` or make
 your own function.
 
-On my computer, ``9**9**5`` evaluates almost instantly, but ``9**9**6`` takes over 10 seconds,
-and ``9**9**7`` takes over a minute. ``9**9**8`` is limited by the ``POWER_MAX``, and throws a 
-``NumberTooHigh`` exception for you.
+On my computer, ``9**9**5`` evaluates almost instantly, but ``9**9**6`` takes over 30 seconds.
+Since ``9**7`` is ``4782969``, and so over the ``POWER_MAX`` limit, it throws a
+``NumberTooHigh`` exception for you. (Otherwise it would go on for hours, or until the computer
+runs out of memory)
+
+String Safety
+~~~~~~~~~~~~~
+
+There are also limits on string length (100000 characters, ``MAX_STRING_LENGTH``).
+This can be changed if you wish.
 
 If Expressions
 --------------
@@ -168,7 +175,7 @@ you can create a SimpleEval object, and pass it expressions each time (which sho
     # and so on...
 
 You can assign / edit the various options of the ``SimpleEval`` object if you want to.
-Eithe assign them during creation (like the ``simple_eval`` function) ::
+Either assign them during creation (like the ``simple_eval`` function) ::
 
     s = SimpleEval(functions={"boo": boo})
 
@@ -183,7 +190,7 @@ this actually means you can modify names (or functions) with functions, if you r
         s.names[name.value] = value.value
         return value.value
 
-    s.functions = {'set':set_val}
+    s.functions = {'set': set_val}
 
     s.eval("set('age', 111)")
 

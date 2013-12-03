@@ -78,7 +78,8 @@ from random import random
 ########################################
 # Module wide 'globals'
 
-POWER_MAX = 5000000
+MAX_STRING_LENGTH = 100000
+MAX_POWER = 4000000 # highest exponent
 
 ########################################
 # Exceptions:
@@ -118,6 +119,10 @@ class NumberTooHigh(InvalidExpression):
         next 10 years evaluating this expression! '''
     pass
 
+class StringTooLong(InvalidExpression):
+    ''' That string is **way** too long, baby. '''
+    pass
+
 ########################################
 # Default simple functions to include:
 
@@ -127,15 +132,34 @@ def random_int(top):
 
 def safe_power(a, b): # pylint: disable=invalid-name
     ''' a limited exponent/to-the-power-of function, for safety reasons '''
-    if abs(a) > POWER_MAX or abs(b) > POWER_MAX:
+    if abs(a) > MAX_POWER or abs(b) > MAX_POWER:
         raise NumberTooHigh("Sorry! I don't want to evaluate {0} ** {1}"
                             .format(a, b))
     return a ** b
 
+def safe_mult(a, b): # pylint: disable=invalid-name
+    ''' limit the number of times a string can be repeated... '''
+    if isinstance(a, str) or isinstance(b, str):
+        if isinstance(a, int) and a*len(b) > MAX_STRING_LENGTH:
+            raise StringTooLong("Sorry, a string that long is not allowed")
+        elif isinstance(b, int) and b*len(a) > MAX_STRING_LENGTH:
+            raise StringTooLong("Sorry, a string that long is not allowed")
+
+    return a * b
+
+def safe_add(a, b): # pylint: disable=invalid-name
+    ''' string length limit again '''
+    if isinstance(a, str) and isinstance(b, str):
+        if len(a) + len(b) > MAX_STRING_LENGTH:
+            raise StringTooLong("Sorry, adding those two strings would"
+                                " make a too long string.")
+    return a + b
+
+
 ########################################
 # Defaults for the evaluator:
 
-DEFAULT_OPERATORS = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
+DEFAULT_OPERATORS = {ast.Add: safe_add, ast.Sub: op.sub, ast.Mult: safe_mult,
                      ast.Div: op.truediv, ast.Pow: safe_power, ast.Mod: op.mod,
                      ast.Eq: op.eq, ast.Gt: op.gt, ast.Lt: op.lt}
 
@@ -187,6 +211,10 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
         if isinstance(node, ast.Num): # <number>
             return node.n
         elif isinstance(node, ast.Str): # <string>
+            if len(node.s) > MAX_STRING_LENGTH:
+                raise StringTooLong("{0} is too long!"
+                                    " ({1}, when {2} is max)".format(
+                                    node.id, len(node.s), MAX_STRING_LENGTH))
             return node.s
 
         # operators, functions, etc:

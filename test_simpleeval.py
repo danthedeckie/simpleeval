@@ -105,7 +105,7 @@ class TestTryingToBreakOut(DRYTest):
 
     def test_long_running(self):
         ''' exponent operations can take a long time. '''
-        old_max = simpleeval.POWER_MAX
+        old_max = simpleeval.MAX_POWER
 
         self.t("9**9**5", 9**9**5)
 
@@ -114,15 +114,34 @@ class TestTryingToBreakOut(DRYTest):
 
         # and does limiting work?
 
-        simpleeval.POWER_MAX = 100
+        simpleeval.MAX_POWER = 100
 
         with self.assertRaises(simpleeval.NumberTooHigh):
             self.t("101**2", 0)
 
         # good, so set it back:
 
-        simpleeval.POWER_MAX = old_max
+        simpleeval.MAX_POWER = old_max
 
+    def test_string_length(self):
+    
+        with self.assertRaises(simpleeval.StringTooLong):
+            self.t("'text'*50000", 0)
+            
+        with self.assertRaises(simpleeval.StringTooLong):
+            self.t("('text'*50000)*1000", 0)
+
+        self.t("'stuff'*20000", 20000*'stuff')
+
+        with self.assertRaises(simpleeval.StringTooLong):
+            self.t("('stuff'*20000) + ('stuff'*20000) ", 0)
+
+        with self.assertRaises(simpleeval.StringTooLong):
+            self.t("'stuff'*100000", 100000*'stuff')
+
+        with self.assertRaises(simpleeval.StringTooLong):
+            self.t("'" + (10000*"stuff") +"'*100", 0)
+ 
     def test_python_stuff(self):
         ''' other various pythony things. '''
         # it only evaluates the first statement:
