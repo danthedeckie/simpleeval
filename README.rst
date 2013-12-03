@@ -1,8 +1,6 @@
 simpleeval (Simple Eval)
 ========================
 
-(C) 2013 Daniel Fairhead
-
 A quick single file library for easily adding evaluatable expressions into python
 projects.  Say you want to allow a user to set an alarm volume, which could depend
 on the time of day, alarm level, how many previous alarms had gone off, and if there
@@ -14,10 +12,20 @@ give full eval() access, or don't want to run in javascript on the client side.
 It's deliberately very simple, just a single file you can dump into a project, or import
 from pypi (pip or easy_install).
 
+Internally, it's using the amazing python `ast` module to parse the expression, which
+allows very fine control of what is and isn't allowed.  It should be completely safe in terms
+of what operations can be performed by the expression.  The only issue I know to be aware of
+is that you could, theroretically, create an expression which takes a long time to evaluate,
+which leaves the potential for DOS attacks.  You should be aware of this when deploying in
+a public setting.
+
+The defaults are pretty locked down and basic, and it's very easy to add whatever extra specific
+functionality you need (your own functions, variable/name lookup, etc).
+
 Basic Usage
 -----------
 
-To get very simple evaluating ::
+To get very simple evaluating: ::
 
     from simpleeval import simple_eval
 
@@ -41,7 +49,7 @@ For more details of working with functions, read further down.
 
 Note:
 ~~~~~
-all further examples use `>>>` to designate python, as if you are using the python interactive
+all further examples use `>>>` to designate python code, as if you are using the python interactive
 prompt.
 
 Operators
@@ -70,13 +78,26 @@ You can add operators yourself, using the `operators` argument, but these are th
  |    | `15 % 4` -> `3`               |
  +----+-------------------------------+
 
+The `^` operator is notably missing - not because it's hard, but because it is often mistaken for
+a exponent operator, not the bitwise shift that it is in python.  It's trivial to add back in again
+if you wish (using the class based evaluator explained below): ::
+
+    >>> import ast
+    >>> import op
+
+    >>> s = SimpleEval()
+    >>> s.operators[ast.BitXor] = op.xor
+
+    >>> s.eval("2 ^ 10")
+    8
+
 If Expressions
 --------------
 
 You can use python style `if x then y else z` type expressions: ::
 
     >>> simple_eval("'equal' if x == y else 'not equal'",
-                    constants={"x": 1, "y": 2})
+                    names={"x": 1, "y": 2})
     'not equal'
 
 which, of course, can be nested: ::
@@ -135,7 +156,7 @@ Eithe assign them during creation (like the `simple_eval` function) ::
 
 or edit them after creation: ::
 
-    s.constants['fortytwo'] = 42
+    s.names['fortytwo'] = 42
 
 this actually means you can modify names (or functions) with functions, if you really feel so inclined: ::
 
@@ -153,4 +174,6 @@ Say.  This would allow a certain level of 'scriptyness' if you had these evaluat
 Other...
 --------
 
-Please read the `test_simpleeval.py` file for other various details.  I'm very happy to accept pull requests, suggestions, or other issues.  Enjoy!
+This is written using python 2.7, but should be trivial to convert to python3 with the 2to3 converter.  It totals around 100 lines of code, so it isn't a complex beast.
+
+Please read the `test_simpleeval.py` file for other potential gotchas or details.  I'm very happy to accept pull requests, suggestions, or other issues.  Enjoy!
