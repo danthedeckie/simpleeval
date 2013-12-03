@@ -47,7 +47,8 @@ if file.txt contents is "11"
 >>> def get_file():
         with open("file.txt",'r') as f:
             return f.read()
-    s.functions.append("get_file", get_file)
+
+    s.functions["get_file"] = get_file
     s.eval("int(get_file()) + 31")
 42
 
