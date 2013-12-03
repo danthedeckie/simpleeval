@@ -75,10 +75,10 @@ You can add operators yourself, using the ``operators`` argument, but these are 
  |    | ``x * y``                       |
  |    | ``10 * 10`` -> ``100``          |
  +----+---------------------------------+
- | ** | 'to the power of' ``x**y``      |
+ |\*\*| 'to the power of' ``x**y``      |
  |    | ``2 ** 10`` -> ``1024``         |
  +----+---------------------------------+
- | %  | modulus. (remainder)  ``x % y`` |
+ | \% | modulus. (remainder)  ``x % y`` |
  |    | ``15 % 4`` -> ``3``             |
  +----+---------------------------------+
 

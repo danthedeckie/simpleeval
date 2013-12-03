@@ -14,7 +14,8 @@ setup(
     keywords = ['eval', 'simple', 'expression', 'parse', 'ast'],
     classifiers = ['Development Status :: 4 - Beta',
                    'Intended Audience :: Developers',
-                   'License :: OSI Approved :: MIT',
-                   'Programming Language :: Python :: 2.7',
+                   'License :: OSI Approved :: MIT License',
+                   'Topic :: Software Development :: Libraries :: Python Modules',
+                   'Programming Language :: Python',
                   ],
     )
