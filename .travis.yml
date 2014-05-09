@@ -1,0 +1,12 @@
+language: python
+python:
+    - "2.7"
+install:
+ - pip install nose
+ - pip install coveralls
+ - pip install coverage
+script:
+ - nosetests
+ - coverage run -m nose
+after_success:
+ - coveralls
