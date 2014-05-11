@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/danthedeckie/simpleeval.svg?branch=master)](https://travis-ci.org/danthedeckie/simpleeval)  [![Coverage Status](https://coveralls.io/repos/danthedeckie/simpleeval/badge.png?branch=master)](https://coveralls.io/r/danthedeckie/simpleeval?branch=master)
 
-A quick single file library for easily adding evaluatable expressions into python
+A quick single-file MIT-Licenced library for easily adding evaluatable expressions into python
 projects.  Say you want to allow a user to set an alarm volume, which could depend
 on the time of day, alarm level, how many previous alarms had gone off, and if there
 is music playing at the time.
@@ -26,6 +26,16 @@ You should be aware of this when deploying in a public setting.
 
 The defaults are pretty locked down and basic, and it's very easy to add whatever
 extra specific functionality you need (your own functions, variable/name lookup, etc).
+
+## To install:
+
+Either just copy the simpleeval.py file into your project, or use pip:
+
+```
+    pip install simpleeval
+```
+
+(or add simpleeval into your requirements.txt, if that's how your project works...)
 
 ## Basic Usage
 
