@@ -9,7 +9,7 @@
 
 import unittest
 import simpleeval
-from simpleeval import SimpleEval
+from simpleeval import SimpleEval, NameNotDefined
 
 class DRYTest(unittest.TestCase):
     ''' Stuff we need to do every test, let's do here instead..
@@ -181,7 +181,14 @@ class TestNames(DRYTest):
 
     def test_none(self):
         ''' what to do when names isn't defined, or is 'none' '''
-        pass
+        with self.assertRaises(NameNotDefined):
+            self.t("a == 2", None)
+
+        self.s.names["s"] = 21
+
+        with self.assertRaises(NameNotDefined):
+            self.t("s += a", 21)
+
 
     def test_dict(self):
         ''' using a normal dict for names lookup '''
@@ -266,10 +273,3 @@ class TestNames(DRYTest):
         self.s.names = name_handler
         self.t('a', 1)
         self.t('a + b', 3)
-
-if __name__ == '__main__':
-    try:
-        import nose
-        nose.run()
-    except ImportError:
-        unittest.main()
