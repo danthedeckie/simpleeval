@@ -1,5 +1,5 @@
 '''
-SimpleEval - (C) 2013 Daniel Fairhead
+SimpleEval - (C) 2013/2014 Daniel Fairhead
 -------------------------------------
 
 An short, easy to use, safe and reasonably extensible expression evaluator.
@@ -161,10 +161,13 @@ def safe_add(a, b): # pylint: disable=invalid-name
 
 DEFAULT_OPERATORS = {ast.Add: safe_add, ast.Sub: op.sub, ast.Mult: safe_mult,
                      ast.Div: op.truediv, ast.Pow: safe_power, ast.Mod: op.mod,
-                     ast.Eq: op.eq, ast.Gt: op.gt, ast.Lt: op.lt}
+                     ast.Eq: op.eq, ast.Gt: op.gt, ast.Lt: op.lt,
+                     ast.GtE: op.ge, ast.LtE: op.le}
 
 DEFAULT_FUNCTIONS = {"rand": random, "randint": random_int,
                      "int": int, "float": float, "str": unicode}
+
+DEFAULT_NAMES = {"True": True, "False": False}
 
 ########################################
 # And the actual evaluator:
@@ -186,6 +189,8 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
             operators = DEFAULT_OPERATORS
         if not functions:
             functions = DEFAULT_FUNCTIONS
+        if not names:
+            names = DEFAULT_NAMES
 
         self.operators = operators
         self.functions = functions

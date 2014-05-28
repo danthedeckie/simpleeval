@@ -5,7 +5,7 @@
     Most of this stuff is pretty basic.
 
 '''
-# pylint: disable=too-many-public-methods
+# pylint: disable=too-many-public-methods, missing-docstring
 
 import unittest
 import simpleeval
@@ -26,7 +26,7 @@ class DRYTest(unittest.TestCase):
 class TestBasic(DRYTest):
     ''' Simple expressions. '''
 
-    def test_maths_exprs(self):
+    def test_maths_with_ints(self):
         ''' simple maths expressions '''
 
         self.t("21 + 21", 42)
@@ -36,6 +36,30 @@ class TestBasic(DRYTest):
         self.t("12*12", 144)
         self.t("2 ** 10", 1024)
         self.t("100 % 9", 1)
+
+    def test_maths_with_floats(self):
+        self.t("11.02 - 9.1", 1.92)
+        self.t("29.1+39", 68.1)
+
+    def test_comparisons(self):
+        # GT & LT:
+        self.t("1 > 0", True)
+        self.t("100000 < 28", False)
+        self.t("-2 < 11", True)
+        self.t("0 == 0", True)
+
+        # GtE, LtE
+        self.t("-2 <= -2", True)
+        self.t("2 >= 2", True)
+        self.t("1 >= 12", False)
+        self.t("1.09 <= 1967392", True)
+
+    def test_mixed_comparisons(self):
+        self.t("1 > 0.999999", True)
+        self.t("1 == True", True)  # Note ==, not 'is'.
+        self.t("0 == False", True)  # Note ==, not 'is'.
+        self.t("False == False", True)
+        self.t("False < True", True)
 
     def test_if_else(self):
         ''' x if y else z '''
@@ -62,7 +86,7 @@ class TestFunctions(DRYTest):
 
         # write to the file:
 
-        with open("file.txt",'w') as f:
+        with open("file.txt", 'w') as f:
             f.write("42")
 
         # define the function we'll send to the eval'er
@@ -124,10 +148,10 @@ class TestTryingToBreakOut(DRYTest):
         simpleeval.MAX_POWER = old_max
 
     def test_string_length(self):
-    
+
         with self.assertRaises(simpleeval.StringTooLong):
             self.t("'text'*50000", 0)
-            
+
         with self.assertRaises(simpleeval.StringTooLong):
             self.t("('text'*50000)*1000", 0)
 
@@ -141,7 +165,7 @@ class TestTryingToBreakOut(DRYTest):
 
         with self.assertRaises(simpleeval.StringTooLong):
             self.t("'" + (10000*"stuff") +"'*100", 0)
- 
+
     def test_python_stuff(self):
         ''' other various pythony things. '''
         # it only evaluates the first statement:
