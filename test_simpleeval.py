@@ -46,6 +46,7 @@ class TestBasic(DRYTest):
         self.t("1 > 0", True)
         self.t("100000 < 28", False)
         self.t("-2 < 11", True)
+        self.t("+2 < 5", True)
         self.t("0 == 0", True)
 
         # GtE, LtE

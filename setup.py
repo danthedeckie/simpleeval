@@ -13,6 +13,7 @@ setup(
     download_url = 'https://github.com/danthedeckie/simpleeval/tarball/' + __version__,
     keywords = ['eval', 'simple', 'expression', 'parse', 'ast'],
     test_suite = 'test_simpleeval',
+    use_2to3 = True,
     classifiers = ['Development Status :: 4 - Beta',
                    'Intended Audience :: Developers',
                    'License :: OSI Approved :: MIT License',
