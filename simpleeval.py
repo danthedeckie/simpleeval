@@ -34,6 +34,10 @@ Initial idea copied from J.F. Sebastian on Stack Overflow
 modifications and many improvments.
 
 -------------------------------------
+Contributors:
+corro (Robin Baumgartner) (py3k)
+
+-------------------------------------
 Usage:
 
 >>> s = SimpleEval()
