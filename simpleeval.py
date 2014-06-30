@@ -162,7 +162,8 @@ def safe_add(a, b): # pylint: disable=invalid-name
 DEFAULT_OPERATORS = {ast.Add: safe_add, ast.Sub: op.sub, ast.Mult: safe_mult,
                      ast.Div: op.truediv, ast.Pow: safe_power, ast.Mod: op.mod,
                      ast.Eq: op.eq, ast.Gt: op.gt, ast.Lt: op.lt,
-                     ast.GtE: op.ge, ast.LtE: op.le}
+                     ast.GtE: op.ge, ast.LtE: op.le, ast.USub: op.neg,
+                     ast.UAdd: op.pos}
 
 DEFAULT_FUNCTIONS = {"rand": random, "randint": random_int,
                      "int": int, "float": float, "str": unicode}
@@ -222,8 +223,16 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
                                     node.id, len(node.s), MAX_STRING_LENGTH))
             return node.s
 
+        # python 3 compatibility:
+
+        elif (hasattr(ast, 'NameConstant') and
+                isinstance(node, ast.NameConstant)): # <bool>
+            return node.value
+
         # operators, functions, etc:
 
+        elif isinstance(node, ast.UnaryOp): # - and + etc.
+            return self.operators[type(node.op)](self._eval(node.operand))
         elif isinstance(node, ast.BinOp): # <left> <operator> <right>
             return self.operators[type(node.op)](self._eval(node.left),
                                        self._eval(node.right))
