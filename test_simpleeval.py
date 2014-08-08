@@ -9,7 +9,7 @@
 
 import unittest
 import simpleeval
-from simpleeval import SimpleEval, NameNotDefined
+from simpleeval import SimpleEval, NameNotDefined, InvalidExpression, simple_eval
 
 class DRYTest(unittest.TestCase):
     ''' Stuff we need to do every test, let's do here instead..
@@ -36,6 +36,13 @@ class TestBasic(DRYTest):
         self.t("12*12", 144)
         self.t("2 ** 10", 1024)
         self.t("100 % 9", 1)
+
+    def test_bools_and_or(self):
+        self.t('True and False', False)
+        self.t('True or False', True)
+        self.t('1 - 1 or 21', True)
+        self.t('1 - 1 and 11', False)
+        self.t('110 == 100 + 10 and True', True)
 
     def test_maths_with_floats(self):
         self.t("11.02 - 9.1", 1.92)
@@ -115,6 +122,19 @@ class TestFunctions(DRYTest):
 
         self.t("int(read('file.txt'))", 42)
 
+    def test_randoms(self):
+        ''' test the rand() and randint() functions '''
+
+        self.s.functions['type'] = type
+
+        self.t('type(randint(1000))', int)
+        self.t('type(rand())', float)
+
+        self.t("randint(20)<20", True)
+        self.t("rand()<1.0", True)
+
+        # I don't know how to further test these functions.  Ideas?
+
 class TestOperators(DRYTest):
     ''' Test adding in new operators, removing them, make sure it works. '''
     pass
@@ -151,12 +171,20 @@ class TestTryingToBreakOut(DRYTest):
     def test_string_length(self):
 
         with self.assertRaises(simpleeval.StringTooLong):
+            self.t("50000*'text'", 0)
+
+        with self.assertRaises(simpleeval.StringTooLong):
             self.t("'text'*50000", 0)
 
         with self.assertRaises(simpleeval.StringTooLong):
             self.t("('text'*50000)*1000", 0)
 
+        with self.assertRaises(simpleeval.StringTooLong):
+            self.t("(50000*'text')*1000", 0)
+
         self.t("'stuff'*20000", 20000*'stuff')
+
+        self.t("20000*'stuff'", 20000*'stuff')
 
         with self.assertRaises(simpleeval.StringTooLong):
             self.t("('stuff'*20000) + ('stuff'*20000) ", 0)
@@ -166,6 +194,9 @@ class TestTryingToBreakOut(DRYTest):
 
         with self.assertRaises(simpleeval.StringTooLong):
             self.t("'" + (10000*"stuff") +"'*100", 0)
+
+        with self.assertRaises(simpleeval.StringTooLong):
+            self.t("'" + (50000 * "stuff") + "'", 0)
 
     def test_python_stuff(self):
         ''' other various pythony things. '''
@@ -189,6 +220,11 @@ class TestNames(DRYTest):
 
         with self.assertRaises(NameNotDefined):
             self.t("s += a", 21)
+
+        self.s.names = None
+
+        with self.assertRaises(InvalidExpression):
+            self.t('s', 21)
 
 
     def test_dict(self):
@@ -274,3 +310,12 @@ class TestNames(DRYTest):
         self.s.names = name_handler
         self.t('a', 1)
         self.t('a + b', 3)
+
+class Test_simple_eval(unittest.TestCase):
+    ''' test the 'simple_eval' wrapper function '''
+    def test_basic_run(self):
+        self.assertEqual(simple_eval('6*7'), 42)
+
+    def test_default_functions(self):
+        self.assertEqual(simple_eval('rand() < 1.0 and rand() > -0.01'), True)
+        self.assertEqual(simple_eval('randint(200) < 200 and rand() > 0'), True)

@@ -222,9 +222,9 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
             return node.n
         elif isinstance(node, ast.Str): # <string>
             if len(node.s) > MAX_STRING_LENGTH:
-                raise StringTooLong("{0} is too long!"
-                                    " ({1}, when {2} is max)".format(
-                                    node.id, len(node.s), MAX_STRING_LENGTH))
+                raise StringTooLong("String Literal in statement is too long!"
+                                    " ({0}, when {1} is max)".format(
+                                    len(node.s), MAX_STRING_LENGTH))
             return node.s
 
         # python 3 compatibility:
@@ -267,7 +267,10 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
                 elif callable(self.names):
                     return self.names(node)
                 else:
-                    raise KeyError('undefined name')
+                    raise InvalidExpression('Trying to use name (variable) "{0}"'
+                                            ' when no "names" defined for'
+                                            ' evaluator'.format(node.id))
+
             except KeyError:
                 raise NameNotDefined(node.id, self.expr)
 
