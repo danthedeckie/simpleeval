@@ -215,7 +215,7 @@ Say.  This would allow a certain level of 'scriptyness' if you had these evaluat
 Other...
 --------
 
-This is written using python 2.7, but should be trivial to convert to python3 with the 2to3 converter.  It totals around 100 lines of code, so it isn't a complex beast.
+The library supports both python 2 and 3 using the 2to3 converter.
 
 Please read the ``test_simpleeval.py`` file for other potential gotchas or details.  I'm very happy to accept pull requests, suggestions, or other issues.  Enjoy!
 
