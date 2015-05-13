@@ -277,6 +277,13 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
         elif isinstance(node, ast.Subscript): # b[1]
             return self._eval(node.value)[self._eval(node.slice.value)]
 
+        elif isinstance(node, ast.Attribute): # a.b.c
+            try:
+                return self._eval(node.value)[node.attr]
+
+            except KeyError:
+                raise NameNotDefined(node.attr, self.expr)
+
         else:
             raise FeatureNotAvailable("Sorry, {0} is not available in this "
                                       "evaluator".format(type(node).__name__ ))
