@@ -9,7 +9,7 @@
 
 import unittest
 import simpleeval
-from simpleeval import SimpleEval, NameNotDefined, InvalidExpression, simple_eval
+from simpleeval import SimpleEval, NameNotDefined, InvalidExpression, AttributeDoesNotExist, simple_eval
 
 class DRYTest(unittest.TestCase):
     ''' Stuff we need to do every test, let's do here instead..
@@ -226,6 +226,11 @@ class TestNames(DRYTest):
         with self.assertRaises(InvalidExpression):
             self.t('s', 21)
 
+        self.s.names = {'a' : {'b': {'c': 42}}}
+
+        with self.assertRaises(AttributeDoesNotExist):
+            self.t('a.b.d**2', 42)
+
 
     def test_dict(self):
         ''' using a normal dict for names lookup '''
@@ -277,6 +282,21 @@ class TestNames(DRYTest):
 
         self.assertEqual(self.s.names['c']['c']['c'], 11)
 
+        # nested dict
+
+        self.s.names = {'a' : {'b': {'c': 42}}}
+
+        self.t("a.b.c*2", 84)
+
+        self.t("a.b.c = 11", 11)
+
+        self.assertEqual(self.s.names['a']['b']['c'], 42)
+
+        self.t("a.d = 11", 11)
+
+        with self.assertRaises(KeyError):
+            self.assertEqual(self.s.names['a']['d'], 11)
+
     def test_func(self):
         ''' using a function for 'names lookup' '''
 
@@ -319,3 +339,6 @@ class Test_simple_eval(unittest.TestCase):
     def test_default_functions(self):
         self.assertEqual(simple_eval('rand() < 1.0 and rand() > -0.01'), True)
         self.assertEqual(simple_eval('randint(200) < 200 and rand() > 0'), True)
+
+if __name__ == '__main__':
+    unittest.main()

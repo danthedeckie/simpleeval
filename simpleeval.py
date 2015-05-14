@@ -114,6 +114,14 @@ class NameNotDefined(InvalidExpression):
         # pylint: disable=bad-super-call
         super(InvalidExpression, self).__init__(self.message)
 
+class AttributeDoesNotExist(InvalidExpression):
+    '''attribute does not exist'''
+    def __init__(self, attr, expression):
+        self.message = "Attribute '{0}' does not exist in expression '{1}'".format(
+            attr, expression)
+        self.attr = attr
+        self.expression = expression
+ 
 class FeatureNotAvailable(InvalidExpression):
     ''' What you're trying to do is not allowed. '''
     pass
@@ -282,7 +290,7 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
                 return self._eval(node.value)[node.attr]
 
             except KeyError:
-                raise NameNotDefined(node.attr, self.expr)
+                raise AttributeDoesNotExist(node.attr, self.expr)
 
         else:
             raise FeatureNotAvailable("Sorry, {0} is not available in this "
