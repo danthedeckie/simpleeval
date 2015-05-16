@@ -1,5 +1,5 @@
 from setuptools import setup
-__version__ = '0.8.3'
+__version__ = '0.8.5'
 
 setup(
     name = 'simpleeval',
@@ -18,7 +18,6 @@ setup(
                    'Intended Audience :: Developers',
                    'License :: OSI Approved :: MIT License',
                    'Topic :: Software Development :: Libraries :: Python Modules',
-                   'Programming Language :: Python :: 2',
-                   'Programming Language :: Python :: 3',
+                   'Programming Language :: Python',
                   ],
     )
