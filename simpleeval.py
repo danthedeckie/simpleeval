@@ -262,7 +262,13 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
 
         elif isinstance(node, ast.Name): # a, b, c...
             try:
-                if isinstance(self.names, dict):
+                #This happens at least for slicing
+                #This is a safe thing to do because it is impossible
+                #that there is a true exression assigning to none
+                #(the compiler rejects it, so you can't even pass that to ast.parse)
+                if node.id == "None":
+                    return None
+                elif isinstance(self.names, dict):
                     return self.names[node.id]
                 elif callable(self.names):
                     return self.names(node)
@@ -283,23 +289,11 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
             if hasattr(node, "lower"):
                 lower = upper = step = None
                 if node.lower is not None:
-                    if isinstance(node.lower, ast.Name):
-                        if node.lower.id != "None":
-                            lower = self._eval(node.lower)
-                    else:
-                        lower = self._eval(node.lower)
+                    lower = self._eval(node.lower)
                 if node.upper is not None:
-                    if isinstance(node.upper, ast.Name):
-                        if node.upper.id != "None":
-                            upper = self._eval(node.upper)
-                    else:
-                        upper = self._eval(node.upper)
+                    upper = self._eval(node.upper)
                 if node.step is not None:
-                    if isinstance(node.step, ast.Name):
-                        if node.step.id != "None":
-                            step = self._eval(node.step)
-                    else:
-                        step = self._eval(node.step)
+                    step = self._eval(node.step)
                 return slice(lower, upper, step)
             else:
                 return self._eval(node.value)
