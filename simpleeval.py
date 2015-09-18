@@ -285,7 +285,6 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
         elif isinstance(node, ast.Index):
             return self._eval(node.value)
         elif isinstance(node, ast.Slice):
-            print("Was slick!")
             lower = upper = step = None
             if node.lower is not None:
                 lower = self._eval(node.lower)
