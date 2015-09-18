@@ -285,18 +285,15 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
         elif isinstance(node, ast.Index):
             return self._eval(node.value)
         elif isinstance(node, ast.Slice):
-            #If it has this, it must be a true slice (i.e. of the form x[1:2:3])
-            if hasattr(node, "lower"):
-                lower = upper = step = None
-                if node.lower is not None:
-                    lower = self._eval(node.lower)
-                if node.upper is not None:
-                    upper = self._eval(node.upper)
-                if node.step is not None:
-                    step = self._eval(node.step)
-                return slice(lower, upper, step)
-            else:
-                return self._eval(node.value)
+            print("Was slick!")
+            lower = upper = step = None
+            if node.lower is not None:
+                lower = self._eval(node.lower)
+            if node.upper is not None:
+                upper = self._eval(node.upper)
+            if node.step is not None:
+                step = self._eval(node.step)
+            return slice(lower, upper, step)
         else:
             raise FeatureNotAvailable("Sorry, {0} is not available in this "
                                       "evaluator".format(type(node).__name__ ))
