@@ -7,7 +7,7 @@
 '''
 # pylint: disable=too-many-public-methods, missing-docstring
 
-import unittest
+import unittest, operator, ast
 import simpleeval
 from simpleeval import SimpleEval, NameNotDefined, InvalidExpression, simple_eval
 
@@ -85,6 +85,23 @@ class TestBasic(DRYTest):
         self.t('int("20") + int(0.22*100)', 42)
         self.t('float("42")', 42.0)
         self.t('"Test Stuff!" + str(11)', u"Test Stuff!11")
+
+    def test_slicing(self):
+        self.s.operators[ast.Slice] = operator.getslice if hasattr(operator, "getslice") else operator.getitem
+        self.t("'hello'[1]", "e")
+        self.t("'hello'[:]", "hello")
+        self.t("'hello'[:3]", "hel")
+        self.t("'hello'[3:]", "lo")
+        self.t("'hello'[::2]", "hlo")
+        self.t("'hello'[::-1]", "olleh")
+        self.t("'hello'[3::]", "lo")
+        self.t("'hello'[:3:]", "hel")
+        self.t("'hello'[1:3]", "el")
+        self.t("'hello'[1:3:]", "el")
+        self.t("'hello'[1::2]", "el")
+        self.t("'hello'[:1:2]", "h")
+        self.t("'hello'[1:3:1]", "el")
+        self.t("'hello'[1:3:2]", "e")
 
 class TestFunctions(DRYTest):
     ''' Functions for expressions to play with '''

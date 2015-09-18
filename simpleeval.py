@@ -275,8 +275,34 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
                 raise NameNotDefined(node.id, self.expr)
 
         elif isinstance(node, ast.Subscript): # b[1]
-            return self._eval(node.value)[self._eval(node.slice.value)]
-
+            return self._eval(node.value)[self._eval(node.slice)]
+        elif isinstance(node, ast.Index):
+            return self._eval(node.value)
+        elif isinstance(node, ast.Slice):
+            #If it has this, it must be a true slice (i.e. of the form x[1:2:3])
+            if hasattr(node, "lower"):
+                lower = upper = step = None
+                if node.lower is not None:
+                    if isinstance(node.lower, ast.Name):
+                        if node.lower.id != "None":
+                            lower = self._eval(node.lower)
+                    else:
+                        lower = self._eval(node.lower)
+                if node.upper is not None:
+                    if isinstance(node.upper, ast.Name):
+                        if node.upper.id != "None":
+                            upper = self._eval(node.upper)
+                    else:
+                        upper = self._eval(node.upper)
+                if node.step is not None:
+                    if isinstance(node.step, ast.Name):
+                        if node.step.id != "None":
+                            step = self._eval(node.step)
+                    else:
+                        step = self._eval(node.step)
+                return slice(lower, upper, step)
+            else:
+                return self._eval(node.value)
         else:
             raise FeatureNotAvailable("Sorry, {0} is not available in this "
                                       "evaluator".format(type(node).__name__ ))
