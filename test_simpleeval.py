@@ -84,7 +84,7 @@ class TestBasic(DRYTest):
 
         self.t('int("20") + int(0.22*100)', 42)
         self.t('float("42")', 42.0)
-        self.t('"Test Stuff!" + str(11)', u"Test Stuff!11")
+        self.t('"Test Stuff!" + str(11)', "Test Stuff!11")
 
     def test_slicing(self):
         self.s.operators[ast.Slice] = operator.getslice if hasattr(operator, "getslice") else operator.getitem
@@ -123,7 +123,7 @@ class TestFunctions(DRYTest):
 
         # simple load:
 
-        self.s.functions = {u"read": load_file}
+        self.s.functions = {"read": load_file}
         self.t("read('file.txt')", "42")
 
         # and we should have *replaced* the default functions. Let's check:
