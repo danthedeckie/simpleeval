@@ -314,6 +314,24 @@ class TestNames(DRYTest):
         with self.assertRaises(KeyError):
             self.assertEqual(self.s.names['a']['d'], 11)
 
+    def test_object(self):
+        ''' using an object for name lookp '''
+        class TestObject(object):
+            pass
+        o = TestObject()
+        o.a = 23
+        o.b = 42
+        o.c = TestObject()
+        o.c.d = 9001
+
+        self.s.names = {'o' : o}
+
+        self.t('o', o)
+        self.t('o.a', 23)
+        self.t('o.b + o.c.d', 9043)
+        with self.assertRaises(AttributeDoesNotExist):
+            self.t('o.d', None)
+
     def test_func(self):
         ''' using a function for 'names lookup' '''
 
