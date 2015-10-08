@@ -184,7 +184,7 @@ Creating an Evaluator Class
 ---------------------------
 
 Rather than creating a new evaluator each time, if you are doing a lot of evaluations,
-you can create a SimpleEval object, and pass it expressions each time (which should be a bit quicker, and certainly more convienient for some use cases): ::
+you can create a SimpleEval object, and pass it expressions each time (which should be a bit quicker, and certainly more convenient for some use cases): ::
 
     s = SimpleEval()
     s.eval("1 + 1")
