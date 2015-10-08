@@ -1,5 +1,5 @@
 '''
-SimpleEval - (C) 2013/2014 Daniel Fairhead
+SimpleEval - (C) 2013/2015 Daniel Fairhead
 -------------------------------------
 
 An short, easy to use, safe and reasonably extensible expression evaluator.
@@ -35,7 +35,9 @@ modifications and many improvments.
 
 -------------------------------------
 Contributors:
-corro (Robin Baumgartner) (py3k)
+- corro (Robin Baumgartner) (py3k)
+- dratchkov (David R) (nested dicts)
+- marky1991 (Mark Young) (slicing)
 
 -------------------------------------
 Usage:
@@ -270,7 +272,13 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
 
         elif isinstance(node, ast.Name): # a, b, c...
             try:
-                if isinstance(self.names, dict):
+                #This happens at least for slicing
+                #This is a safe thing to do because it is impossible
+                #that there is a true exression assigning to none
+                #(the compiler rejects it, so you can't even pass that to ast.parse)
+                if node.id == "None":
+                    return None
+                elif isinstance(self.names, dict):
                     return self.names[node.id]
                 elif callable(self.names):
                     return self.names(node)
@@ -283,7 +291,7 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
                 raise NameNotDefined(node.id, self.expr)
 
         elif isinstance(node, ast.Subscript): # b[1]
-            return self._eval(node.value)[self._eval(node.slice.value)]
+            return self._eval(node.value)[self._eval(node.slice)]
 
         elif isinstance(node, ast.Attribute): # a.b.c
             try:
@@ -292,6 +300,17 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
             except KeyError:
                 raise AttributeDoesNotExist(node.attr, self.expr)
 
+        elif isinstance(node, ast.Index):
+            return self._eval(node.value)
+        elif isinstance(node, ast.Slice):
+            lower = upper = step = None
+            if node.lower is not None:
+                lower = self._eval(node.lower)
+            if node.upper is not None:
+                upper = self._eval(node.upper)
+            if node.step is not None:
+                step = self._eval(node.step)
+            return slice(lower, upper, step)
         else:
             raise FeatureNotAvailable("Sorry, {0} is not available in this "
                                       "evaluator".format(type(node).__name__ ))
