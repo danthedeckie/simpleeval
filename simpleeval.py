@@ -78,6 +78,7 @@ well:
 '''
 
 import ast
+import sys
 import operator as op
 from random import random
 
@@ -86,6 +87,7 @@ from random import random
 
 MAX_STRING_LENGTH = 100000
 MAX_POWER = 4000000 # highest exponent
+PYTHON3 = sys.version_info[0] == 3
 
 ########################################
 # Exceptions:
@@ -180,7 +182,7 @@ DEFAULT_OPERATORS = {ast.Add: safe_add, ast.Sub: op.sub, ast.Mult: safe_mult,
                      ast.UAdd: op.pos}
 
 DEFAULT_FUNCTIONS = {"rand": random, "randint": random_int,
-                     "int": int, "float": float, "str": unicode}
+                     "int": int, "float": float, "str": str if PYTHON3 else unicode}
 
 DEFAULT_NAMES = {"True": True, "False": False}
 
