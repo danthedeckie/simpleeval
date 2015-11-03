@@ -294,23 +294,19 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
             return self._eval(node.value)[self._eval(node.slice)]
 
         elif isinstance(node, ast.Attribute): # a.b.c
-            success = False
             try:
                 return self._eval(node.value)[node.attr]
-                success = True
             except (KeyError, TypeError):
-                success = False
+                pass
 
             # Maybe the base object is an actual object, not just a dict
-            if not success:
-                try:
-                    return getattr(self._eval(node.value), node.attr)
-                    success = True
-                except (AttributeError, TypeError):
-                    success = False
+            try:
+                return getattr(self._eval(node.value), node.attr)
+            except (AttributeError, TypeError):
+                pass
 
-            if not success:
-                raise AttributeDoesNotExist(node.attr, self.expr)
+            # If it is neither, raise an exception
+            raise AttributeDoesNotExist(node.attr, self.expr)
 
         elif isinstance(node, ast.Index):
             return self._eval(node.value)
