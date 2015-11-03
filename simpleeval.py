@@ -175,7 +175,7 @@ def safe_add(a, b): # pylint: disable=invalid-name
 
 DEFAULT_OPERATORS = {ast.Add: safe_add, ast.Sub: op.sub, ast.Mult: safe_mult,
                      ast.Div: op.truediv, ast.Pow: safe_power, ast.Mod: op.mod,
-                     ast.Eq: op.eq, ast.Gt: op.gt, ast.Lt: op.lt,
+                     ast.Eq: op.eq, ast.NotEq: op.ne, ast.Gt: op.gt, ast.Lt: op.lt,
                      ast.GtE: op.ge, ast.LtE: op.le, ast.USub: op.neg,
                      ast.UAdd: op.pos}
 

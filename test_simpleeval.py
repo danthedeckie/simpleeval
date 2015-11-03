@@ -43,6 +43,7 @@ class TestBasic(DRYTest):
         self.t('1 - 1 or 21', True)
         self.t('1 - 1 and 11', False)
         self.t('110 == 100 + 10 and True', True)
+        self.t('110 != 100 + 10 and True', False)
 
     def test_maths_with_floats(self):
         self.t("11.02 - 9.1", 1.92)
