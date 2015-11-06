@@ -38,6 +38,7 @@ Contributors:
 - corro (Robin Baumgartner) (py3k)
 - dratchkov (David R) (nested dicts)
 - marky1991 (Mark Young) (slicing)
+- T045T (Nils Berg) (!=, py3kstr, obj.attributes)
 
 -------------------------------------
 Usage:
