@@ -9,7 +9,15 @@
 
 import unittest, operator, ast
 import simpleeval
-from simpleeval import SimpleEval, NameNotDefined, InvalidExpression, AttributeDoesNotExist, simple_eval
+from simpleeval import (
+    SimpleEval, ComplexTypeMixin, NameNotDefined,
+    InvalidExpression, AttributeDoesNotExist, simple_eval
+)
+
+
+class FullEval(ComplexTypeMixin, SimpleEval):
+    pass
+
 
 class DRYTest(unittest.TestCase):
     ''' Stuff we need to do every test, let's do here instead..
@@ -17,7 +25,7 @@ class DRYTest(unittest.TestCase):
 
     def setUp(self):
         ''' initialize a SimpleEval '''
-        self.s = SimpleEval()
+        self.s = FullEval()
 
     def t(self, expr, shouldbe): #pylint: disable=invalid-name
         ''' test an evaluation of an expression against an expected answer '''
@@ -153,9 +161,15 @@ class TestFunctions(DRYTest):
 
         # I don't know how to further test these functions.  Ideas?
 
+    def test_methods(self):
+        self.t('"WORD".lower()', 'word')
+        self.t('"{}:{}".format(1, 2)', '1:2')
+
+
 class TestOperators(DRYTest):
     ''' Test adding in new operators, removing them, make sure it works. '''
     pass
+
 
 class TestTryingToBreakOut(DRYTest):
     ''' Test various weird methods to break the security sandbox... '''
@@ -225,6 +239,33 @@ class TestTryingToBreakOut(DRYTest):
         # this could be changed in a future release, if people want...
         with self.assertRaises(simpleeval.FeatureNotAvailable):
             self.t("[x for x in (1, 2, 3)]", (1, 2, 3))
+
+
+class TestBuiltins(DRYTest):
+    def test_dict(self):
+        self.t('{}', {})
+        self.t('{"foo": "bar"}', {'foo': 'bar'})
+        self.t('{"foo": "bar"}["foo"]', 'bar')
+        self.t('dict()', {})
+        self.t('dict(a=1)', {'a': 1})
+
+    def test_tuple(self):
+        self.t('()', ())
+        self.t('(1,)', (1,))
+        self.t('(1, 2, 3, 4, 5, 6)', (1, 2, 3, 4, 5, 6))
+        self.t('(1, 2) + (3, 4)', (1, 2, 3, 4))
+        self.t('(1, 2, 3)[1]', 2)
+        self.t('tuple()', ())
+        self.t('tuple("foo")', ('f', 'o', 'o'))
+
+    def test_list(self):
+        self.t('[]', [])
+        self.t('[1]', [1])
+        self.t('[1, 2, 3, 4, 5]', [1, 2, 3, 4, 5])
+        self.t('[1, 2, 3][1]', 2)
+        self.t('list()', [])
+        self.t('list("foo")', ['f', 'o', 'o'])
+
 
 class TestNames(DRYTest):
     ''' 'names', what other languages call variables... '''

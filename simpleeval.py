@@ -274,12 +274,21 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
                                          else self._eval(node.orelse)
 
     def _eval_call(self, node):
-        try:
-            return self.functions[node.func.id](*(self._eval(a)
-                                                      for a in node.args))
-        except KeyError:
-            raise FunctionNotDefined(node.func.id, self.expr)
+        if isinstance(node.func, ast.Attribute):
+            func = self._eval(node.func)
+        else:
+            try:
+                func = self.functions[node.func.id]
+            except KeyError:
+                raise FunctionNotDefined(node.func.id, self.expr)
 
+        return func(
+            *(self._eval(a) for a in node.args),
+            **dict(self._eval(k) for k in node.keywords)
+        )
+
+    def _eval_keyword(self, node):
+        return node.arg, self._eval(node.value)
 
     def _eval_name(self, node):
         try:
@@ -331,6 +340,30 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
         if node.step is not None:
             step = self._eval(node.step)
         return slice(lower, upper, step)
+
+class ComplexTypeMixin(object):
+    COMPLEX_FUNCTIONS = {
+        'list': list,
+        'tuple': tuple,
+        'dict': dict
+    }
+
+    def __init__(self, *args, **kwargs):
+        super(ComplexTypeMixin, self).__init__(*args, **kwargs)
+
+        for k, v in self.COMPLEX_FUNCTIONS.items():
+            if k not in self.functions:
+                self.functions[k] = v
+
+    def _eval_dict(self, node):
+        return {self._eval(k): self._eval(v) for (k, v) in zip(node.keys, node.values)}
+
+    def _eval_tuple(self, node):
+        return tuple(self._eval(x) for x in node.elts)
+
+    def _eval_list(self, node):
+        return list(self._eval(x) for x in node.elts)
+
 
 def simple_eval(expr, operators=None, functions=None, names=None):
     ''' Simply evaluate an expresssion '''
