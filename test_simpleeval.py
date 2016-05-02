@@ -266,6 +266,12 @@ class TestBuiltins(DRYTest):
         self.t('list()', [])
         self.t('list("foo")', ['f', 'o', 'o'])
 
+    def test_set(self):
+        self.t('{1}', {1})
+        self.t('{1, 2, 1, 2, 1, 2, 1}', {1, 2})
+        self.t('set()', set())
+        self.t('set("foo")', {'f', 'o'})
+
 
 class TestNames(DRYTest):
     ''' 'names', what other languages call variables... '''

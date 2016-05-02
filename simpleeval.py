@@ -345,7 +345,8 @@ class ComplexTypeMixin(object):
     COMPLEX_FUNCTIONS = {
         'list': list,
         'tuple': tuple,
-        'dict': dict
+        'dict': dict,
+        'set': set
     }
 
     def __init__(self, *args, **kwargs):
@@ -363,6 +364,9 @@ class ComplexTypeMixin(object):
 
     def _eval_list(self, node):
         return list(self._eval(x) for x in node.elts)
+
+    def _eval_set(self, node):
+        return set(self._eval(x) for x in node.elts)
 
 
 def simple_eval(expr, operators=None, functions=None, names=None):
