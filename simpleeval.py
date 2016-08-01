@@ -258,7 +258,11 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
             if isinstance(node.op, ast.And):
                 return all((self._eval(v) for v in node.values))
             elif isinstance(node.op, ast.Or):
-                return any((self._eval(v) for v in node.values))
+                for v in node.values:
+                    n = self._eval(v)
+                    if n:
+                        return n
+                return False
         elif isinstance(node, ast.Compare): # 1 < 2, a == b...
             return self.operators[type(node.ops[0])](self._eval(node.left),
                                                      self._eval(node.comparators[0]))

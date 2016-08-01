@@ -40,10 +40,11 @@ class TestBasic(DRYTest):
     def test_bools_and_or(self):
         self.t('True and False', False)
         self.t('True or False', True)
-        self.t('1 - 1 or 21', True)
-        self.t('1 - 1 and 11', False)
+        self.t('1 - 1 or 21', 21)
+        self.t('1 - 1 and 11', 0)
         self.t('110 == 100 + 10 and True', True)
         self.t('110 != 100 + 10 and True', False)
+        self.t('False or 42', 42)
 
     def test_maths_with_floats(self):
         self.t("11.02 - 9.1", 1.92)
