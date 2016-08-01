@@ -46,6 +46,11 @@ class TestBasic(DRYTest):
         self.t('110 != 100 + 10 and True', False)
         self.t('False or 42', 42)
 
+        self.s.names = {'out': True, 'position': 3}
+        self.t('(out and position <=6 and -10)'
+                ' or (out and position > 6 and -5)'
+                ' or (not out and 15)', -10)
+
     def test_maths_with_floats(self):
         self.t("11.02 - 9.1", 1.92)
         self.t("29.1+39", 68.1)

@@ -256,7 +256,11 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
                                        self._eval(node.right))
         elif isinstance(node, ast.BoolOp): # and & or...
             if isinstance(node.op, ast.And):
-                return all((self._eval(v) for v in node.values))
+                for v in node.values:
+                    vout = self._eval(v)
+                    if not vout:
+                        return False
+                return vout
             elif isinstance(node.op, ast.Or):
                 for v in node.values:
                     n = self._eval(v)
