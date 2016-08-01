@@ -226,6 +226,30 @@ class TestTryingToBreakOut(DRYTest):
         with self.assertRaises(simpleeval.FeatureNotAvailable):
             self.t("[x for x in (1, 2, 3)]", (1, 2, 3))
 
+
+    def test_function_globals_breakout(self):
+        ''' by accessing function.__globals__ or func_... '''
+        # thanks perkinslr.
+
+        self.s.functions['x'] = lambda y:y+y
+        self.t('x(100)', 200)
+
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('x.__globals__', None)
+
+        class EscapeArtist(object):
+            def trapdoor(self):
+                return 42
+
+        self.s.names['houdini'] = EscapeArtist()
+
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('houdini.trapdoor.__globals__', 0)
+
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('houdini.trapdoor.func_globals', 0)
+
+
 class TestNames(DRYTest):
     ''' 'names', what other languages call variables... '''
 

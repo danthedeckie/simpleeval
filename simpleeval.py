@@ -1,5 +1,5 @@
 '''
-SimpleEval - (C) 2013/2015 Daniel Fairhead
+SimpleEval - (C) 2013-2016 Daniel Fairhead
 -------------------------------------
 
 An short, easy to use, safe and reasonably extensible expression evaluator.
@@ -39,6 +39,7 @@ Contributors:
 - dratchkov (David R) (nested dicts)
 - marky1991 (Mark Young) (slicing)
 - T045T (Nils Berg) (!=, py3kstr, obj.attributes)
+- perkinslr (Logan Perkins) (.__globals__ or .func_ breakouts)
 
 -------------------------------------
 Usage:
@@ -126,7 +127,7 @@ class AttributeDoesNotExist(InvalidExpression):
             attr, expression)
         self.attr = attr
         self.expression = expression
- 
+
 class FeatureNotAvailable(InvalidExpression):
     ''' What you're trying to do is not allowed. '''
     pass
@@ -297,6 +298,11 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
             return self._eval(node.value)[self._eval(node.slice)]
 
         elif isinstance(node, ast.Attribute): # a.b.c
+
+            if node.attr.startswith('__') or node.attr.startswith('func_'):
+                raise FeatureNotAvailable("Sorry, access to __attributes or "
+                    "func_ attributes is not available. ({0})".format(node.attr))
+
             try:
                 return self._eval(node.value)[node.attr]
             except (KeyError, TypeError):
