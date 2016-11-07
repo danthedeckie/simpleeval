@@ -224,7 +224,7 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
         self.expr = expr
 
         # and evaluate:
-        return self._eval(ast.parse(expr).body[0].value)
+        return self._eval(ast.parse(expr.strip()).body[0].value)
 
     # pylint: disable=too-many-return-statements, too-many-branches
     def _eval(self, node):

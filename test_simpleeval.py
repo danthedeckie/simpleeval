@@ -397,6 +397,29 @@ class TestNames(DRYTest):
         self.t('a', 1)
         self.t('a + b', 3)
 
+
+class Test_whitespace(DRYTest):
+    ''' test that incorrect whitespace (preceding/trailing) doesn't matter. '''
+    def test_no_whitespace(self):
+        self.t('200 + 200', 400)
+
+    def test_trailing(self):
+        self.t('200 + 200       ', 400)
+
+    def test_preciding_whitespace(self):
+        self.t('    200 + 200', 400)
+
+    def test_preceding_tab_whitespace(self):
+        self.t("\t200 + 200", 400)
+
+    def test_preceding_mixed_whitespace(self):
+        self.t("  \t 200 + 200", 400)
+
+    def test_both_ends_whitespace(self):
+        self.t("  \t 200 + 200  ", 400)
+
+
+
 class Test_simple_eval(unittest.TestCase):
     ''' test the 'simple_eval' wrapper function '''
     def test_basic_run(self):
