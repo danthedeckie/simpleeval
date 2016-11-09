@@ -254,6 +254,9 @@ class TestTryingToBreakOut(DRYTest):
             def trapdoor(self):
                 return 42
 
+            def _quasi_private(self):
+                return 84
+
         self.s.names['houdini'] = EscapeArtist()
 
         with self.assertRaises(simpleeval.FeatureNotAvailable):
@@ -261,6 +264,21 @@ class TestTryingToBreakOut(DRYTest):
 
         with self.assertRaises(simpleeval.FeatureNotAvailable):
             self.t('houdini.trapdoor.func_globals', 0)
+
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('houdini._quasi_private()', 0)
+
+        # and test for changing '_' to '__':
+
+        dis = simpleeval.DISALLOW_PREFIXES
+        simpleeval.DISALLOW_PREFIXES = ['func_']
+
+        self.t('houdini._quasi_private()', 84)
+
+        # and return things to normal
+
+        simpleeval.DISALLOW_PREFIXES = dis
+
 
 
 class TestNames(DRYTest):
@@ -353,9 +371,11 @@ class TestNames(DRYTest):
             self.assertEqual(self.s.names['a']['d'], 11)
 
     def test_object(self):
-        ''' using an object for name lookp '''
+        ''' using an object for name lookup '''
         class TestObject(object):
-            pass
+           def method_thing(self):
+                return 42
+
         o = TestObject()
         o.a = 23
         o.b = 42
@@ -367,6 +387,9 @@ class TestNames(DRYTest):
         self.t('o', o)
         self.t('o.a', 23)
         self.t('o.b + o.c.d', 9043)
+
+        self.t('o.method_thing()', 42)
+
         with self.assertRaises(AttributeDoesNotExist):
             self.t('o.d', None)
 

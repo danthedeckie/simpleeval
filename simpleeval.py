@@ -89,6 +89,8 @@ from random import random
 
 MAX_STRING_LENGTH = 100000
 MAX_POWER = 4000000 # highest exponent
+DISALLOW_PREFIXES = ['_', 'func_']
+
 PYTHON3 = sys.version_info[0] == 3
 
 ########################################
@@ -282,8 +284,12 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
                                          else self._eval(node.orelse)
         elif isinstance(node, ast.Call): # function...
             try:
-                return self.functions[node.func.id](*(self._eval(a)
-                                                      for a in node.args))
+                if type(node.func) == ast.Name:
+                    return self.functions[node.func.id](*(self._eval(a)
+                                                          for a in node.args))
+                elif type(node.func) == ast.Attribute:
+                    return self._eval(node.func)(*(self._eval(a)
+                                                        for a in node.args))
             except KeyError:
                 raise FunctionNotDefined(node.func.id, self.expr)
 
@@ -313,9 +319,9 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
             return self._eval(node.value)[self._eval(node.slice)]
 
         elif isinstance(node, ast.Attribute): # a.b.c
-
-            if node.attr.startswith('__') or node.attr.startswith('func_'):
-                raise FeatureNotAvailable("Sorry, access to __attributes or "
+            for prefix in DISALLOW_PREFIXES:
+                if node.attr.startswith(prefix):
+                 raise FeatureNotAvailable("Sorry, access to __attributes or "
                     "func_ attributes is not available. ({0})".format(node.attr))
 
             try:
