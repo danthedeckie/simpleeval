@@ -5,7 +5,7 @@ simpleeval (Simple Eval)
    :target: https://travis-ci.org/danthedeckie/simpleeval
    :alt: Build Status
    
-.. image:: https://coveralls.io/repos/danthedeckie/simpleeval/badge.png?branch=master
+.. image:: https://coveralls.io/repos/github/danthedeckie/simpleeval/badge.svg?branch=master
    :target: https://coveralls.io/r/danthedeckie/simpleeval?branch=master
    :alt: Coverage Status
 
@@ -273,9 +273,9 @@ Other...
 
 The library supports both python 2 and 3.
 
-Object attributes that start with `_` or `func_` are disallowed by default.
+Object attributes that start with ``_`` or ``func_`` are disallowed by default.
 If you really need that (BE CAREFUL!), then modify the module global
-`simpleeval.DISALLOW_PREFIXES`.
+``simpleeval.DISALLOW_PREFIXES``.
 
 Please read the ``test_simpleeval.py`` file for other potential gotchas or
 details.  I'm very happy to accept pull requests, suggestions, or other issues.
