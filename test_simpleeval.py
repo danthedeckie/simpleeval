@@ -69,6 +69,13 @@ class TestBasic(DRYTest):
         self.t("1 >= 12", False)
         self.t("1.09 <= 1967392", True)
 
+        self.t('1 < 2 < 3 < 4', 1 < 2 < 3 < 4)
+        self.t('1 < 2 > 3 < 4', 1 < 2  > 3 < 4)
+
+        self.t('1<2<1+1', 1<2<1+1)
+        self.t('1 == 1 == 2', 1 == 1 == 2)
+        self.t('1 == 1 < 2', 1 == 1 < 2)
+
     def test_mixed_comparisons(self):
         self.t("1 > 0.999999", True)
         self.t("1 == True", True)  # Note ==, not 'is'.

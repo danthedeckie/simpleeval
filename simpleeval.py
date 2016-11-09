@@ -268,8 +268,15 @@ class SimpleEval(object): # pylint: disable=too-few-public-methods
                         return n
                 return False
         elif isinstance(node, ast.Compare): # 1 < 2, a == b...
-            return self.operators[type(node.ops[0])](self._eval(node.left),
-                                                     self._eval(node.comparators[0]))
+            x = self._eval(node.left)
+            for op, comp  in zip(node.ops, node.comparators):
+                y = self._eval(comp)
+                if self.operators[type(op)](x, y):
+                    x = y
+                else:
+                    return False
+            return True
+
         elif isinstance(node, ast.IfExp): # x if y else z
             return self._eval(node.body) if self._eval(node.test) \
                                          else self._eval(node.orelse)
