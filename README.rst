@@ -1,6 +1,18 @@
 simpleeval (Simple Eval)
 ========================
 
+.. image:: https://travis-ci.org/danthedeckie/simpleeval.svg?branch=master
+   :target: https://travis-ci.org/danthedeckie/simpleeval
+   :alt: Build Status
+   
+.. image:: https://coveralls.io/repos/danthedeckie/simpleeval/badge.png?branch=master
+   :target: https://coveralls.io/r/danthedeckie/simpleeval?branch=master
+   :alt: Coverage Status
+
+.. image:: https://badge.fury.io/py/simpleeval.svg
+   :target: https://badge.fury.io/py/simpleeval
+   :alt: PyPI Version
+
 A quick single file library for easily adding evaluatable expressions into python
 projects.  Say you want to allow a user to set an alarm volume, which could depend
 on the time of day, alarm level, how many previous alarms had gone off, and if there
