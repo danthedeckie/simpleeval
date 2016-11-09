@@ -283,7 +283,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 for value in node.values:
                     vout = self._eval(value)
                     if vout:
-                        return vout 
+                        return vout
                 return False
 
         elif isinstance(node, ast.Compare):  # 1 < 2, a == b...
