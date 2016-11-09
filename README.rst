@@ -21,8 +21,8 @@ off, and if there is music playing at the time.
 Or if you want to allow simple formulae in a web application, but don't want to
 give full eval() access, or don't want to run in javascript on the client side.
 
-It's deliberately very simple, just a single file you can dump into a project,
-or import from pypi (pip or easy_install).
+It's deliberately very simple, pull it in from PyPI (pip or easy_install), or
+even just a single file you can dump into a project.
 
 Internally, it's using the amazing python ``ast`` module to parse the
 expression, which allows very fine control of what is and isn't allowed.  It
@@ -33,7 +33,7 @@ The only issue I know to be aware of is that you can create an expression which
 takes a long time to evaluate, or which evaluating requires an awful lot of
 memory, which leaves the potential for DOS attacks.  There is basic protection
 against this, and you can lock it down further if you desire. (see the
-`Operators` section below)
+Operators_ section below)
 
 You should be aware of this when deploying in a public setting.
 
@@ -77,47 +77,49 @@ Note:
 all further examples use ``>>>`` to designate python code, as if you are using
 the python interactive prompt.
 
+.. _Operators:
+
 Operators
 ---------
 You can add operators yourself, using the ``operators`` argument, but these are
 the defaults:
 
- +----+------------------------------------+
- | \+ | add two things. ``x + y``          |
- |    | ``1 + 1`` -> ``2``                 |
- +----+------------------------------------+
- | \- | subtract two things ``x - y``      |
- |    | ``100 - 1`` -> ``99``              |
- +----+------------------------------------+
- | \/ | divide one thing by another        |
- |    | ``x / y``                          |
- |    | ``100/10`` -> ``10``               |
- +----+------------------------------------+
- | \* | multiple one thing by another      |
- |    | ``x * y``                          |
- |    | ``10 * 10`` -> ``100``             |
- +----+------------------------------------+
- |\*\*| 'to the power of' ``x**y``         |
- |    | ``2 ** 10`` -> ``1024``            |
- +----+------------------------------------+
- | \% | modulus. (remainder)  ``x % y``    |
- |    | ``15 % 4`` -> ``3``                |
- +----+------------------------------------+
- | == | equals  ``x == y``                 |
- |    | ``15 == 4`` -> ``False``           |
- +----+------------------------------------+
- | <  | Less than. ``x < y``               |
- |    | ``1 < 4`` -> ``True``              |
- +----+------------------------------------+
- | >  | Greater than. ``x > y``            |
- |    | ``1 > 4`` -> ``False``             |
- +----+------------------------------------+
- | <= | Less than or Equal to. ``x <= y``  |
- |    | ``1 < 4`` -> ``True``              |
- +----+------------------------------------+
- | >= | Greater or Equal to ``x >= 21``    |
- |    | ``1 >= 4`` -> ``False``            |
- +----+------------------------------------+
++--------+------------------------------------+
+| ``\+`` | add two things. ``x + y``          |
+|        | ``1 + 1`` -> ``2``                 |
++--------+------------------------------------+
+| ``\-`` | subtract two things ``x - y``      |
+|        | ``100 - 1`` -> ``99``              |
++--------+------------------------------------+
+| ``\/`` | divide one thing by another        |
+|        | ``x / y``                          |
+|        | ``100/10`` -> ``10``               |
++--------+------------------------------------+
+| ``\*`` | multiple one thing by another      |
+|        | ``x * y``                          |
+|        | ``10 * 10`` -> ``100``             |
++--------+------------------------------------+
+|``\*\*``| 'to the power of' ``x**y``         |
+|        | ``2 ** 10`` -> ``1024``            |
++--------+------------------------------------+
+| ``\%`` | modulus. (remainder)  ``x % y``    |
+|        | ``15 % 4`` -> ``3``                |
++--------+------------------------------------+
+| ``==`` | equals  ``x == y``                 |
+|        | ``15 == 4`` -> ``False``           |
++--------+------------------------------------+
+| ``<``  | Less than. ``x < y``               |
+|        | ``1 < 4`` -> ``True``              |
++--------+------------------------------------+
+| ``>``  | Greater than. ``x > y``            |
+|        | ``1 > 4`` -> ``False``             |
++--------+------------------------------------+
+| ``<=`` | Less than or Equal to. ``x <= y``  |
+|        | ``1 < 4`` -> ``True``              |
++--------+------------------------------------+
+| ``>=`` | Greater or Equal to ``x >= 21``    |
+|        | ``1 >= 4`` -> ``False``            |
++--------+------------------------------------+
 
 
 The ``^`` operator is notably missing - not because it's hard, but because it
@@ -232,8 +234,14 @@ cases):
 
 .. code-block:: python
 
-    s = SimpleEval()
-    s.eval("1 + 1")
+    >>> s = SimpleEval()
+
+    >>> s.eval("1 + 1")
+    2
+
+    >>> s.eval('100 * 10'
+    1000
+    
     # and so on...
 
 You can assign / edit the various options of the ``SimpleEval`` object if you
@@ -241,6 +249,9 @@ want to.  Either assign them during creation (like the ``simple_eval``
 function)
 
 .. code-block:: python
+
+    def boo():
+        return 'Boo!'
 
     s = SimpleEval(functions={"boo": boo})
 
