@@ -85,24 +85,24 @@ You can add operators yourself, using the ``operators`` argument, but these are
 the defaults:
 
 +--------+------------------------------------+
-| ``\+`` | add two things. ``x + y``          |
+|  ``+`` | add two things. ``x + y``          |
 |        | ``1 + 1`` -> ``2``                 |
 +--------+------------------------------------+
-| ``\-`` | subtract two things ``x - y``      |
+|  ``-`` | subtract two things ``x - y``      |
 |        | ``100 - 1`` -> ``99``              |
 +--------+------------------------------------+
-| ``\/`` | divide one thing by another        |
+|  ``/`` | divide one thing by another        |
 |        | ``x / y``                          |
 |        | ``100/10`` -> ``10``               |
 +--------+------------------------------------+
-| ``\*`` | multiple one thing by another      |
+|  ``*`` | multiple one thing by another      |
 |        | ``x * y``                          |
 |        | ``10 * 10`` -> ``100``             |
 +--------+------------------------------------+
-|``\*\*``| 'to the power of' ``x**y``         |
+| ``**`` | 'to the power of' ``x**y``         |
 |        | ``2 ** 10`` -> ``1024``            |
 +--------+------------------------------------+
-| ``\%`` | modulus. (remainder)  ``x % y``    |
+| ``%``  | modulus. (remainder)  ``x % y``    |
 |        | ``15 % 4`` -> ``3``                |
 +--------+------------------------------------+
 | ``==`` | equals  ``x == y``                 |
