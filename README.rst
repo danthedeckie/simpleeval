@@ -65,6 +65,7 @@ returns ``535.714285714``.
 You can add your own functions in as well.
 
 .. code-block:: python
+
     simple_eval("square(11)", functions={"square": lambda x: x*x})
 
 returns ``121``.
@@ -125,6 +126,7 @@ in python.  It's trivial to add back in again if you wish (using the class
 based evaluator explained below):
 
 .. code-block:: python
+
     >>> import ast
     >>> import operator
 
@@ -162,6 +164,7 @@ If Expressions
 You can use python style ``if x then y else z`` type expressions:
 
 .. code-block:: python
+
     >>> simple_eval("'equal' if x == y else 'not equal'",
                     names={"x": 1, "y": 2})
     'not equal'
@@ -169,6 +172,7 @@ You can use python style ``if x then y else z`` type expressions:
 which, of course, can be nested:
 
 .. code-block:: python
+
     >>> simple_eval("'a' if 1 == 2 else 'b' if 2 == 3 else 'c'")
     'c'
     
@@ -179,6 +183,7 @@ Functions
 You can define functions which you'd like the expresssions to have access to:
 
 .. code-block:: python
+
     >>> simple_eval("double(21)", functions={"double": lambda x:x*2})
     42
 
@@ -186,6 +191,7 @@ You can define "real" functions to pass in rather than lambdas, of course too,
 and even re-name them so that expressions can be shorter
 
 .. code-block:: python
+
     >>> def double(x):
             return x * 2
     >>> simple_eval("d(100) + double(1)", functions={"d": double, "double":double})
@@ -198,6 +204,7 @@ Sometimes it's useful to have variables available, which in python terminology
 are called 'names'.
 
 .. code-block:: python
+
     >>> simple_eval("a + b", names={"a": 11, "b": 100})
     111
 
@@ -205,6 +212,7 @@ You can also hand the handling of names over to a function, if you prefer:
 
 
 .. code-block:: python
+
     >>> def name_handler(node):
             return ord(node.id[0].lower(a))-96
 
@@ -223,6 +231,7 @@ time (which should be a bit quicker, and certainly more convenient for some use
 cases):
 
 .. code-block:: python
+
     s = SimpleEval()
     s.eval("1 + 1")
     # and so on...
@@ -232,17 +241,20 @@ want to.  Either assign them during creation (like the ``simple_eval``
 function)
 
 .. code-block:: python
+
     s = SimpleEval(functions={"boo": boo})
 
 or edit them after creation:
 
 .. code-block:: python
+
     s.names['fortytwo'] = 42
 
 this actually means you can modify names (or functions) with functions, if you
 really feel so inclined:
 
 .. code-block:: python
+
     s = SimpleEval()
     def set_val(name, value):
         s.names[name.value] = value.value
