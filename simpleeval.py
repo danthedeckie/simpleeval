@@ -302,8 +302,10 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         elif isinstance(node, ast.Call):  # function...
             try:
                 if isinstance(node.func, ast.Name):
-                    return self.functions[node.func.id](*(self._eval(a)
-                                                          for a in node.args))
+                    return self.functions[node.func.id](
+                        *(self._eval(a) for a in node.args),
+                        **{k.arg: self._eval(k.value) for k in node.keywords}
+                    )
                 elif isinstance(node.func, ast.Attribute):
                     return self._eval(node.func)(*(self._eval(a)
                                                    for a in node.args))
