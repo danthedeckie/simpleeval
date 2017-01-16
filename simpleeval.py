@@ -38,7 +38,7 @@ Contributors:
 - corro (Robin Baumgartner) (py3k)
 - dratchkov (David R) (nested dicts)
 - marky1991 (Mark Young) (slicing)
-- T045T (Nils Berg) (!=, py3kstr, obj.attributes)
+- T045T (Nils Berg) (!=, py3kstr, obj.
 - perkinslr (Logan Perkins) (.__globals__ or .func_ breakouts)
 
 -------------------------------------
@@ -117,9 +117,9 @@ class FunctionNotDefined(InvalidExpression):
 class NameNotDefined(InvalidExpression):
     ''' a name isn't defined. '''
     def __init__(self, name, expression):
+        self.name = name
         self.message = "'{0}' is not defined for expression '{1}'".format(
             name, expression)
-        self.name = name
         self.expression = expression
 
         # pylint: disable=bad-super-call
@@ -244,135 +244,170 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         # and evaluate:
         return self._eval(ast.parse(expr.strip()).body[0].value)
 
-    # pylint: disable=too-many-return-statements, too-many-branches
     def _eval(self, node):
         ''' The internal evaluator used on each node in the parsed tree. '''
 
-        # literals:
+        method_name = '_eval_{}'.format(type(node).__name__.lower())
 
-        if isinstance(node, ast.Num):  # <number>
-            return node.n
-        elif isinstance(node, ast.Str):  # <string>
-            if len(node.s) > MAX_STRING_LENGTH:
-                raise StringTooLong("String Literal in statement is too long!"
-                                    " ({0}, when {1} is max)".format(
-                                        len(node.s), MAX_STRING_LENGTH))
-            return node.s
+        try:
+            method = getattr(self, method_name)
+        except AttributeError:
+            raise FeatureNotAvailable("Sorry, {0} is not available in this "
+                                      "evaluator".format(type(node).__name__ ))
 
-        # python 3 compatibility:
+        return method(node)
 
-        elif (hasattr(ast, 'NameConstant') and
-              isinstance(node, ast.NameConstant)):  # <bool>
-            return node.value
 
-        # operators, functions, etc:
+    def _eval_num(self, node):
+        return node.n
 
-        elif isinstance(node, ast.UnaryOp):  # - and + etc.
-            return self.operators[type(node.op)](self._eval(node.operand))
-        elif isinstance(node, ast.BinOp):  # <left> <operator> <right>
-            return self.operators[type(node.op)](self._eval(node.left),
-                                                 self._eval(node.right))
-        elif isinstance(node, ast.BoolOp):  # and & or...
-            if isinstance(node.op, ast.And):
-                for value in node.values:
-                    vout = self._eval(value)
-                    if not vout:
-                        return False
-                return vout
-            elif isinstance(node.op, ast.Or):
-                for value in node.values:
-                    vout = self._eval(value)
-                    if vout:
-                        return vout
-                return False
+    def _eval_str(self, node):
+        if len(node.s) > MAX_STRING_LENGTH:
+            raise StringTooLong("String Literal in statement is too long!"
+                                " ({0}, when {1} is max)".format(
+                                len(node.s), MAX_STRING_LENGTH))
+        return node.s
 
-        elif isinstance(node, ast.Compare):  # 1 < 2, a == b...
-            left = self._eval(node.left)
-            for operation, comp in zip(node.ops, node.comparators):
-                right = self._eval(comp)
-                if self.operators[type(operation)](left, right):
-                    left = right  # Hi Dr. Seuss...
-                else:
+    def _eval_nameconstant(self, node):
+        return node.value
+
+    def _eval_unaryop(self, node):
+        return self.operators[type(node.op)](self._eval(node.operand))
+
+    def _eval_binop(self, node):
+        return self.operators[type(node.op)](self._eval(node.left),
+                                       self._eval(node.right))
+
+    def _eval_boolop(self, node):
+        if isinstance(node.op, ast.And):
+            for value in node.values:
+                vout = self._eval(value)
+                if not vout:
                     return False
-            return True
+            return vout
+        elif isinstance(node.op, ast.Or):
+            for value in node.values:
+                vout = self._eval(value)
+                if vout:
+                    return vout
+            return False
 
-        elif isinstance(node, ast.IfExp):  # x if y else z
-            return self._eval(node.body) if self._eval(node.test) \
+    def _eval_compare(self, node):
+        left = self._eval(node.left)
+        for operation, comp in zip(node.ops, node.comparators):
+            right = self._eval(comp)
+            if self.operators[type(operation)](left, right):
+                left = right  # Hi Dr. Seuss...
+            else:
+                return False
+        return True
+
+    def _eval_ifexp(self, node):
+        return self._eval(node.body) if self._eval(node.test) \
                                          else self._eval(node.orelse)
-        elif isinstance(node, ast.Call):  # function...
+
+    def _eval_call(self, node):
+        if isinstance(node.func, ast.Attribute):
+            func = self._eval(node.func)
+        else:
             try:
-                if isinstance(node.func, ast.Name):
-                    return self.functions[node.func.id](*(self._eval(a)
-                                                          for a in node.args))
-                elif isinstance(node.func, ast.Attribute):
-                    return self._eval(node.func)(*(self._eval(a)
-                                                   for a in node.args))
+                func = self.functions[node.func.id]
             except KeyError:
                 raise FunctionNotDefined(node.func.id, self.expr)
 
-        # variables/names:
+        return func(
+            *(self._eval(a) for a in node.args),
+            **dict(self._eval(k) for k in node.keywords)
+        )
 
-        elif isinstance(node, ast.Name):  # a, b, c...
-            try:
-                # This happens at least for slicing
-                # This is a safe thing to do because it is impossible
-                # that there is a true exression assigning to none
-                # (the compiler rejects it, so you can't even pass that
-                # to ast.parse)
-                if node.id == "None":
-                    return None
-                elif isinstance(self.names, dict):
-                    return self.names[node.id]
-                elif callable(self.names):
-                    return self.names(node)
-                else:
-                    raise InvalidExpression(
-                        'Trying to use name (variable) "{0}"'
-                        ' when no "names" defined for'
-                        ' evaluator'.format(node.id))
+    def _eval_keyword(self, node):
+        return node.arg, self._eval(node.value)
 
-            except KeyError:
-                raise NameNotDefined(node.id, self.expr)
+    def _eval_name(self, node):
+        try:
+            #This happens at least for slicing
+            #This is a safe thing to do because it is impossible
+            #that there is a true exression assigning to none
+            #(the compiler rejects it, so you can't even pass that to ast.parse)
+            if node.id == "None":
+                return None
+            elif isinstance(self.names, dict):
+                return self.names[node.id]
+            elif callable(self.names):
+                return self.names(node)
+            else:
+                raise InvalidExpression('Trying to use name (variable) "{0}"'
+                                        ' when no "names" defined for'
+                                        ' evaluator'.format(node.id))
 
-        elif isinstance(node, ast.Subscript):  # b[1]
-            return self._eval(node.value)[self._eval(node.slice)]
+        except KeyError:
+            raise NameNotDefined(node.id, self.expr)
 
-        elif isinstance(node, ast.Attribute):  # a.b.c
-            for prefix in DISALLOW_PREFIXES:
-                if node.attr.startswith(prefix):
-                    raise FeatureNotAvailable(
-                        "Sorry, access to __attributes "
-                        " or func_ attributes is not available. "
-                        "({0})".format(node.attr))
+    def _eval_subscript(self, node):
+        return self._eval(node.value)[self._eval(node.slice)]
 
-            try:
-                return self._eval(node.value)[node.attr]
-            except (KeyError, TypeError):
-                pass
+    def _eval_attribute(self, node):
+        for prefix in DISALLOW_PREFIXES:
+            if node.attr.startswith(prefix):
+                raise FeatureNotAvailable(
+                    "Sorry, access to __attributes "
+                    " or func_ attributes is not available. "
+                    "({0})".format(node.attr))
 
-            # Maybe the base object is an actual object, not just a dict
-            try:
-                return getattr(self._eval(node.value), node.attr)
-            except (AttributeError, TypeError):
-                pass
+        try:
+            return self._eval(node.value)[node.attr]
+        except (KeyError, TypeError):
+            pass
 
-            # If it is neither, raise an exception
-            raise AttributeDoesNotExist(node.attr, self.expr)
+        # Maybe the base object is an actual object, not just a dict
+        try:
+            return getattr(self._eval(node.value), node.attr)
+        except (AttributeError, TypeError):
+            pass
 
-        elif isinstance(node, ast.Index):
-            return self._eval(node.value)
-        elif isinstance(node, ast.Slice):
-            lower = upper = step = None
-            if node.lower is not None:
-                lower = self._eval(node.lower)
-            if node.upper is not None:
-                upper = self._eval(node.upper)
-            if node.step is not None:
-                step = self._eval(node.step)
-            return slice(lower, upper, step)
-        else:
-            raise FeatureNotAvailable("Sorry, {0} is not available in this "
-                                      "evaluator".format(type(node).__name__))
+        # If it is neither, raise an exception
+        raise AttributeDoesNotExist(node.attr, self.expr)
+
+
+    def _eval_index(self, node):
+        return self._eval(node.value)
+
+    def _eval_slice(self, node):
+        lower = upper = step = None
+        if node.lower is not None:
+            lower = self._eval(node.lower)
+        if node.upper is not None:
+            upper = self._eval(node.upper)
+        if node.step is not None:
+            step = self._eval(node.step)
+        return slice(lower, upper, step)
+
+class ComplexTypeMixin(object):
+    COMPLEX_FUNCTIONS = {
+        'list': list,
+        'tuple': tuple,
+        'dict': dict,
+        'set': set
+    }
+
+    def __init__(self, *args, **kwargs):
+        super(ComplexTypeMixin, self).__init__(*args, **kwargs)
+
+        for k, v in self.COMPLEX_FUNCTIONS.items():
+            if k not in self.functions:
+                self.functions[k] = v
+
+    def _eval_dict(self, node):
+        return {self._eval(k): self._eval(v) for (k, v) in zip(node.keys, node.values)}
+
+    def _eval_tuple(self, node):
+        return tuple(self._eval(x) for x in node.elts)
+
+    def _eval_list(self, node):
+        return list(self._eval(x) for x in node.elts)
+
+    def _eval_set(self, node):
+        return set(self._eval(x) for x in node.elts)
 
 
 def simple_eval(expr, operators=None, functions=None, names=None):
