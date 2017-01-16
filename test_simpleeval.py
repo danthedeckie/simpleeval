@@ -7,7 +7,9 @@
 '''
 # pylint: disable=too-many-public-methods, missing-docstring
 
-import unittest, operator, ast
+import unittest
+import operator
+import ast
 import simpleeval
 from simpleeval import (
     SimpleEval, EvalWithCompoundTypes, NameNotDefined,
@@ -23,9 +25,10 @@ class DRYTest(unittest.TestCase):
         ''' initialize a SimpleEval '''
         self.s = SimpleEval()
 
-    def t(self, expr, shouldbe): #pylint: disable=invalid-name
+    def t(self, expr, shouldbe): # pylint: disable=invalid-name
         ''' test an evaluation of an expression against an expected answer '''
         return self.assertEqual(self.s.eval(expr), shouldbe)
+
 
 class TestBasic(DRYTest):
     ''' Simple expressions. '''
@@ -52,8 +55,8 @@ class TestBasic(DRYTest):
 
         self.s.names = {'out': True, 'position': 3}
         self.t('(out and position <=6 and -10)'
-                ' or (out and position > 6 and -5)'
-                ' or (not out and 15)', -10)
+               ' or (out and position > 6 and -5)'
+               ' or (not out and 15)', -10)
 
     def test_maths_with_floats(self):
         self.t("11.02 - 9.1", 1.92)
@@ -74,9 +77,9 @@ class TestBasic(DRYTest):
         self.t("1.09 <= 1967392", True)
 
         self.t('1 < 2 < 3 < 4', 1 < 2 < 3 < 4)
-        self.t('1 < 2 > 3 < 4', 1 < 2  > 3 < 4)
+        self.t('1 < 2 > 3 < 4', 1 < 2 > 3 < 4)
 
-        self.t('1<2<1+1', 1<2<1+1)
+        self.t('1<2<1+1', 1 < 2 < 1 + 1)
         self.t('1 == 1 == 2', 1 == 1 == 2)
         self.t('1 == 1 < 2', 1 == 1 < 2)
 
@@ -105,7 +108,8 @@ class TestBasic(DRYTest):
         self.t('"Test Stuff!" + str(11)', "Test Stuff!11")
 
     def test_slicing(self):
-        self.s.operators[ast.Slice] = operator.getslice if hasattr(operator, "getslice") else operator.getitem
+        self.s.operators[ast.Slice] = (operator.getslice \
+            if hasattr(operator, "getslice") else operator.getitem)
         self.t("'hello'[1]", "e")
         self.t("'hello'[:]", "hello")
         self.t("'hello'[:3]", "hel")
@@ -277,18 +281,18 @@ class TestTryingToBreakOut(DRYTest):
         with self.assertRaises(simpleeval.StringTooLong):
             self.t("(50000*'text')*1000", 0)
 
-        self.t("'stuff'*20000", 20000*'stuff')
+        self.t("'stuff'*20000", 20000 * 'stuff')
 
-        self.t("20000*'stuff'", 20000*'stuff')
+        self.t("20000*'stuff'", 20000 * 'stuff')
 
         with self.assertRaises(simpleeval.StringTooLong):
             self.t("('stuff'*20000) + ('stuff'*20000) ", 0)
 
         with self.assertRaises(simpleeval.StringTooLong):
-            self.t("'stuff'*100000", 100000*'stuff')
+            self.t("'stuff'*100000", 100000 * 'stuff')
 
         with self.assertRaises(simpleeval.StringTooLong):
-            self.t("'" + (10000*"stuff") +"'*100", 0)
+            self.t("'" + (10000 * "stuff") +"'*100", 0)
 
         with self.assertRaises(simpleeval.StringTooLong):
             self.t("'" + (50000 * "stuff") + "'", 0)
@@ -303,12 +307,11 @@ class TestTryingToBreakOut(DRYTest):
         with self.assertRaises(simpleeval.FeatureNotAvailable):
             self.t("[x for x in (1, 2, 3)]", (1, 2, 3))
 
-
     def test_function_globals_breakout(self):
         ''' by accessing function.__globals__ or func_... '''
         # thanks perkinslr.
 
-        self.s.functions['x'] = lambda y:y+y
+        self.s.functions['x'] = lambda y: y + y
         self.t('x(100)', 200)
 
         with self.assertRaises(simpleeval.FeatureNotAvailable):
@@ -362,7 +365,6 @@ class TestCompoundTypes(DRYTest):
         self.t('dict()', {})
         self.t('dict(a=1)', {'a': 1})
 
-
     def test_dict_contains(self):
         self.t('{"a":22}["a"]', 22)
         with self.assertRaises(KeyError):
@@ -379,7 +381,6 @@ class TestCompoundTypes(DRYTest):
         self.t('(1, 2, 3)[1]', 2)
         self.t('tuple()', ())
         self.t('tuple("foo")', ('f', 'o', 'o'))
-
 
     def test_tuple_contains(self):
         self.t('("a","b")[1]', 'b')
@@ -401,7 +402,6 @@ class TestCompoundTypes(DRYTest):
             self.t('("a","b")[5]', 'b')
 
         self.t('"b" in ["a","b"]', True)
-
 
     def test_set(self):
         self.t('{1}', {1})
@@ -431,11 +431,10 @@ class TestNames(DRYTest):
         with self.assertRaises(InvalidExpression):
             self.t('s', 21)
 
-        self.s.names = {'a' : {'b': {'c': 42}}}
+        self.s.names = {'a': {'b': {'c': 42}}}
 
         with self.assertRaises(AttributeDoesNotExist):
             self.t('a.b.d**2', 42)
-
 
     def test_dict(self):
         ''' using a normal dict for names lookup '''
@@ -489,7 +488,7 @@ class TestNames(DRYTest):
 
         # nested dict
 
-        self.s.names = {'a' : {'b': {'c': 42}}}
+        self.s.names = {'a': {'b': {'c': 42}}}
 
         self.t("a.b.c*2", 84)
 
@@ -514,7 +513,7 @@ class TestNames(DRYTest):
         o.c = TestObject()
         o.c.d = 9001
 
-        self.s.names = {'o' : o}
+        self.s.names = {'o': o}
 
         self.t('o', o)
         self.t('o.a', 23)
@@ -528,7 +527,7 @@ class TestNames(DRYTest):
     def test_func(self):
         ''' using a function for 'names lookup' '''
 
-        def resolver(node): # pylint: disable=unused-argument
+        def resolver(node):  # pylint: disable=unused-argument
             ''' all names now equal 1024! '''
             return 1024
 
@@ -581,7 +580,6 @@ class Test_whitespace(DRYTest):
         self.t("  \t 200 + 200  ", 400)
 
 
-
 class Test_simple_eval(unittest.TestCase):
     ''' test the 'simple_eval' wrapper function '''
     def test_basic_run(self):
@@ -590,6 +588,7 @@ class Test_simple_eval(unittest.TestCase):
     def test_default_functions(self):
         self.assertEqual(simple_eval('rand() < 1.0 and rand() > -0.01'), True)
         self.assertEqual(simple_eval('randint(200) < 200 and rand() > 0'), True)
+
 
 if __name__ == '__main__':
     unittest.main()

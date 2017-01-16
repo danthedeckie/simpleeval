@@ -1,5 +1,5 @@
 '''
-SimpleEval - (C) 2013-2016 Daniel Fairhead
+SimpleEval - (C) 2013-2017 Daniel Fairhead
 -------------------------------------
 
 An short, easy to use, safe and reasonably extensible expression evaluator.
@@ -200,8 +200,8 @@ DEFAULT_OPERATORS = {ast.Add: safe_add, ast.Sub: op.sub, ast.Mult: safe_mult,
                      ast.Gt: op.gt, ast.Lt: op.lt,
                      ast.GtE: op.ge, ast.LtE: op.le,
                      ast.USub: op.neg, ast.UAdd: op.pos,
-                     ast.In: lambda x,y:op.contains(y, x),
-                     ast.NotIn: lambda x,y:not op.contains(y, x),
+                     ast.In: lambda x, y: op.contains(y, x),
+                     ast.NotIn: lambda x, y: not op.contains(y, x),
                      }
 
 DEFAULT_FUNCTIONS = {"rand": random, "randint": random_int,
