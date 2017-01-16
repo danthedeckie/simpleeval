@@ -10,13 +10,9 @@
 import unittest, operator, ast
 import simpleeval
 from simpleeval import (
-    SimpleEval, ComplexTypeMixin, NameNotDefined,
+    SimpleEval, EvalWithCompoundTypes, NameNotDefined,
     InvalidExpression, AttributeDoesNotExist, simple_eval
 )
-
-
-class FullEval(ComplexTypeMixin, SimpleEval):
-    pass
 
 
 class DRYTest(unittest.TestCase):
@@ -25,7 +21,7 @@ class DRYTest(unittest.TestCase):
 
     def setUp(self):
         ''' initialize a SimpleEval '''
-        self.s = FullEval()
+        self.s = SimpleEval()
 
     def t(self, expr, shouldbe): #pylint: disable=invalid-name
         ''' test an evaluation of an expression against an expected answer '''
@@ -125,6 +121,15 @@ class TestBasic(DRYTest):
         self.t("'hello'[1:3:1]", "el")
         self.t("'hello'[1:3:2]", "e")
 
+        with self.assertRaises(IndexError):
+            self.t("'hello'[90]", 0)
+
+        self.t('"spam" not in "my breakfast"', True)
+        self.t('"silly" in "ministry of silly walks"', True)
+        self.t('"I" not in "team"', True)
+        self.t('"U" in "RUBBISH"', True)
+
+
 class TestFunctions(DRYTest):
     ''' Functions for expressions to play with '''
 
@@ -177,6 +182,51 @@ class TestFunctions(DRYTest):
     def test_methods(self):
         self.t('"WORD".lower()', 'word')
         self.t('"{}:{}".format(1, 2)', '1:2')
+
+    def test_function_args_none(self):
+        def foo():
+            return 42
+
+        self.s.functions['foo'] = foo
+        self.t('foo()', 42)
+
+    def test_function_args_required(self):
+        def foo(toret):
+            return toret
+
+        self.s.functions['foo'] = foo
+        with self.assertRaises(TypeError):
+            self.t('foo()', 42)
+
+        self.t('foo(12)', 12)
+        self.t('foo(toret=100)', 100)
+
+    def test_function_args_defaults(self):
+        def foo(toret=9999):
+            return toret
+
+        self.s.functions['foo'] = foo
+        self.t('foo()', 9999)
+
+        self.t('foo(12)', 12)
+        self.t('foo(toret=100)', 100)
+
+    def test_function_args_bothtypes(self):
+        def foo(mult, toret=100):
+            return toret * mult
+
+        self.s.functions['foo'] = foo
+        with self.assertRaises(TypeError):
+            self.t('foo()', 9999)
+
+        self.t('foo(2)', 200)
+
+        with self.assertRaises(TypeError):
+            self.t('foo(toret=100)', 100)
+
+        self.t('foo(4, toret=4)', 16)
+        self.t('foo(mult=2, toret=4)', 8)
+        self.t('foo(2, 10)', 20)
 
 
 class TestOperators(DRYTest):
@@ -293,13 +343,33 @@ class TestTryingToBreakOut(DRYTest):
 
         simpleeval.DISALLOW_PREFIXES = dis
 
-class TestBuiltins(DRYTest):
+    def test_builtins_private_access(self):
+        # explicit attempt of the exploit from perkinslr
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t("True.__class__.__class__.__base__.__subclasses__()[-1].__init__.func_globals['sys'].exit(1)", 42)
+
+
+class TestCompoundTypes(DRYTest):
+    ''' Test the compound-types edition of the library '''
+
+    def setUp(self):
+        self.s = EvalWithCompoundTypes()
+
     def test_dict(self):
         self.t('{}', {})
         self.t('{"foo": "bar"}', {'foo': 'bar'})
         self.t('{"foo": "bar"}["foo"]', 'bar')
         self.t('dict()', {})
         self.t('dict(a=1)', {'a': 1})
+
+
+    def test_dict_contains(self):
+        self.t('{"a":22}["a"]', 22)
+        with self.assertRaises(KeyError):
+            self.t('{"a":22}["b"]', 22)
+
+        self.t('{"a": 24}.get("b", 11)', 11)
+        self.t('"a" in {"a": 24}', True)
 
     def test_tuple(self):
         self.t('()', ())
@@ -310,6 +380,13 @@ class TestBuiltins(DRYTest):
         self.t('tuple()', ())
         self.t('tuple("foo")', ('f', 'o', 'o'))
 
+
+    def test_tuple_contains(self):
+        self.t('("a","b")[1]', 'b')
+        with self.assertRaises(IndexError):
+            self.t('("a","b")[5]', 'b')
+        self.t('"a" in ("b","c","a")', True)
+
     def test_list(self):
         self.t('[]', [])
         self.t('[1]', [1])
@@ -318,11 +395,22 @@ class TestBuiltins(DRYTest):
         self.t('list()', [])
         self.t('list("foo")', ['f', 'o', 'o'])
 
+    def test_list_contains(self):
+        self.t('["a","b"][1]', 'b')
+        with self.assertRaises(IndexError):
+            self.t('("a","b")[5]', 'b')
+
+        self.t('"b" in ["a","b"]', True)
+
+
     def test_set(self):
         self.t('{1}', {1})
         self.t('{1, 2, 1, 2, 1, 2, 1}', {1, 2})
         self.t('set()', set())
         self.t('set("foo")', {'f', 'o'})
+
+        self.t('2 in {1,2,3,4}', True)
+        self.t('22 not in {1,2,3,4}', True)
 
 
 class TestNames(DRYTest):

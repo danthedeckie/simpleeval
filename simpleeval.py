@@ -40,6 +40,7 @@ Contributors:
 - marky1991 (Mark Young) (slicing)
 - T045T (Nils Berg) (!=, py3kstr, obj.
 - perkinslr (Logan Perkins) (.__globals__ or .func_ breakouts)
+- impala2 (Kirill Stepanov) (massive _eval refactor)
 
 -------------------------------------
 Usage:
@@ -193,11 +194,15 @@ def safe_add(a, b):  # pylint: disable=invalid-name
 # Defaults for the evaluator:
 
 DEFAULT_OPERATORS = {ast.Add: safe_add, ast.Sub: op.sub, ast.Mult: safe_mult,
-                     ast.Div: op.truediv, ast.Pow: safe_power, ast.Mod: op.mod,
+                     ast.Div: op.truediv, ast.FloorDiv: op.floordiv,
+                     ast.Pow: safe_power, ast.Mod: op.mod,
                      ast.Eq: op.eq, ast.NotEq: op.ne,
                      ast.Gt: op.gt, ast.Lt: op.lt,
-                     ast.GtE: op.ge, ast.LtE: op.le, ast.USub: op.neg,
-                     ast.UAdd: op.pos}
+                     ast.GtE: op.ge, ast.LtE: op.le,
+                     ast.USub: op.neg, ast.UAdd: op.pos,
+                     ast.In: lambda x,y:op.contains(y, x),
+                     ast.NotIn: lambda x,y:not op.contains(y, x),
+                     }
 
 DEFAULT_FUNCTIONS = {"rand": random, "randint": random_int,
                      "int": int, "float": float,
@@ -233,6 +238,28 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         self.functions = functions
         self.names = names
 
+        self.nodes = {
+            ast.Num: self._eval_num,
+            ast.Str: self._eval_str,
+            ast.Name: self._eval_name,
+            ast.UnaryOp: self._eval_unaryop,
+            ast.BinOp: self._eval_binop,
+            ast.BoolOp: self._eval_boolop,
+            ast.Compare: self._eval_compare,
+            ast.IfExp: self._eval_ifexp,
+            ast.Call: self._eval_call,
+            ast.keyword: self._eval_keyword,
+            ast.Name: self._eval_name,
+            ast.Subscript: self._eval_subscript,
+            ast.Attribute: self._eval_attribute,
+            ast.Index: self._eval_index,
+            ast.Slice: self._eval_slice,
+        }
+
+        # py3k stuff:
+        if hasattr(ast, 'NameConstant'):
+            self.nodes[ast.NameConstant] = self._eval_nameconstant
+
     def eval(self, expr):
         ''' evaluate an expresssion, using the operators, functions and
             names previously set up. '''
@@ -247,16 +274,13 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def _eval(self, node):
         ''' The internal evaluator used on each node in the parsed tree. '''
 
-        method_name = '_eval_{}'.format(type(node).__name__.lower())
-
         try:
-            method = getattr(self, method_name)
-        except AttributeError:
+            handler = self.nodes[type(node)]
+        except KeyError:
             raise FeatureNotAvailable("Sorry, {0} is not available in this "
-                                      "evaluator".format(type(node).__name__ ))
+                                      "evaluator".format(type(node).__name__))
 
-        return method(node)
-
+        return handler(node)
 
     def _eval_num(self, node):
         return node.n
@@ -265,7 +289,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if len(node.s) > MAX_STRING_LENGTH:
             raise StringTooLong("String Literal in statement is too long!"
                                 " ({0}, when {1} is max)".format(
-                                len(node.s), MAX_STRING_LENGTH))
+                                    len(node.s), MAX_STRING_LENGTH))
         return node.s
 
     def _eval_nameconstant(self, node):
@@ -276,7 +300,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     def _eval_binop(self, node):
         return self.operators[type(node.op)](self._eval(node.left),
-                                       self._eval(node.right))
+                                             self._eval(node.right))
 
     def _eval_boolop(self, node):
         if isinstance(node.op, ast.And):
@@ -325,10 +349,11 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     def _eval_name(self, node):
         try:
-            #This happens at least for slicing
-            #This is a safe thing to do because it is impossible
-            #that there is a true exression assigning to none
-            #(the compiler rejects it, so you can't even pass that to ast.parse)
+            # This happens at least for slicing
+            # This is a safe thing to do because it is impossible
+            # that there is a true exression assigning to none
+            # (the compiler rejects it, so you can't even
+            # pass that to ast.parse)
             if node.id == "None":
                 return None
             elif isinstance(self.names, dict):
@@ -344,6 +369,14 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             raise NameNotDefined(node.id, self.expr)
 
     def _eval_subscript(self, node):
+
+        container = self._eval(node.value)
+        key = self._eval(node.slice)
+        try:
+            return container[key]
+        except KeyError:
+            raise
+
         return self._eval(node.value)[self._eval(node.slice)]
 
     def _eval_attribute(self, node):
@@ -368,7 +401,6 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         # If it is neither, raise an exception
         raise AttributeDoesNotExist(node.attr, self.expr)
 
-
     def _eval_index(self, node):
         return self._eval(node.value)
 
@@ -382,23 +414,32 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             step = self._eval(node.step)
         return slice(lower, upper, step)
 
-class ComplexTypeMixin(object):
-    COMPLEX_FUNCTIONS = {
-        'list': list,
-        'tuple': tuple,
-        'dict': dict,
-        'set': set
-    }
+
+class EvalWithCompoundTypes(SimpleEval):
+    '''
+        SimpleEval with additional Compound Types, and their respective
+        function editions. (list, tuple, dict, set).
+    '''
 
     def __init__(self, *args, **kwargs):
-        super(ComplexTypeMixin, self).__init__(*args, **kwargs)
+        super(EvalWithCompoundTypes, self).__init__(*args, **kwargs)
 
-        for k, v in self.COMPLEX_FUNCTIONS.items():
-            if k not in self.functions:
-                self.functions[k] = v
+        self.functions.update(
+            list=list,
+            tuple=tuple,
+            dict=dict,
+            set=set)
+
+        self.nodes.update({
+            ast.Dict: self._eval_dict,
+            ast.Tuple: self._eval_tuple,
+            ast.List: self._eval_list,
+            ast.Set: self._eval_set
+        })
 
     def _eval_dict(self, node):
-        return {self._eval(k): self._eval(v) for (k, v) in zip(node.keys, node.values)}
+        return {self._eval(k): self._eval(v)
+                for (k, v) in zip(node.keys, node.values)}
 
     def _eval_tuple(self, node):
         return tuple(self._eval(x) for x in node.elts)

@@ -120,6 +120,11 @@ the defaults:
 | ``>=`` | Greater or Equal to ``x >= 21``    |
 |        | ``1 >= 4`` -> ``False``            |
 +--------+------------------------------------+
+| ``in`` | is something contained within      |
+|        | something else.                    |
+|        | ``"spam" in "my breakfast"``       |
+|        | -> ``False``                       |
++--------+------------------------------------+
 
 
 The ``^`` operator is notably missing - not because it's hard, but because it
@@ -278,6 +283,14 @@ really feel so inclined:
 Say.  This would allow a certain level of 'scriptyness' if you had these
 evaluations happening as callbacks in a program.  Although you really are
 reaching the end of what this library is intended for at this stage.
+
+Compound Types
+--------------
+
+Compound types (``dict``, ``tuple``, ``list``, ``set``) in general just work if
+you pass them in as named objects.  If you want to allow creation of these, the
+``EvalWithCompoundTypes`` class works.  Just replace any use of ``SimpleEval`` with
+that.
 
 Other...
 --------
