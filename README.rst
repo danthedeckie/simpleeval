@@ -159,11 +159,14 @@ over 30 seconds.  Since ``9**7`` is ``4782969``, and so over the ``POWER_MAX``
 limit, it throws a ``NumberTooHigh`` exception for you. (Otherwise it would go
 on for hours, or until the computer runs out of memory)
 
-String Safety
+Strings (and other Iterables) Safety
 ~~~~~~~~~~~~~
 
 There are also limits on string length (100000 characters,
 ``MAX_STRING_LENGTH``).  This can be changed if you wish.
+
+Related to this, if you try to create a silly long string/bytes/list, by doing
+``'i want to break free'.split() * 9999999999`` for instance, it will block you.
 
 If Expressions
 --------------
