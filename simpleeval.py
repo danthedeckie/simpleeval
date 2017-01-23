@@ -41,6 +41,7 @@ Contributors:
 - T045T (Nils Berg) (!=, py3kstr, obj.
 - perkinslr (Logan Perkins) (.__globals__ or .func_ breakouts)
 - impala2 (Kirill Stepanov) (massive _eval refactor)
+- gk (ugik) (Other iterables than str can DOS too, and can be made)
 
 -------------------------------------
 Usage:
@@ -148,8 +149,8 @@ class NumberTooHigh(InvalidExpression):
     pass
 
 
-class StringTooLong(InvalidExpression):
-    ''' That string is **way** too long, baby. '''
+class IterableTooLong(InvalidExpression):
+    ''' That iterable is **way** too long, baby. '''
     pass
 
 
@@ -171,22 +172,22 @@ def safe_power(a, b):  # pylint: disable=invalid-name
 
 
 def safe_mult(a, b):  # pylint: disable=invalid-name
-    ''' limit the number of times a string can be repeated... '''
-    if isinstance(a, str) or isinstance(b, str):
-        if isinstance(a, int) and a*len(b) > MAX_STRING_LENGTH:
-            raise StringTooLong("Sorry, a string that long is not allowed")
-        elif isinstance(b, int) and b*len(a) > MAX_STRING_LENGTH:
-            raise StringTooLong("Sorry, a string that long is not allowed")
+    ''' limit the number of times an iterable can be repeated... '''
+
+    if hasattr(a, '__len__') and b*len(a) > MAX_STRING_LENGTH:
+        raise IterableTooLong('Sorry, I will not evalute something that long.')
+    if hasattr(b, '__len__') and a*len(b) > MAX_STRING_LENGTH:
+        raise IterableTooLong('Sorry, I will not evalute something that long.')
 
     return a * b
 
 
 def safe_add(a, b):  # pylint: disable=invalid-name
-    ''' string length limit again '''
-    if isinstance(a, str) and isinstance(b, str):
+    ''' iterable length limit again '''
+    if hasattr(a, '__len__') and hasattr(b, '__len__'):
         if len(a) + len(b) > MAX_STRING_LENGTH:
-            raise StringTooLong("Sorry, adding those two strings would"
-                                " make a too long string.")
+            raise IterableTooLong("Sorry, adding those two together would"
+                                  " make something too long.")
     return a + b
 
 
@@ -287,8 +288,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     def _eval_str(self, node):
         if len(node.s) > MAX_STRING_LENGTH:
-            raise StringTooLong("String Literal in statement is too long!"
-                                " ({0}, when {1} is max)".format(
+            raise IterableTooLong("String Literal in statement is too long!"
+                                  " ({0}, when {1} is max)".format(
                                     len(node.s), MAX_STRING_LENGTH))
         return node.s
 

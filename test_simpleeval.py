@@ -267,35 +267,54 @@ class TestTryingToBreakOut(DRYTest):
 
         simpleeval.MAX_POWER = old_max
 
+    def test_encode_bignums(self):
+        # thanks gk
+        if hasattr(1, 'from_bytes'):  # python3 only
+            with self.assertRaises(simpleeval.IterableTooLong):
+                self.t('(1).from_bytes(("123123123123123123123123").encode()*999999, "big")', 0)
+
     def test_string_length(self):
 
-        with self.assertRaises(simpleeval.StringTooLong):
+        with self.assertRaises(simpleeval.IterableTooLong):
             self.t("50000*'text'", 0)
 
-        with self.assertRaises(simpleeval.StringTooLong):
+        with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'text'*50000", 0)
 
-        with self.assertRaises(simpleeval.StringTooLong):
+        with self.assertRaises(simpleeval.IterableTooLong):
             self.t("('text'*50000)*1000", 0)
 
-        with self.assertRaises(simpleeval.StringTooLong):
+        with self.assertRaises(simpleeval.IterableTooLong):
             self.t("(50000*'text')*1000", 0)
 
         self.t("'stuff'*20000", 20000 * 'stuff')
 
         self.t("20000*'stuff'", 20000 * 'stuff')
 
-        with self.assertRaises(simpleeval.StringTooLong):
+        with self.assertRaises(simpleeval.IterableTooLong):
             self.t("('stuff'*20000) + ('stuff'*20000) ", 0)
 
-        with self.assertRaises(simpleeval.StringTooLong):
+        with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'stuff'*100000", 100000 * 'stuff')
 
-        with self.assertRaises(simpleeval.StringTooLong):
+        with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'" + (10000 * "stuff") +"'*100", 0)
 
-        with self.assertRaises(simpleeval.StringTooLong):
+        with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'" + (50000 * "stuff") + "'", 0)
+
+    def test_bytes_array_test(self):
+        self.t("'20000000000000000000'.encode() * 5000",
+                '20000000000000000000'.encode() * 5000)
+
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.t("'123121323123131231223'.encode() * 5000", 20)
+
+    def test_list_length_test(self):
+        self.t("'spam spam spam'.split() * 5000", ['spam', 'spam', 'spam'] * 5000)
+
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.t("('spam spam spam' * 5000).split() * 5000", None)
 
     def test_python_stuff(self):
         ''' other various pythony things. '''
