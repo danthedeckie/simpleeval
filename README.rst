@@ -295,6 +295,25 @@ you pass them in as named objects.  If you want to allow creation of these, the
 ``EvalWithCompoundTypes`` class works.  Just replace any use of ``SimpleEval`` with
 that.
 
+Extending
+---------
+
+The ``SimpleEval`` class is pretty easy to extend.  For instance, to create a
+version that disallows method invocation on objects:
+
+.. code-block:: python
+
+    import ast
+    import simpleeval
+
+    class EvalNoMethods(simpleeval.SimpleEval):
+        def _eval_call(self, node):
+            if isinstance(node.func, ast.Attribute):
+                raise simpleeval.FeatureNotAvailable("No methods please, we're British")
+            return super(EvalNoMethods, self)._eval_call(node)
+
+and then use ``EvalNoMethods`` instead of the ``SimpleEval`` class.
+
 Other...
 --------
 
