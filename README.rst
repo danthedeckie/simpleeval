@@ -227,12 +227,12 @@ then you can do a normal python ``.copy()`` & ``.update``:
 
 .. code-block:: python
 
-    my_functions = simpleeval.DEFAULT_FUNCTIONS.copy()
-    my_functions.update(
-        square=(lambda x:x*x),
-        double=(lambda x:x+x),
-    )
-    simple_eval('square(randint(100))', functions=my_functions)
+    >>> my_functions = simpleeval.DEFAULT_FUNCTIONS.copy()
+    >>> my_functions.update(
+            square=(lambda x:x*x),
+            double=(lambda x:x+x),
+        )
+    >>> simple_eval('square(randint(100))', functions=my_functions)
 
 Names
 -----
