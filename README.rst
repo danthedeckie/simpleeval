@@ -212,9 +212,13 @@ are provided in the ``DEFAULT_FUNCTIONS`` dict:
 
 +----------------+--------------------------------------------------+
 | ``randint(x)`` | Return a random ``int`` below ``x``              |
++----------------+--------------------------------------------------+
 | ``rand()``     | Return a random ``float`` between 0 and 1        |
++----------------+--------------------------------------------------+
 | ``int(x)``     | Convert ``x`` to an ``int``.                     |
++----------------+--------------------------------------------------+
 | ``float(x)``   | Convert ``x`` to a ``float``.                    |
++----------------+--------------------------------------------------+
 | ``str(x)``     | Convert ``x`` to a ``str`` (``unicode`` in py2)  |
 +----------------+--------------------------------------------------+
 
@@ -228,6 +232,7 @@ then you can do a normal python ``.copy()`` & ``.update``:
         square=(lambda x:x*x),
         double=(lambda x:x+x),
     )
+    simple_eval('square(randint(100))', functions=my_functions)
 
 Names
 -----
@@ -254,7 +259,7 @@ You can also hand the handling of names over to a function, if you prefer:
 That was a bit of a silly example, but you could use this for pulling values
 from a database or file, say, or doing some kind of caching system.
 
-The two default names that are provided are ``True`` and ``False``.  So if you want to provide your own names, but want ``True`` and ``False`` to keep working, either provide them yourself, or ``.copy()`` and ``.update`` the ``DEFAULT_NAMES``.
+The two default names that are provided are ``True`` and ``False``.  So if you want to provide your own names, but want ``True`` and ``False`` to keep working, either provide them yourself, or ``.copy()`` and ``.update`` the ``DEFAULT_NAMES``. (See functions example above).
 
 Creating an Evaluator Class
 ---------------------------
