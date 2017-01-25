@@ -207,6 +207,28 @@ and even re-name them so that expressions can be shorter
     >>> simple_eval("d(100) + double(1)", functions={"d": double, "double":double})
     202
 
+If you don't provide your own ``functions`` dict, then the the following defaults
+are provided in the ``DEFAULT_FUNCTIONS`` dict:
+
++----------------+--------------------------------------------------+
+| ``randint(x)`` | Return a random ``int`` below ``x``              |
+| ``rand()``     | Return a random ``float`` between 0 and 1        |
+| ``int(x)``     | Convert ``x`` to an ``int``.                     |
+| ``float(x)``   | Convert ``x`` to a ``float``.                    |
+| ``str(x)``     | Convert ``x`` to a ``str`` (``unicode`` in py2)  |
++----------------+--------------------------------------------------+
+
+If you want to provide a list of functions, but want to keep these as well,
+then you can do a normal python ``.copy()`` & ``.update``:
+
+.. code-block:: python
+
+    my_functions = simpleeval.DEFAULT_FUNCTIONS.copy()
+    my_functions.update(
+        square=(lambda x:x*x),
+        double=(lambda x:x+x),
+    )
+
 Names
 -----
 
@@ -231,6 +253,8 @@ You can also hand the handling of names over to a function, if you prefer:
 
 That was a bit of a silly example, but you could use this for pulling values
 from a database or file, say, or doing some kind of caching system.
+
+The two default names that are provided are ``True`` and ``False``.  So if you want to provide your own names, but want ``True`` and ``False`` to keep working, either provide them yourself, or ``.copy()`` and ``.update`` the ``DEFAULT_NAMES``.
 
 Creating an Evaluator Class
 ---------------------------
