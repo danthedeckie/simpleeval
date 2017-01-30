@@ -343,10 +343,12 @@ class TestTryingToBreakOut(DRYTest):
             self.t('x.__globals__', None)
 
         class EscapeArtist(object):
-            def trapdoor(self):
+            @staticmethod
+            def trapdoor():
                 return 42
 
-            def _quasi_private(self):
+            @staticmethod
+            def _quasi_private():
                 return 84
 
         self.s.names['houdini'] = EscapeArtist()
@@ -536,7 +538,8 @@ class TestNames(DRYTest):
     def test_object(self):
         """ using an object for name lookup """
         class TestObject(object):
-           def method_thing(self):
+           @staticmethod
+           def method_thing():
                 return 42
 
         o = TestObject()
