@@ -378,8 +378,6 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         except KeyError:
             raise
 
-        return self._eval(node.value)[self._eval(node.slice)]
-
     def _eval_attribute(self, node):
         for prefix in DISALLOW_PREFIXES:
             if node.attr.startswith(prefix):
