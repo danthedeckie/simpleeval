@@ -305,6 +305,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     def _eval_boolop(self, node):
         if isinstance(node.op, ast.And):
+            vout = False
             for value in node.values:
                 vout = self._eval(value)
                 if not vout:
