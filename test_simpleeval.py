@@ -155,8 +155,8 @@ class TestFunctions(DRYTest):
 
         def load_file(filename):
             """ load a file and return its contents """
-            with open(filename) as f:
-                return f.read()
+            with open(filename) as f2:
+                return f2.read()
 
         # simple load:
 
@@ -594,7 +594,7 @@ class TestNames(DRYTest):
         self.t('a + b', 3)
 
 
-class Test_whitespace(DRYTest):
+class TestWhitespace(DRYTest):
     """ test that incorrect whitespace (preceding/trailing) doesn't matter. """
 
     def test_no_whitespace(self):
@@ -616,7 +616,7 @@ class Test_whitespace(DRYTest):
         self.t("  \t 200 + 200  ", 400)
 
 
-class Test_simple_eval(unittest.TestCase):
+class TestSimpleEval(unittest.TestCase):
     """ test the 'simple_eval' wrapper function """
 
     def test_basic_run(self):
@@ -627,7 +627,7 @@ class Test_simple_eval(unittest.TestCase):
         self.assertEqual(simple_eval('randint(200) < 200 and rand() > 0'), True)
 
 
-class Test_extending_class(unittest.TestCase):
+class TestExtendingClass(unittest.TestCase):
     """
         It should be pretty easy to extend / inherit from the SimpleEval class,
         to further lock things down, or unlock stuff, or whatever.
