@@ -562,7 +562,7 @@ class TestNames(DRYTest):
     def test_func(self):
         """ using a function for 'names lookup' """
 
-        def resolver(node):  # pylint: disable=unused-argument
+        def resolver(_):
             """ all names now equal 1024! """
             return 1024
 
