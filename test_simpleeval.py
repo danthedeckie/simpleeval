@@ -58,6 +58,12 @@ class TestBasic(DRYTest):
                ' or (out and position > 6 and -5)'
                ' or (not out and 15)', -10)
 
+    def test_not(self):
+        self.t('not False', True)
+        self.t('not True', False)
+        self.t('not 0', True)
+        self.t('not 1', False)
+
     def test_maths_with_floats(self):
         self.t("11.02 - 9.1", 1.92)
         self.t("29.1+39", 68.1)
@@ -430,6 +436,13 @@ class TestCompoundTypes(DRYTest):
 
         self.t('2 in {1,2,3,4}', True)
         self.t('22 not in {1,2,3,4}', True)
+
+    def test_not(self):
+        self.t('not []', True)
+        self.t('not [0]', False)
+        self.t('not {}', True)
+        self.t('not {0: 1}', False)
+        self.t('not {0}', False)
 
 
 class TestNames(DRYTest):
