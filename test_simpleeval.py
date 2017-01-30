@@ -114,7 +114,7 @@ class TestBasic(DRYTest):
         self.t('"Test Stuff!" + str(11)', "Test Stuff!11")
 
     def test_slicing(self):
-        self.s.operators[ast.Slice] = (operator.getslice \
+        self.s.operators[ast.Slice] = (operator.getslice
             if hasattr(operator, "getslice") else operator.getitem)
         self.t("'hello'[1]", "e")
         self.t("'hello'[:]", "hello")
