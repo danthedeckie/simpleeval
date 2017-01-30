@@ -25,7 +25,7 @@ class DRYTest(unittest.TestCase):
         """ initialize a SimpleEval """
         self.s = SimpleEval()
 
-    def t(self, expr, shouldbe): # pylint: disable=invalid-name
+    def t(self, expr, shouldbe):  # pylint: disable=invalid-name
         """ test an evaluation of an expression against an expected answer """
         return self.assertEqual(self.s.eval(expr), shouldbe)
 
@@ -115,7 +115,7 @@ class TestBasic(DRYTest):
 
     def test_slicing(self):
         self.s.operators[ast.Slice] = (operator.getslice
-            if hasattr(operator, "getslice") else operator.getitem)
+                                       if hasattr(operator, "getslice") else operator.getitem)
         self.t("'hello'[1]", "e")
         self.t("'hello'[:]", "hello")
         self.t("'hello'[:3]", "hel")
@@ -257,7 +257,7 @@ class TestTryingToBreakOut(DRYTest):
         """ exponent operations can take a long time. """
         old_max = simpleeval.MAX_POWER
 
-        self.t("9**9**5", 9**9**5)
+        self.t("9**9**5", 9 ** 9 ** 5)
 
         with self.assertRaises(simpleeval.NumberTooHigh):
             self.t("9**9**8", 0)
@@ -280,7 +280,6 @@ class TestTryingToBreakOut(DRYTest):
                 self.t('(1).from_bytes(("123123123123123123123123").encode()*999999, "big")', 0)
 
     def test_string_length(self):
-
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("50000*'text'", 0)
 
@@ -304,14 +303,14 @@ class TestTryingToBreakOut(DRYTest):
             self.t("'stuff'*100000", 100000 * 'stuff')
 
         with self.assertRaises(simpleeval.IterableTooLong):
-            self.t("'" + (10000 * "stuff") +"'*100", 0)
+            self.t("'" + (10000 * "stuff") + "'*100", 0)
 
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'" + (50000 * "stuff") + "'", 0)
 
     def test_bytes_array_test(self):
         self.t("'20000000000000000000'.encode() * 5000",
-                '20000000000000000000'.encode() * 5000)
+               '20000000000000000000'.encode() * 5000)
 
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'123121323123131231223'.encode() * 5000", 20)
@@ -537,9 +536,10 @@ class TestNames(DRYTest):
 
     def test_object(self):
         """ using an object for name lookup """
+
         class TestObject(object):
-           @staticmethod
-           def method_thing():
+            @staticmethod
+            def method_thing():
                 return 42
 
         o = TestObject()
@@ -587,7 +587,7 @@ class TestNames(DRYTest):
         def name_handler(node):
             """ return the alphabet number of the first letter of
                 the name's textual name """
-            return ord(node.id[0].lower())-96
+            return ord(node.id[0].lower()) - 96
 
         self.s.names = name_handler
         self.t('a', 1)
@@ -596,6 +596,7 @@ class TestNames(DRYTest):
 
 class Test_whitespace(DRYTest):
     """ test that incorrect whitespace (preceding/trailing) doesn't matter. """
+
     def test_no_whitespace(self):
         self.t('200 + 200', 400)
 
@@ -617,12 +618,14 @@ class Test_whitespace(DRYTest):
 
 class Test_simple_eval(unittest.TestCase):
     """ test the 'simple_eval' wrapper function """
+
     def test_basic_run(self):
         self.assertEqual(simple_eval('6*7'), 42)
 
     def test_default_functions(self):
         self.assertEqual(simple_eval('rand() < 1.0 and rand() > -0.01'), True)
         self.assertEqual(simple_eval('randint(200) < 200 and rand() > 0'), True)
+
 
 class Test_extending_class(unittest.TestCase):
     """
@@ -645,8 +648,6 @@ class Test_extending_class(unittest.TestCase):
 
         with self.assertRaises(simpleeval.FeatureNotAvailable):
             e.eval('"  blah  ".strip()')
-
-
 
 
 if __name__ == '__main__':
