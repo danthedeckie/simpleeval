@@ -424,8 +424,8 @@ class EvalWithCompoundTypes(SimpleEval):
         function editions. (list, tuple, dict, set).
     """
 
-    def __init__(self, *args, **kwargs):
-        super(EvalWithCompoundTypes, self).__init__(*args, **kwargs)
+    def __init__(self, operators=None, functions=None, names=None):
+        super(EvalWithCompoundTypes, self).__init__(operators, functions, names)
 
         self.functions.update(
             list=list,
