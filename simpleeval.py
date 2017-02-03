@@ -42,6 +42,7 @@ Contributors:
 - perkinslr (Logan Perkins) (.__globals__ or .func_ breakouts)
 - impala2 (Kirill Stepanov) (massive _eval refactor)
 - gk (ugik) (Other iterables than str can DOS too, and can be made)
+- daveisfera (Dave Johansen) 'not' Boolean op, Pycharm and pep8 fixes.
 
 -------------------------------------
 Usage:
