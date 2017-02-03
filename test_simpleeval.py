@@ -12,7 +12,7 @@ import operator
 import ast
 import simpleeval
 from simpleeval import (
-    SimpleEval, EvalWithCompoundTypes, NameNotDefined,
+    SimpleEval, EvalWithCompoundTypes, FeatureNotAvailable, FunctionNotDefined, NameNotDefined,
     InvalidExpression, AttributeDoesNotExist, simple_eval
 )
 
@@ -444,6 +444,20 @@ class TestCompoundTypes(DRYTest):
         self.t('not {}', True)
         self.t('not {0: 1}', False)
         self.t('not {0}', False)
+
+    def test_use_func(self):
+        self.s = EvalWithCompoundTypes(functions={"map": map, "str": str})
+        self.t('list(map(str, [-1, 0, 1]))', ['-1', '0', '1'])
+        with self.assertRaises(NameNotDefined):
+            self.s.eval('list(map(bad, [-1, 0, 1]))')
+
+        with self.assertRaises(FunctionNotDefined):
+            self.s.eval('dir(str)')
+        with self.assertRaises(FeatureNotAvailable):
+            self.s.eval('str.__dict__')
+
+        self.s = EvalWithCompoundTypes(functions={"dir": dir, "str": str})
+        self.t('dir(str)', dir(str))
 
 
 class TestNames(DRYTest):
