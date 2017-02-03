@@ -1,10 +1,10 @@
-'''
+"""
     Unit tests for simpleeval.
     --------------------------
 
     Most of this stuff is pretty basic.
 
-'''
+"""
 # pylint: disable=too-many-public-methods, missing-docstring
 
 import unittest
@@ -18,23 +18,23 @@ from simpleeval import (
 
 
 class DRYTest(unittest.TestCase):
-    ''' Stuff we need to do every test, let's do here instead..
-        Don't Repeat Yourself. '''
+    """ Stuff we need to do every test, let's do here instead..
+        Don't Repeat Yourself. """
 
     def setUp(self):
-        ''' initialize a SimpleEval '''
+        """ initialize a SimpleEval """
         self.s = SimpleEval()
 
-    def t(self, expr, shouldbe): # pylint: disable=invalid-name
-        ''' test an evaluation of an expression against an expected answer '''
+    def t(self, expr, shouldbe):  # pylint: disable=invalid-name
+        """ test an evaluation of an expression against an expected answer """
         return self.assertEqual(self.s.eval(expr), shouldbe)
 
 
 class TestBasic(DRYTest):
-    ''' Simple expressions. '''
+    """ Simple expressions. """
 
     def test_maths_with_ints(self):
-        ''' simple maths expressions '''
+        """ simple maths expressions """
 
         self.t("21 + 21", 42)
         self.t("6*7", 42)
@@ -57,6 +57,12 @@ class TestBasic(DRYTest):
         self.t('(out and position <=6 and -10)'
                ' or (out and position > 6 and -5)'
                ' or (not out and 15)', -10)
+
+    def test_not(self):
+        self.t('not False', True)
+        self.t('not True', False)
+        self.t('not 0', True)
+        self.t('not 1', False)
 
     def test_maths_with_floats(self):
         self.t("11.02 - 9.1", 1.92)
@@ -91,7 +97,7 @@ class TestBasic(DRYTest):
         self.t("False < True", True)
 
     def test_if_else(self):
-        ''' x if y else z '''
+        """ x if y else z """
 
         # and test if/else expressions:
         self.t("'a' if 1 == 1 else 'b'", 'a')
@@ -101,15 +107,15 @@ class TestBasic(DRYTest):
         self.t("'a' if 4 < 1 else 'b' if 1 == 2 else 'c'", 'c')
 
     def test_default_conversions(self):
-        ''' conversion between types '''
+        """ conversion between types """
 
         self.t('int("20") + int(0.22*100)', 42)
         self.t('float("42")', 42.0)
         self.t('"Test Stuff!" + str(11)', "Test Stuff!11")
 
     def test_slicing(self):
-        self.s.operators[ast.Slice] = (operator.getslice \
-            if hasattr(operator, "getslice") else operator.getitem)
+        self.s.operators[ast.Slice] = (operator.getslice
+                                       if hasattr(operator, "getslice") else operator.getitem)
         self.t("'hello'[1]", "e")
         self.t("'hello'[:]", "hello")
         self.t("'hello'[:3]", "hel")
@@ -135,10 +141,10 @@ class TestBasic(DRYTest):
 
 
 class TestFunctions(DRYTest):
-    ''' Functions for expressions to play with '''
+    """ Functions for expressions to play with """
 
     def test_load_file(self):
-        ''' add in a function which loads data from an external file. '''
+        """ add in a function which loads data from an external file. """
 
         # write to the file:
 
@@ -148,9 +154,9 @@ class TestFunctions(DRYTest):
         # define the function we'll send to the eval'er
 
         def load_file(filename):
-            ''' load a file and return its contents '''
-            with open(filename) as f:
-                return f.read()
+            """ load a file and return its contents """
+            with open(filename) as f2:
+                return f2.read()
 
         # simple load:
 
@@ -171,7 +177,7 @@ class TestFunctions(DRYTest):
         self.t("int(read('file.txt'))", 42)
 
     def test_randoms(self):
-        ''' test the rand() and randint() functions '''
+        """ test the rand() and randint() functions """
 
         self.s.functions['type'] = type
 
@@ -234,24 +240,24 @@ class TestFunctions(DRYTest):
 
 
 class TestOperators(DRYTest):
-    ''' Test adding in new operators, removing them, make sure it works. '''
+    """ Test adding in new operators, removing them, make sure it works. """
     pass
 
 
 class TestTryingToBreakOut(DRYTest):
-    ''' Test various weird methods to break the security sandbox... '''
+    """ Test various weird methods to break the security sandbox... """
 
     def test_import(self):
-        ''' usual suspect. import '''
+        """ usual suspect. import """
         # cannot import things:
         with self.assertRaises(AttributeError):
             self.t("import sys", None)
 
     def test_long_running(self):
-        ''' exponent operations can take a long time. '''
+        """ exponent operations can take a long time. """
         old_max = simpleeval.MAX_POWER
 
-        self.t("9**9**5", 9**9**5)
+        self.t("9**9**5", 9 ** 9 ** 5)
 
         with self.assertRaises(simpleeval.NumberTooHigh):
             self.t("9**9**8", 0)
@@ -274,7 +280,6 @@ class TestTryingToBreakOut(DRYTest):
                 self.t('(1).from_bytes(("123123123123123123123123").encode()*999999, "big")', 0)
 
     def test_string_length(self):
-
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("50000*'text'", 0)
 
@@ -298,14 +303,14 @@ class TestTryingToBreakOut(DRYTest):
             self.t("'stuff'*100000", 100000 * 'stuff')
 
         with self.assertRaises(simpleeval.IterableTooLong):
-            self.t("'" + (10000 * "stuff") +"'*100", 0)
+            self.t("'" + (10000 * "stuff") + "'*100", 0)
 
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'" + (50000 * "stuff") + "'", 0)
 
     def test_bytes_array_test(self):
         self.t("'20000000000000000000'.encode() * 5000",
-                '20000000000000000000'.encode() * 5000)
+               '20000000000000000000'.encode() * 5000)
 
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'123121323123131231223'.encode() * 5000", 20)
@@ -317,7 +322,7 @@ class TestTryingToBreakOut(DRYTest):
             self.t("('spam spam spam' * 5000).split() * 5000", None)
 
     def test_python_stuff(self):
-        ''' other various pythony things. '''
+        """ other various pythony things. """
         # it only evaluates the first statement:
         self.t("a = 11; x = 21; x + x", 11)
 
@@ -327,7 +332,7 @@ class TestTryingToBreakOut(DRYTest):
             self.t("[x for x in (1, 2, 3)]", (1, 2, 3))
 
     def test_function_globals_breakout(self):
-        ''' by accessing function.__globals__ or func_... '''
+        """ by accessing function.__globals__ or func_... """
         # thanks perkinslr.
 
         self.s.functions['x'] = lambda y: y + y
@@ -337,10 +342,12 @@ class TestTryingToBreakOut(DRYTest):
             self.t('x.__globals__', None)
 
         class EscapeArtist(object):
-            def trapdoor(self):
+            @staticmethod
+            def trapdoor():
                 return 42
 
-            def _quasi_private(self):
+            @staticmethod
+            def _quasi_private():
                 return 84
 
         self.s.names['houdini'] = EscapeArtist()
@@ -372,7 +379,7 @@ class TestTryingToBreakOut(DRYTest):
 
 
 class TestCompoundTypes(DRYTest):
-    ''' Test the compound-types edition of the library '''
+    """ Test the compound-types edition of the library """
 
     def setUp(self):
         self.s = EvalWithCompoundTypes()
@@ -431,12 +438,19 @@ class TestCompoundTypes(DRYTest):
         self.t('2 in {1,2,3,4}', True)
         self.t('22 not in {1,2,3,4}', True)
 
+    def test_not(self):
+        self.t('not []', True)
+        self.t('not [0]', False)
+        self.t('not {}', True)
+        self.t('not {0: 1}', False)
+        self.t('not {0}', False)
+
 
 class TestNames(DRYTest):
-    ''' 'names', what other languages call variables... '''
+    """ 'names', what other languages call variables... """
 
     def test_none(self):
-        ''' what to do when names isn't defined, or is 'none' '''
+        """ what to do when names isn't defined, or is 'none' """
         with self.assertRaises(NameNotDefined):
             self.t("a == 2", None)
 
@@ -456,7 +470,7 @@ class TestNames(DRYTest):
             self.t('a.b.d**2', 42)
 
     def test_dict(self):
-        ''' using a normal dict for names lookup '''
+        """ using a normal dict for names lookup """
 
         self.s.names = {'a': 42}
         self.t("a + a", 84)
@@ -521,9 +535,11 @@ class TestNames(DRYTest):
             self.assertEqual(self.s.names['a']['d'], 11)
 
     def test_object(self):
-        ''' using an object for name lookup '''
+        """ using an object for name lookup """
+
         class TestObject(object):
-           def method_thing(self):
+            @staticmethod
+            def method_thing():
                 return 42
 
         o = TestObject()
@@ -544,10 +560,10 @@ class TestNames(DRYTest):
             self.t('o.d', None)
 
     def test_func(self):
-        ''' using a function for 'names lookup' '''
+        """ using a function for 'names lookup' """
 
-        def resolver(node):  # pylint: disable=unused-argument
-            ''' all names now equal 1024! '''
+        def resolver(_):
+            """ all names now equal 1024! """
             return 1024
 
         self.s.names = resolver
@@ -558,7 +574,7 @@ class TestNames(DRYTest):
         # the function can do stuff with the value it's sent:
 
         def my_name(node):
-            ''' all names equal their textual name, twice. '''
+            """ all names equal their textual name, twice. """
             return node.id + node.id
 
         self.s.names = my_name
@@ -566,20 +582,21 @@ class TestNames(DRYTest):
         self.t("a", "aa")
 
     def test_from_doc(self):
-        ''' the 'name first letter as value' example from the docs '''
+        """ the 'name first letter as value' example from the docs """
 
         def name_handler(node):
-            ''' return the alphabet number of the first letter of
-                the name's textual name '''
-            return ord(node.id[0].lower())-96
+            """ return the alphabet number of the first letter of
+                the name's textual name """
+            return ord(node.id[0].lower()) - 96
 
         self.s.names = name_handler
         self.t('a', 1)
         self.t('a + b', 3)
 
 
-class Test_whitespace(DRYTest):
-    ''' test that incorrect whitespace (preceding/trailing) doesn't matter. '''
+class TestWhitespace(DRYTest):
+    """ test that incorrect whitespace (preceding/trailing) doesn't matter. """
+
     def test_no_whitespace(self):
         self.t('200 + 200', 400)
 
@@ -599,8 +616,9 @@ class Test_whitespace(DRYTest):
         self.t("  \t 200 + 200  ", 400)
 
 
-class Test_simple_eval(unittest.TestCase):
-    ''' test the 'simple_eval' wrapper function '''
+class TestSimpleEval(unittest.TestCase):
+    """ test the 'simple_eval' wrapper function """
+
     def test_basic_run(self):
         self.assertEqual(simple_eval('6*7'), 42)
 
@@ -608,11 +626,12 @@ class Test_simple_eval(unittest.TestCase):
         self.assertEqual(simple_eval('rand() < 1.0 and rand() > -0.01'), True)
         self.assertEqual(simple_eval('randint(200) < 200 and rand() > 0'), True)
 
-class Test_extending_class(unittest.TestCase):
-    '''
+
+class TestExtendingClass(unittest.TestCase):
+    """
         It should be pretty easy to extend / inherit from the SimpleEval class,
         to further lock things down, or unlock stuff, or whatever.
-    '''
+    """
 
     def test_methods_forbidden(self):
         # Example from README
@@ -629,8 +648,6 @@ class Test_extending_class(unittest.TestCase):
 
         with self.assertRaises(simpleeval.FeatureNotAvailable):
             e.eval('"  blah  ".strip()')
-
-
 
 
 if __name__ == '__main__':

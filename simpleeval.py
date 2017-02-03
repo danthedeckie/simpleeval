@@ -1,4 +1,4 @@
-'''
+"""
 SimpleEval - (C) 2013-2017 Daniel Fairhead
 -------------------------------------
 
@@ -79,7 +79,7 @@ well:
 >>> simple_eval("40 + two", names={"two": 2})
 42
 
-'''
+"""
 
 import ast
 import sys
@@ -100,12 +100,12 @@ PYTHON3 = sys.version_info[0] == 3
 
 
 class InvalidExpression(Exception):
-    ''' Generic Exception '''
+    """ Generic Exception """
     pass
 
 
 class FunctionNotDefined(InvalidExpression):
-    ''' sorry! That function isn't defined! '''
+    """ sorry! That function isn't defined! """
     def __init__(self, func_name, expression):
         self.message = "Function '{0}' not defined," \
                        " for expression '{1}'.".format(func_name, expression)
@@ -117,7 +117,7 @@ class FunctionNotDefined(InvalidExpression):
 
 
 class NameNotDefined(InvalidExpression):
-    ''' a name isn't defined. '''
+    """ a name isn't defined. """
     def __init__(self, name, expression):
         self.name = name
         self.message = "'{0}' is not defined for expression '{1}'".format(
@@ -129,7 +129,7 @@ class NameNotDefined(InvalidExpression):
 
 
 class AttributeDoesNotExist(InvalidExpression):
-    '''attribute does not exist'''
+    """attribute does not exist"""
     def __init__(self, attr, expression):
         self.message = \
             "Attribute '{0}' does not exist in expression '{1}'".format(
@@ -139,18 +139,18 @@ class AttributeDoesNotExist(InvalidExpression):
 
 
 class FeatureNotAvailable(InvalidExpression):
-    ''' What you're trying to do is not allowed. '''
+    """ What you're trying to do is not allowed. """
     pass
 
 
 class NumberTooHigh(InvalidExpression):
-    ''' Sorry! That number is too high. I don't want to spend the
-        next 10 years evaluating this expression! '''
+    """ Sorry! That number is too high. I don't want to spend the
+        next 10 years evaluating this expression! """
     pass
 
 
 class IterableTooLong(InvalidExpression):
-    ''' That iterable is **way** too long, baby. '''
+    """ That iterable is **way** too long, baby. """
     pass
 
 
@@ -159,12 +159,12 @@ class IterableTooLong(InvalidExpression):
 
 
 def random_int(top):
-    ''' return a random int below <top> '''
+    """ return a random int below <top> """
     return int(random() * top)
 
 
 def safe_power(a, b):  # pylint: disable=invalid-name
-    ''' a limited exponent/to-the-power-of function, for safety reasons '''
+    """ a limited exponent/to-the-power-of function, for safety reasons """
     if abs(a) > MAX_POWER or abs(b) > MAX_POWER:
         raise NumberTooHigh("Sorry! I don't want to evaluate {0} ** {1}"
                             .format(a, b))
@@ -172,7 +172,7 @@ def safe_power(a, b):  # pylint: disable=invalid-name
 
 
 def safe_mult(a, b):  # pylint: disable=invalid-name
-    ''' limit the number of times an iterable can be repeated... '''
+    """ limit the number of times an iterable can be repeated... """
 
     if hasattr(a, '__len__') and b*len(a) > MAX_STRING_LENGTH:
         raise IterableTooLong('Sorry, I will not evalute something that long.')
@@ -183,7 +183,7 @@ def safe_mult(a, b):  # pylint: disable=invalid-name
 
 
 def safe_add(a, b):  # pylint: disable=invalid-name
-    ''' iterable length limit again '''
+    """ iterable length limit again """
     if hasattr(a, '__len__') and hasattr(b, '__len__'):
         if len(a) + len(b) > MAX_STRING_LENGTH:
             raise IterableTooLong("Sorry, adding those two together would"
@@ -200,6 +200,7 @@ DEFAULT_OPERATORS = {ast.Add: safe_add, ast.Sub: op.sub, ast.Mult: safe_mult,
                      ast.Eq: op.eq, ast.NotEq: op.ne,
                      ast.Gt: op.gt, ast.Lt: op.lt,
                      ast.GtE: op.ge, ast.LtE: op.le,
+                     ast.Not: op.not_,
                      ast.USub: op.neg, ast.UAdd: op.pos,
                      ast.In: lambda x, y: op.contains(y, x),
                      ast.NotIn: lambda x, y: not op.contains(y, x),
@@ -216,17 +217,17 @@ DEFAULT_NAMES = {"True": True, "False": False}
 
 
 class SimpleEval(object):  # pylint: disable=too-few-public-methods
-    ''' A very simple expression parser.
+    """ A very simple expression parser.
         >>> s = SimpleEval()
         >>> s.eval("20 + 30 - ( 10 * 5)")
         0
-        '''
+        """
     expr = ""
 
     def __init__(self, operators=None, functions=None, names=None):
-        '''
+        """
             Create the evaluator instance.  Set up valid operators (+,-, etc)
-            functions (add, random, get_val, whatever) and names. '''
+            functions (add, random, get_val, whatever) and names. """
 
         if not operators:
             operators = DEFAULT_OPERATORS
@@ -250,7 +251,6 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             ast.IfExp: self._eval_ifexp,
             ast.Call: self._eval_call,
             ast.keyword: self._eval_keyword,
-            ast.Name: self._eval_name,
             ast.Subscript: self._eval_subscript,
             ast.Attribute: self._eval_attribute,
             ast.Index: self._eval_index,
@@ -262,8 +262,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             self.nodes[ast.NameConstant] = self._eval_nameconstant
 
     def eval(self, expr):
-        ''' evaluate an expresssion, using the operators, functions and
-            names previously set up. '''
+        """ evaluate an expresssion, using the operators, functions and
+            names previously set up. """
 
         # set a copy of the expression aside, so we can give nice errors...
 
@@ -273,7 +273,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return self._eval(ast.parse(expr.strip()).body[0].value)
 
     def _eval(self, node):
-        ''' The internal evaluator used on each node in the parsed tree. '''
+        """ The internal evaluator used on each node in the parsed tree. """
 
         try:
             handler = self.nodes[type(node)]
@@ -283,17 +283,20 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
         return handler(node)
 
-    def _eval_num(self, node):
+    @staticmethod
+    def _eval_num(node):
         return node.n
 
-    def _eval_str(self, node):
+    @staticmethod
+    def _eval_str(node):
         if len(node.s) > MAX_STRING_LENGTH:
             raise IterableTooLong("String Literal in statement is too long!"
                                   " ({0}, when {1} is max)".format(
-                                    len(node.s), MAX_STRING_LENGTH))
+                                      len(node.s), MAX_STRING_LENGTH))
         return node.s
 
-    def _eval_nameconstant(self, node):
+    @staticmethod
+    def _eval_nameconstant(node):
         return node.value
 
     def _eval_unaryop(self, node):
@@ -305,6 +308,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     def _eval_boolop(self, node):
         if isinstance(node.op, ast.And):
+            vout = False
             for value in node.values:
                 vout = self._eval(value)
                 if not vout:
@@ -378,8 +382,6 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         except KeyError:
             raise
 
-        return self._eval(node.value)[self._eval(node.slice)]
-
     def _eval_attribute(self, node):
         for prefix in DISALLOW_PREFIXES:
             if node.attr.startswith(prefix):
@@ -417,13 +419,13 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
 
 class EvalWithCompoundTypes(SimpleEval):
-    '''
+    """
         SimpleEval with additional Compound Types, and their respective
         function editions. (list, tuple, dict, set).
-    '''
+    """
 
-    def __init__(self, *args, **kwargs):
-        super(EvalWithCompoundTypes, self).__init__(*args, **kwargs)
+    def __init__(self, operators=None, functions=None, names=None):
+        super(EvalWithCompoundTypes, self).__init__(operators, functions, names)
 
         self.functions.update(
             list=list,
@@ -453,7 +455,7 @@ class EvalWithCompoundTypes(SimpleEval):
 
 
 def simple_eval(expr, operators=None, functions=None, names=None):
-    ''' Simply evaluate an expresssion '''
+    """ Simply evaluate an expresssion """
     s = SimpleEval(operators=operators,
                    functions=functions,
                    names=names)
