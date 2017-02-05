@@ -372,6 +372,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                                         ' evaluator'.format(node.id))
 
         except KeyError:
+            if node.id in self.functions:
+                return self.functions[node.id]
+
             raise NameNotDefined(node.id, self.expr)
 
     def _eval_subscript(self, node):
