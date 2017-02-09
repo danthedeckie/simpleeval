@@ -1,5 +1,5 @@
 from setuptools import setup
-__version__ = '0.9.4'
+__version__ = '0.9.5'
 
 setup(
     name='simpleeval',
