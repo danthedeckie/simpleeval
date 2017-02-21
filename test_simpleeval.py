@@ -388,7 +388,8 @@ class TestTryingToBreakOut(DRYTest):
     def test_builtins_private_access(self):
         # explicit attempt of the exploit from perkinslr
         with self.assertRaises(simpleeval.FeatureNotAvailable):
-            self.t("True.__class__.__class__.__base__.__subclasses__()[-1].__init__.func_globals['sys'].exit(1)", 42)
+            self.t("True.__class__.__class__.__base__.__subclasses__()[-1]"
+                   ".__init__.func_globals['sys'].exit(1)", 42)
 
 
 class TestCompoundTypes(DRYTest):

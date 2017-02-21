@@ -1,4 +1,5 @@
 from setuptools import setup
+
 __version__ = '0.9.5'
 
 setup(
@@ -6,7 +7,7 @@ setup(
     py_modules=['simpleeval'],
     version=__version__,
     description='A simple, safe single expression evaluator library.',
-    long_description=open('README.rst','r').read(),
+    long_description=open('README.rst', 'r').read(),
     author='Daniel Fairhead',
     author_email='danthedeckie@gmail.com',
     url='https://github.com/danthedeckie/simpleeval',
@@ -20,4 +21,4 @@ setup(
                  'Topic :: Software Development :: Libraries :: Python Modules',
                  'Programming Language :: Python',
                  ],
-    )
+)
