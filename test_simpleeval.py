@@ -139,6 +139,19 @@ class TestBasic(DRYTest):
         self.t('"I" not in "team"', True)
         self.t('"U" in "RUBBISH"', True)
 
+    def test_is(self):
+        self.t('1 is 1', True)
+        self.t('1 is 2', False)
+        self.t('1 is "a"', False)
+        self.t('1 is None', False)
+        self.t('None is None', True)
+
+        self.t('1 is not 1', False)
+        self.t('1 is not 2', True)
+        self.t('1 is not "a"', True)
+        self.t('1 is not None', True)
+        self.t('None is not None', False)
+
 
 class TestFunctions(DRYTest):
     """ Functions for expressions to play with """

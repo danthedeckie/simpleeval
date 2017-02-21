@@ -205,6 +205,8 @@ DEFAULT_OPERATORS = {ast.Add: safe_add, ast.Sub: op.sub, ast.Mult: safe_mult,
                      ast.USub: op.neg, ast.UAdd: op.pos,
                      ast.In: lambda x, y: op.contains(y, x),
                      ast.NotIn: lambda x, y: not op.contains(y, x),
+                     ast.Is: lambda x, y: x is y,
+                     ast.IsNot: lambda x, y: x is not y,
                      }
 
 DEFAULT_FUNCTIONS = {"rand": random, "randint": random_int,
