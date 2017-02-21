@@ -679,7 +679,3 @@ class TestExtendingClass(unittest.TestCase):
 
         with self.assertRaises(simpleeval.FeatureNotAvailable):
             e.eval('"  blah  ".strip()')
-
-
-if __name__ == '__main__':
-    unittest.main()
