@@ -47,6 +47,7 @@ class TestBasic(DRYTest):
     def test_bools_and_or(self):
         self.t('True and False', False)
         self.t('True or False', True)
+        self.t('False or False', False)
         self.t('1 - 1 or 21', 21)
         self.t('1 - 1 and 11', 0)
         self.t('110 == 100 + 10 and True', True)
@@ -379,6 +380,7 @@ class TestTryingToBreakOut(DRYTest):
         dis = simpleeval.DISALLOW_PREFIXES
         simpleeval.DISALLOW_PREFIXES = ['func_']
 
+        self.t('houdini.trapdoor()', 42)
         self.t('houdini._quasi_private()', 84)
 
         # and return things to normal
@@ -673,6 +675,7 @@ class TestExtendingClass(unittest.TestCase):
 
         self.assertEqual(e.eval('"stuff happens"'), "stuff happens")
         self.assertEqual(e.eval('22 + 20'), 42)
+        self.assertEqual(e.eval('int("42")'), 42)
 
         with self.assertRaises(simpleeval.FeatureNotAvailable):
             e.eval('"  blah  ".strip()')
