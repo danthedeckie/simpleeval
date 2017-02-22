@@ -263,6 +263,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         # py3k stuff:
         if hasattr(ast, 'NameConstant'):
             self.nodes[ast.NameConstant] = self._eval_nameconstant
+        elif isinstance(self.names, dict) and "None" not in self.names:
+            self.names["None"] = None
 
     def eval(self, expr):
         """ evaluate an expresssion, using the operators, functions and
@@ -362,9 +364,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             # that there is a true exression assigning to none
             # (the compiler rejects it, so you can't even
             # pass that to ast.parse)
-            if node.id == "None":
-                return None
-            elif isinstance(self.names, dict):
+            if isinstance(self.names, dict):
                 return self.names[node.id]
             elif callable(self.names):
                 return self.names(node)
