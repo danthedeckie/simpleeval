@@ -205,7 +205,10 @@ class TestFunctions(DRYTest):
 
     def test_methods(self):
         self.t('"WORD".lower()', 'word')
+        x = simpleeval.DISALLOW_METHODS
+        simpleeval.DISALLOW_METHODS = []
         self.t('"{}:{}".format(1, 2)', '1:2')
+        simpleeval.DISALLOW_METHODS = x
 
     def test_function_args_none(self):
         def foo():
@@ -393,6 +396,11 @@ class TestTryingToBreakOut(DRYTest):
             self.t("True.__class__.__class__.__base__.__subclasses__()[-1]"
                    ".__init__.func_globals['sys'].exit(1)", 42)
 
+
+    def test_string_format(self):
+        # python has so many ways to break out!
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+             self.t('"{string.__class__}".format(string="things")', 0)
 
 class TestCompoundTypes(DRYTest):
     """ Test the compound-types edition of the library """

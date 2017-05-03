@@ -93,6 +93,7 @@ from random import random
 MAX_STRING_LENGTH = 100000
 MAX_POWER = 4000000  # highest exponent
 DISALLOW_PREFIXES = ['_', 'func_']
+DISALLOW_METHODS = ['format']
 
 PYTHON3 = sys.version_info[0] == 3
 
@@ -394,6 +395,10 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 raise FeatureNotAvailable(
                     "Sorry, access to __attributes "
                     " or func_ attributes is not available. "
+                    "({0})".format(node.attr))
+        if node.attr in DISALLOW_METHODS:
+            raise FeatureNotAvailable(
+                    "Sorry, this method is not available. "
                     "({0})".format(node.attr))
 
         try:
