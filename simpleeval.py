@@ -31,7 +31,7 @@ THE SOFTWARE.
 
 Initial idea copied from J.F. Sebastian on Stack Overflow
 ( http://stackoverflow.com/a/9558001/1973500 ) with
-modifications and many improvments.
+modifications and many improvements.
 
 -------------------------------------
 Contributors:
