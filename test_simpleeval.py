@@ -542,6 +542,9 @@ class TestNames(DRYTest):
         self.s.names['c'] = {'i': 11}
 
         self.t("c['i']", 11)
+        self.t("c.get('i')", 11)
+        self.t("c.get('j', 11)", 11)
+        self.t("c.get('j')", None)
 
         # you still can't assign though:
 
