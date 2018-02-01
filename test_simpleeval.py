@@ -10,6 +10,7 @@
 import unittest
 import operator
 import ast
+
 import simpleeval
 from simpleeval import (
     SimpleEval, EvalWithCompoundTypes, FeatureNotAvailable, FunctionNotDefined, NameNotDefined,
@@ -663,6 +664,30 @@ class TestSimpleEval(unittest.TestCase):
     def test_default_functions(self):
         self.assertEqual(simple_eval('rand() < 1.0 and rand() > -0.01'), True)
         self.assertEqual(simple_eval('randint(200) < 200 and rand() > 0'), True)
+
+
+class TestExpr(unittest.TestCase):
+    """Verify that we can parse an expression and evaluate it later."""
+
+    def test_parse_and_eval(self):
+        expr = simpleeval.Expr("200 + 200")
+        self.assertEqual(expr.eval(), 400)
+
+    def test_parse_and_eval_with_custom_cls(self):
+        expr = simpleeval.Expr("[1, 2][0]", evaluator_cls=EvalWithCompoundTypes)
+        self.assertEqual(expr.eval(), 1)
+
+    def test_parse_and_eval_with_names(self):
+        expr = simpleeval.Expr("a + 200")
+        self.assertEqual(expr.eval(names={"a": 200}), 400)
+
+    def test_get_names(self):
+        expr = simpleeval.Expr("a + 200")
+        self.assertEqual(expr.get_names(), set(["a"]))
+
+    def test_get_names_complex(self):
+        expr = simpleeval.Expr("a.b.c + int(e) / d.method() and (a and e)")
+        self.assertEqual(expr.get_names(), set(["a", "e", "d"]))
 
 
 class TestExtendingClass(unittest.TestCase):

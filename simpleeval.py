@@ -429,6 +429,37 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return slice(lower, upper, step)
 
 
+class Expr(object):
+
+    def __init__(self, expr, evaluator_cls=None):
+        self.expr = expr
+        self.ast = ast.parse(expr.strip()).body[0].value
+        self.evaluator_cls = evaluator_cls or SimpleEval
+
+    def eval(self, operators=None, functions=None, names=None):
+        """Evaluate an expression and return its value."""
+        evaluator = self.evaluator_cls(operators=operators,
+                                       functions=functions,
+                                       names=names)
+        return evaluator._eval(self.ast)
+
+    def get_names(self, functions=None):
+        """Return a set of names contained in the expression."""
+        class NamesLister(ast.NodeVisitor):
+            names = set([])
+            def visit_Name(self, node):
+                self.names.add(node.id)
+
+        lister = NamesLister()
+        lister.visit(self.ast)
+
+        # We need to exclude the functions defined by the evaluator
+        functions = self.evaluator_cls(functions=functions).functions
+        names = lister.names - set(functions.keys())
+
+        return names
+
+
 class EvalWithCompoundTypes(SimpleEval):
     """
         SimpleEval with additional Compound Types, and their respective

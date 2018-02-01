@@ -316,6 +316,32 @@ Say.  This would allow a certain level of 'scriptyness' if you had these
 evaluations happening as callbacks in a program.  Although you really are
 reaching the end of what this library is intended for at this stage.
 
+Creating an expression instance
+-------------------------------
+
+Creating an expression class can make sense if you want to inspect the parsed
+expression (e.g. to get the names defined) or if parsing the expression is
+costly.
+
+.. code-block:: python
+
+    expr = simpleeval.Expr("2 + 2")  # the AST is parsed at this time
+    assert expr.eval() == 2
+
+    expr = simpleeval.Expr("a + 1")
+    assert expr.get_names() == set(["a"])  # returns the set of names
+    assert expr.eval(names={"a": 1}) == 2
+
+You can also pass a specific evaluator class to further customize the parsing
+environment.
+
+.. code-block:: python
+
+    from simpleeval import EvalWithCompoundTypes, Expr
+
+    expr = Expr("[1, 2][0]", evaluator_cls=EvalWithCompoundTypes)
+    assert expr.eval() == 1
+
 Compound Types
 --------------
 
