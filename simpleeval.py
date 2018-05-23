@@ -83,8 +83,8 @@ well:
 """
 
 import ast
-import sys
 import operator as op
+import sys
 from random import random
 
 ########################################
@@ -97,6 +97,7 @@ DISALLOW_METHODS = ['format']
 
 PYTHON3 = sys.version_info[0] == 3
 
+
 ########################################
 # Exceptions:
 
@@ -108,6 +109,7 @@ class InvalidExpression(Exception):
 
 class FunctionNotDefined(InvalidExpression):
     """ sorry! That function isn't defined! """
+
     def __init__(self, func_name, expression):
         self.message = "Function '{0}' not defined," \
                        " for expression '{1}'.".format(func_name, expression)
@@ -120,6 +122,7 @@ class FunctionNotDefined(InvalidExpression):
 
 class NameNotDefined(InvalidExpression):
     """ a name isn't defined. """
+
     def __init__(self, name, expression):
         self.name = name
         self.message = "'{0}' is not defined for expression '{1}'".format(
@@ -132,6 +135,7 @@ class NameNotDefined(InvalidExpression):
 
 class AttributeDoesNotExist(InvalidExpression):
     """attribute does not exist"""
+
     def __init__(self, attr, expression):
         self.message = \
             "Attribute '{0}' does not exist in expression '{1}'".format(
@@ -176,9 +180,9 @@ def safe_power(a, b):  # pylint: disable=invalid-name
 def safe_mult(a, b):  # pylint: disable=invalid-name
     """ limit the number of times an iterable can be repeated... """
 
-    if hasattr(a, '__len__') and b*len(a) > MAX_STRING_LENGTH:
+    if hasattr(a, '__len__') and b * len(a) > MAX_STRING_LENGTH:
         raise IterableTooLong('Sorry, I will not evalute something that long.')
-    if hasattr(b, '__len__') and a*len(b) > MAX_STRING_LENGTH:
+    if hasattr(b, '__len__') and a * len(b) > MAX_STRING_LENGTH:
         raise IterableTooLong('Sorry, I will not evalute something that long.')
 
     return a * b
@@ -215,6 +219,7 @@ DEFAULT_FUNCTIONS = {"rand": random, "randint": random_int,
                      "str": str if PYTHON3 else unicode}
 
 DEFAULT_NAMES = {"True": True, "False": False}
+
 
 ########################################
 # And the actual evaluator:
@@ -303,7 +308,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if len(node.s) > MAX_STRING_LENGTH:
             raise IterableTooLong("String Literal in statement is too long!"
                                   " ({0}, when {1} is max)".format(
-                                      len(node.s), MAX_STRING_LENGTH))
+                len(node.s), MAX_STRING_LENGTH))
         return node.s
 
     @staticmethod
@@ -344,7 +349,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     def _eval_ifexp(self, node):
         return self._eval(node.body) if self._eval(node.test) \
-                                         else self._eval(node.orelse)
+            else self._eval(node.orelse)
 
     def _eval_call(self, node):
         if isinstance(node.func, ast.Attribute):
@@ -403,8 +408,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                     "({0})".format(node.attr))
         if node.attr in DISALLOW_METHODS:
             raise FeatureNotAvailable(
-                    "Sorry, this method is not available. "
-                    "({0})".format(node.attr))
+                "Sorry, this method is not available. "
+                "({0})".format(node.attr))
 
         try:
             return self._eval(node.value)[node.attr]
@@ -487,6 +492,7 @@ class EvalWithAssignments(SimpleEval):
     """
     SimpleEval, but allows the setting of evaluator's names with name=value.
     """
+
     def __init__(self, operators=None, functions=None, names=None):
         super(SimpleEval, self).__init__(operators, functions, names)
 
