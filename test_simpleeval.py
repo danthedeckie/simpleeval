@@ -334,8 +334,9 @@ class TestTryingToBreakOut(DRYTest):
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'" + (50000 * "stuff") + "'", 0)
 
-        with self.assertRaises(simpleeval.IterableTooLong):
-            self.t("f'{\"foo\"*50000}'", 0)
+        if sys.version_info >= (3, 6, 0):
+            with self.assertRaises(simpleeval.IterableTooLong):
+                self.t("f'{\"foo\"*50000}'", 0)
 
     def test_bytes_array_test(self):
         self.t("'20000000000000000000'.encode() * 5000",
