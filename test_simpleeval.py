@@ -153,6 +153,13 @@ class TestBasic(DRYTest):
         self.t('1 is not None', True)
         self.t('None is not None', False)
 
+    def test_fstring(self):
+        self.t('f""', "")
+        self.t('f"stuff"', "stuff")
+        self.t('f"one is {1} and two is {2}"', "one is 1 and two is 2")
+        self.t('f"1+1 is {1+1}"', "1+1 is 2")
+        self.t('f"{\'dramatic\':!<11}"', "dramatic!!!")
+
 
 class TestFunctions(DRYTest):
     """ Functions for expressions to play with """
@@ -324,6 +331,9 @@ class TestTryingToBreakOut(DRYTest):
 
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'" + (50000 * "stuff") + "'", 0)
+
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.t("f'{\"foo\"*50000}'", 0)
 
     def test_bytes_array_test(self):
         self.t("'20000000000000000000'.encode() * 5000",
