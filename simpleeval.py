@@ -258,9 +258,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             ast.Subscript: self._eval_subscript,
             ast.Attribute: self._eval_attribute,
             ast.Index: self._eval_index,
-            ast.Slice: self._eval_slice,
-            ast.JoinedStr: self._eval_joinedstr,  # f-string
-            ast.FormattedValue: self._eval_formattedvalue  # formatted value in f-string
+            ast.Slice: self._eval_slice
         }
 
         # py3k stuff:
@@ -268,6 +266,11 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             self.nodes[ast.NameConstant] = self._eval_nameconstant
         elif isinstance(self.names, dict) and "None" not in self.names:
             self.names["None"] = None
+
+        # py3.6
+        if hasattr(ast, 'JoinedStr'):
+            self.nodes[ast.JoinedStr] = self._eval_joinedstr,  # f-string
+            self.nodes[ast.FormattedValue] = self._eval_formattedvalue  # formatted value in f-string
 
     def eval(self, expr):
         """ evaluate an expresssion, using the operators, functions and
