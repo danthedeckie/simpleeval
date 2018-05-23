@@ -480,6 +480,52 @@ class EvalWithCompoundTypes(SimpleEval):
         return set(self._eval(x) for x in node.elts)
 
 
+class EvalWithAssignments(SimpleEval):
+    """
+    SimpleEval, but allows the setting of evaluator's names with name=value.
+    """
+    def __init__(self, operators=None, functions=None, names=None):
+        super(SimpleEval, self).__init__(operators, functions, names)
+
+    def eval(self, expr):  # allow for ast.Assign to set names
+        """ evaluate an expression, using the operators, functions and
+            names previously set up. """
+        self.expr = expr
+        expression = ast.parse(expr.strip()).body[0]
+
+        if isinstance(expression, ast.Expr):
+            return self._eval(expression.value)
+        elif isinstance(expression, ast.Assign):
+            return self._eval_assign(expression)
+        else:
+            raise TypeError("Unknown ast body type")
+
+    def _eval_assign(self, node):
+        names = node.targets[0]
+        values = node.value
+        self._assign(names, values)
+
+    def _assign(self, names, values):
+        if isinstance(names, ast.Tuple):  # unpacking variables
+            names = [n.id for n in names.elts]  # turn ast into str
+            if not isinstance(values, ast.Tuple):
+                raise ValueError(f"unequal unpack: {len(names)} names, 1 value")
+            values = values.elts
+            if not len(values) == len(names):
+                raise ValueError(f"unequal unpack: {len(names)} names, {len(values)} values")
+            else:
+                if not isinstance(self.names, dict):
+                    raise TypeError("cannot set name: incorrect name type")
+                else:
+                    for name, value in zip(names, values):
+                        self.names[name] = value  # and assign it
+        else:
+            if not isinstance(self.names, dict):
+                raise TypeError("cannot set name: incorrect name type")
+            else:
+                self.names[names.id] = values
+
+
 def simple_eval(expr, operators=None, functions=None, names=None):
     """ Simply evaluate an expresssion """
     s = SimpleEval(operators=operators,
