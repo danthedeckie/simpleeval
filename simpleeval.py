@@ -518,10 +518,10 @@ class EvalWithAssignments(SimpleEval):
         if isinstance(names, ast.Tuple):  # unpacking variables
             names = [n.id for n in names.elts]  # turn ast into str
             if not isinstance(values, ast.Tuple):
-                raise ValueError(f"unequal unpack: {len(names)} names, 1 value")
+                raise ValueError("unequal unpack: {} names, 1 value".format(len(names)))
             values = values.elts
             if not len(values) == len(names):
-                raise ValueError(f"unequal unpack: {len(names)} names, {len(values)} values")
+                raise ValueError("unequal unpack: {} names, {} values".format(len(names), len(values)))
             else:
                 if not isinstance(self.names, dict):
                     raise TypeError("cannot set name: incorrect name type")
