@@ -259,6 +259,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             ast.Attribute: self._eval_attribute,
             ast.Index: self._eval_index,
             ast.Slice: self._eval_slice,
+            ast.JoinedStr: self._eval_joinedstr,  # f-string
+            ast.FormattedValue: self._eval_formattedvalue  # formatted value in f-string
         }
 
         # py3k stuff:
@@ -427,6 +429,19 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if node.step is not None:
             step = self._eval(node.step)
         return slice(lower, upper, step)
+
+    def _eval_joinedstr(self, node):
+        evaluated_values = [str(self._eval(n)) for n in node.values]
+        if sum(len(v) for v in evaluated_values) > MAX_STRING_LENGTH:
+            raise IterableTooLong("Sorry, I will not evaluate something this long.")
+        return ''.join(evaluated_values)
+
+    def _eval_formattedvalue(self, node):
+        if node.format_spec:
+            fmt = "{:" + self._eval(node.format_spec) + "}"
+            return fmt.format(self._eval(node.value))
+        else:
+            return self._eval(node.value)
 
 
 class EvalWithCompoundTypes(SimpleEval):
