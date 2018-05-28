@@ -533,16 +533,15 @@ class TestAssignments(DRYTest):
         with self.assertRaises(ValueError):
             self.t('a,b=1,2,3', None)
         self.t('a=1,2,3', None)
-        self.t('a', (1,2,3))
+        self.t('a', (1, 2, 3))
 
     def test_names_function(self):
-        oldnames = self.s.names
         self.s.names = lambda n: n  # each name's value is just the name
         with self.assertRaises(TypeError):
             self.t('a,b=1,2', None)
         with self.assertRaises(TypeError):
             self.t('a=2', None)
-        self.s.names = oldnames
+        self.s.names = {}  # clean up for later tests
 
 
 class TestNames(DRYTest):
