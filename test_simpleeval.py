@@ -547,6 +547,9 @@ class TestAssignments(DRYTest):
 class TestNames(DRYTest):
     """ 'names', what other languages call variables... """
 
+    def setUp(self):
+        self.s = EvalWithCompoundTypes()
+
     def test_none(self):
         """ what to do when names isn't defined, or is 'none' """
         with self.assertRaises(NameNotDefined):
