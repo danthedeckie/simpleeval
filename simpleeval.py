@@ -488,13 +488,13 @@ class EvalWithCompoundTypes(SimpleEval):
         return set(self._eval(x) for x in node.elts)
 
 
-class EvalWithAssignments(SimpleEval):
+class EvalWithAssignments(EvalWithCompoundTypes):
     """
     SimpleEval, but allows the setting of evaluator's names with name=value.
     """
 
     def __init__(self, operators=None, functions=None, names=None):
-        super(SimpleEval, self).__init__(operators, functions, names)
+        super(EvalWithAssignments, self).__init__(operators, functions, names)
 
     def eval(self, expr):  # allow for ast.Assign to set names
         """ evaluate an expression, using the operators, functions and
@@ -527,12 +527,12 @@ class EvalWithAssignments(SimpleEval):
                     raise TypeError("cannot set name: incorrect name type")
                 else:
                     for name, value in zip(names, values):
-                        self.names[name] = value  # and assign it
+                        self.names[name] = self._eval(value)  # and assign it
         else:
             if not isinstance(self.names, dict):
                 raise TypeError("cannot set name: incorrect name type")
             else:
-                self.names[names.id] = values
+                self.names[names.id] = self._eval(values)
 
 
 def simple_eval(expr, operators=None, functions=None, names=None):

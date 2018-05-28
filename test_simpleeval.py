@@ -13,7 +13,7 @@ import unittest
 
 import simpleeval
 from simpleeval import (
-    SimpleEval, EvalWithCompoundTypes, FeatureNotAvailable, FunctionNotDefined, NameNotDefined,
+    SimpleEval, EvalWithCompoundTypes, EvalWithAssignments, FeatureNotAvailable, FunctionNotDefined, NameNotDefined,
     InvalidExpression, AttributeDoesNotExist, simple_eval
 )
 
@@ -495,6 +495,54 @@ class TestCompoundTypes(DRYTest):
 
         self.s = EvalWithCompoundTypes(functions={"dir": dir, "str": str})
         self.t('dir(str)', dir(str))
+
+
+class TestAssignments(DRYTest):
+    """ Test the assignment edition of the library """
+
+    def setUp(self):
+        self.s = EvalWithAssignments()
+
+    def test_assign(self):
+        self.t('a=1', None)
+        self.t('a', 1)
+
+    def test_reassign(self):
+        self.t('a=1', None)
+        self.t('a', 1)
+        self.t('a=2', None)
+        self.t('a', 2)
+
+    def test_assign_complex(self):
+        self.t('a=1+1+2', None)
+        self.t('a', 4)
+        self.t('b=15**2', None)
+        self.t('b', 225)
+        self.t('c=a+b', None)
+        self.t('c', 229)
+
+    def test_unpack(self):
+        self.t('a,b,c=1,2,3', None)
+        self.t('a', 1)
+        self.t('b', 2)
+        self.t('c', 3)
+
+    def test_unequal_unpack(self):
+        with self.assertRaises(ValueError):
+            self.t('a,b=1', None)
+        with self.assertRaises(ValueError):
+            self.t('a,b=1,2,3', None)
+        self.t('a=1,2,3', None)
+        self.t('a', (1,2,3))
+
+    def test_names_function(self):
+        oldnames = self.s.names
+        self.s.names = lambda n: n  # each name's value is just the name
+        with self.assertRaises(TypeError):
+            self.t('a,b=1,2', None)
+        with self.assertRaises(TypeError):
+            self.t('a=2', None)
+        self.s.names = oldnames
 
 
 class TestNames(DRYTest):
