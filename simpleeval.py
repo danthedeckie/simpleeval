@@ -42,7 +42,11 @@ Contributors:
 - perkinslr (Logan Perkins) (.__globals__ or .func_ breakouts)
 - impala2 (Kirill Stepanov) (massive _eval refactor)
 - gk (ugik) (Other iterables than str can DOS too, and can be made)
-- daveisfera (Dave Johansen) 'not' Boolean op, Pycharm and pep8 fixes.
+- daveisfera (Dave Johansen) 'not' Boolean op, Pycharm, pep8, various other fixes
+- xaled (Khalid Grandi) method chaining correctly, double-eval bugfix.
+- EdwardBetts (Edward Betts) spelling correction.
+- charlax (Charles-Axel Dein charlax) Makefile and cleanups
+
 
 -------------------------------------
 Usage:
