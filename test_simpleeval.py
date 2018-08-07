@@ -162,7 +162,7 @@ class TestFunctions(DRYTest):
 
         # write to the file:
 
-        with open("file.txt", 'w') as f:
+        with open("testfile.txt", 'w') as f:
             f.write("42")
 
         # define the function we'll send to the eval'er
@@ -175,12 +175,12 @@ class TestFunctions(DRYTest):
         # simple load:
 
         self.s.functions = {"read": load_file}
-        self.t("read('file.txt')", "42")
+        self.t("read('testfile.txt')", "42")
 
         # and we should have *replaced* the default functions. Let's check:
 
         with self.assertRaises(simpleeval.FunctionNotDefined):
-            self.t("int(read('file.txt'))", 42)
+            self.t("int(read('testfile.txt'))", 42)
 
         # OK, so we can load in the default functions as well...
 
@@ -188,7 +188,7 @@ class TestFunctions(DRYTest):
 
         # now it works:
 
-        self.t("int(read('file.txt'))", 42)
+        self.t("int(read('testfile.txt'))", 42)
 
     def test_randoms(self):
         """ test the rand() and randint() functions """
@@ -542,6 +542,9 @@ class TestNames(DRYTest):
         self.s.names['c'] = {'i': 11}
 
         self.t("c['i']", 11)
+        self.t("c.get('i')", 11)
+        self.t("c.get('j', 11)", 11)
+        self.t("c.get('j')", None)
 
         # you still can't assign though:
 
@@ -710,3 +713,6 @@ class TestExtendingClass(unittest.TestCase):
 
         with self.assertRaises(simpleeval.FeatureNotAvailable):
             e.eval('"  blah  ".strip()')
+
+if __name__ == '__main__':  # pragma: no cover
+    unittest.main()

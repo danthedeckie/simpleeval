@@ -4,7 +4,7 @@ simpleeval (Simple Eval)
 .. image:: https://travis-ci.org/danthedeckie/simpleeval.svg?branch=master
    :target: https://travis-ci.org/danthedeckie/simpleeval
    :alt: Build Status
-   
+
 .. image:: https://coveralls.io/repos/github/danthedeckie/simpleeval/badge.svg?branch=master
    :target: https://coveralls.io/r/danthedeckie/simpleeval?branch=master
    :alt: Coverage Status
@@ -185,7 +185,7 @@ which, of course, can be nested:
 
     >>> simple_eval("'a' if 1 == 2 else 'b' if 2 == 3 else 'c'")
     'c'
-    
+
 
 Functions
 ---------
@@ -278,7 +278,7 @@ cases):
 
     >>> s.eval('100 * 10')
     1000
-    
+
     # and so on...
 
 You can assign / edit the various options of the ``SimpleEval`` object if you
@@ -355,3 +355,10 @@ If you really need that (BE CAREFUL!), then modify the module global
 Please read the ``test_simpleeval.py`` file for other potential gotchas or
 details.  I'm very happy to accept pull requests, suggestions, or other issues.
 Enjoy!
+
+Developing
+----------
+
+Run tests::
+
+    $ make test
