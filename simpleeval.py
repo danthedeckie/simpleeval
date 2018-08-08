@@ -115,7 +115,7 @@ class FunctionNotDefined(InvalidExpression):
     def __init__(self, func_name, expression):
         self.message = "Function '{0}' not defined," \
                        " for expression '{1}'.".format(func_name, expression)
-        self.func_name = func_name
+        setattr(self, 'func_name', func_name) # bypass 2to3 confusion.
         self.expression = expression
 
         # pylint: disable=bad-super-call
