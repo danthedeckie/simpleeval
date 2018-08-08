@@ -60,7 +60,7 @@ You can add your own functions easily too:
 if file.txt contents is "11"
 
 >>> def get_file():
-        with open("file.txt",'r') as f:
+        with open("file.txt", 'r') as f:
             return f.read()
 
     s.functions["get_file"] = get_file
@@ -115,7 +115,7 @@ class FunctionNotDefined(InvalidExpression):
     def __init__(self, func_name, expression):
         self.message = "Function '{0}' not defined," \
                        " for expression '{1}'.".format(func_name, expression)
-        setattr(self, 'func_name', func_name) # bypass 2to3 confusion.
+        setattr(self, 'func_name', func_name)  # bypass 2to3 confusion.
         self.expression = expression
 
         # pylint: disable=bad-super-call
@@ -385,7 +385,6 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             raise NameNotDefined(node.id, self.expr)
 
     def _eval_subscript(self, node):
-
         container = self._eval(node.value)
         key = self._eval(node.slice)
         try:
@@ -402,8 +401,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                     "({0})".format(node.attr))
         if node.attr in DISALLOW_METHODS:
             raise FeatureNotAvailable(
-                    "Sorry, this method is not available. "
-                    "({0})".format(node.attr))
+                "Sorry, this method is not available. "
+                "({0})".format(node.attr))
         # eval node
         node_evaulated = self._eval(node.value)
 
