@@ -8,7 +8,6 @@ setup(
     version=__version__,
     description='A simple, safe single expression evaluator library.',
     long_description=open('README.rst', 'r').read(),
-    long_description_content_type="text/markdown",
     author='Daniel Fairhead',
     author_email='danthedeckie@gmail.com',
     url='https://github.com/danthedeckie/simpleeval',

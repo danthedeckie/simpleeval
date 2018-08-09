@@ -60,11 +60,11 @@ You can add your own functions easily too:
 if file.txt contents is "11"
 
 >>> def get_file():
-        with open("file.txt", 'r') as f:
-            return f.read()
+...     with open("file.txt", 'r') as f:
+...         return f.read()
 
-    s.functions["get_file"] = get_file
-    s.eval("int(get_file()) + 31")
+>>> s.functions["get_file"] = get_file
+>>> s.eval("int(get_file()) + 31")
 42
 
 For more information, see the full package documentation on pypi, or the github

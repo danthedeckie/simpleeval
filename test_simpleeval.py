@@ -11,6 +11,7 @@ import unittest
 import operator
 import ast
 import simpleeval
+import os
 from simpleeval import (
     SimpleEval, EvalWithCompoundTypes, FeatureNotAvailable, FunctionNotDefined, NameNotDefined,
     InvalidExpression, AttributeDoesNotExist, simple_eval
@@ -189,6 +190,8 @@ class TestFunctions(DRYTest):
         # now it works:
 
         self.t("int(read('testfile.txt'))", 42)
+
+        os.remove('testfile.txt')
 
     def test_randoms(self):
         """ test the rand() and randint() functions """
