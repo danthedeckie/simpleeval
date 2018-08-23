@@ -271,6 +271,11 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         elif isinstance(self.names, dict) and "None" not in self.names:
             self.names["None"] = None
 
+        # py3.6, f-strings
+        if hasattr(ast, 'JoinedStr'):
+            self.nodes[ast.JoinedStr] = self._eval_joinedstr  # f-string
+            self.nodes[ast.FormattedValue] = self._eval_formattedvalue  # formatted value in f-string
+
     def eval(self, expr):
         """ evaluate an expresssion, using the operators, functions and
             names previously set up. """
@@ -432,6 +437,19 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if node.step is not None:
             step = self._eval(node.step)
         return slice(lower, upper, step)
+
+    def _eval_joinedstr(self, node):
+        evaluated_values = [str(self._eval(n)) for n in node.values]
+        if sum(len(v) for v in evaluated_values) > MAX_STRING_LENGTH:
+            raise IterableTooLong("Sorry, I will not evaluate something this long.")
+        return ''.join(evaluated_values)
+
+    def _eval_formattedvalue(self, node):
+        if node.format_spec:
+            fmt = "{:" + self._eval(node.format_spec) + "}"
+            return fmt.format(self._eval(node.value))
+        else:
+            return self._eval(node.value)
 
 
 class EvalWithCompoundTypes(SimpleEval):
