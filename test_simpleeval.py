@@ -487,6 +487,46 @@ class TestCompoundTypes(DRYTest):
         self.t('dir(str)', dir(str))
 
 
+class TestComprehensions(DRYTest):
+    """ Test the Comprehensions support of the compound-types edition of the class. """
+
+    def setUp(self):
+        self.s = EvalWithCompoundTypes()
+
+    def test_basic(self):
+        self.t('[a + 1 for a in [1,2,3]]', [2,3,4])
+
+    def test_with_self_reference(self):
+        self.t('[a + a for a in [1,2,3]]', [2,4,6])
+
+    def test_with_if(self):
+        self.t('[a for a in [1,2,3,4,5] if a <= 3]', [1,2,3])
+
+    def test_with_multiple_if(self):
+        self.t('[a for a in [1,2,3,4,5] if a <= 3 and a > 1 ]', [2,3])
+
+    def test_attr_access_fails(self):
+        with self.assertRaises(FeatureNotAvailable):
+            self.t('[a.__class__ for a in [1,2,3]]', None)
+
+    def test_unpack(self):
+        self.t('[a+b for a,b in ((1,2),(3,4))]', [3, 7])
+
+    def test_nested_unpack(self):
+        self.t('[a+b+c for a, (b, c) in ((1,(1,1)),(3,(2,2)))]', [3, 7])
+
+    def test_other_places(self):
+        self.s.functions = {'sum': sum}
+        self.t('sum([a+1 for a in [1,2,3,4,5]])', 20)
+        self.t('sum(a+1 for a in [1,2,3,4,5])', 20)
+
+    def test_multiple_generators(self):
+        self.s.functions = {'range': range}
+        with self.assertRaises(FeatureNotAvailable):
+            self.t('[j for i in range(100) if i > 10 for j in range(i) if j < 20]', 100)
+
+
+
 class TestNames(DRYTest):
     """ 'names', what other languages call variables... """
 

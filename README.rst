@@ -324,6 +324,11 @@ you pass them in as named objects.  If you want to allow creation of these, the
 ``EvalWithCompoundTypes`` class works.  Just replace any use of ``SimpleEval`` with
 that.
 
+The ``EvalWithCompoundTypes`` class also contains support for simple comprehensions.
+eg: ``[x + 1 for x in [1,2,3]]``  Multiple loops in a comprehension is currently not
+supported.
+
+
 Extending
 ---------
 
@@ -352,6 +357,10 @@ Object attributes that start with ``_`` or ``func_`` are disallowed by default.
 If you really need that (BE CAREFUL!), then modify the module global
 ``simpleeval.DISALLOW_PREFIXES``.
 
+The initial idea came from J.F. Sebastian on Stack Overflow
+( http://stackoverflow.com/a/9558001/1973500 ) with modifications and many improvements,
+see the head of the main file for contributors list.
+
 Please read the ``test_simpleeval.py`` file for other potential gotchas or
 details.  I'm very happy to accept pull requests, suggestions, or other issues.
 Enjoy!
@@ -362,3 +371,9 @@ Developing
 Run tests::
 
     $ make test
+
+Or to set the tests running on every file change:
+
+    $ make autotest
+
+(requires ``entr``) 

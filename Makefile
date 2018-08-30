@@ -1,5 +1,9 @@
 test:
 	python test_simpleeval.py
+
+autotest:
+	find . -name \*.py -not -path .\/.v\* | entr make test
+
 .PHONY: test
 
 dist/:

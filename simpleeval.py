@@ -1,5 +1,5 @@
 """
-SimpleEval - (C) 2013-2017 Daniel Fairhead
+SimpleEval - (C) 2013-2018 Daniel Fairhead
 -------------------------------------
 
 An short, easy to use, safe and reasonably extensible expression evaluator.
@@ -49,7 +49,7 @@ Contributors:
 
 
 -------------------------------------
-Usage:
+Basic Usage:
 
 >>> s = SimpleEval()
 >>> s.eval("20 + 30")
@@ -453,7 +453,9 @@ class EvalWithCompoundTypes(SimpleEval):
             ast.Dict: self._eval_dict,
             ast.Tuple: self._eval_tuple,
             ast.List: self._eval_list,
-            ast.Set: self._eval_set
+            ast.Set: self._eval_set,
+            ast.ListComp: self._eval_comprehension,
+            ast.GeneratorExp: self._eval_comprehension,
         })
 
     def _eval_dict(self, node):
@@ -468,6 +470,49 @@ class EvalWithCompoundTypes(SimpleEval):
 
     def _eval_set(self, node):
         return set(self._eval(x) for x in node.elts)
+
+    def _eval_comprehension(self, node):
+        to_return = []
+
+        extra_names = {}
+
+        previous_name_evaller = self.nodes[ast.Name]
+
+        def eval_names_extra(node):
+            """
+                Here we hide our extra scope for within this comprehension
+            """
+            if node.id in extra_names:
+                return extra_names[node.id]
+            return previous_name_evaller(node)
+
+        self.nodes.update({ast.Name: eval_names_extra})
+
+        def recurse_targets(target, value):
+            """
+                Recursively (enter, (into, (nested, name), unpacking)) = \
+                             and, (assign, (values, to), each
+            """
+            if type(target) == ast.Name:
+                extra_names[target.id] = value
+            else:
+                for t, v in zip(target.elts, value):
+                    recurse_targets(t, v)
+
+        if len(node.generators) > 1:
+            # This would be nice to do, but again potential for DOS?
+            raise FeatureNotAvailable('Comprehensions with multiple generators not implemented, sorry')
+
+        g = node.generators[0]  # for g in node.generators when doing nested.
+        for i in self._eval(g.iter):
+            recurse_targets(g.target, i)
+            if (all(self._eval(iff) for iff in g.ifs)):
+                to_return.append(self._eval(node.elt))
+
+        self.nodes.update({ast.Name: previous_name_evaller})
+
+        return to_return
+
 
 
 def simple_eval(expr, operators=None, functions=None, names=None):
