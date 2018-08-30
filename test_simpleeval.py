@@ -520,6 +520,13 @@ class TestComprehensions(DRYTest):
         self.t('sum([a+1 for a in [1,2,3,4,5]])', 20)
         self.t('sum(a+1 for a in [1,2,3,4,5])', 20)
 
+    def test_external_names_work(self):
+        self.s.names = {'x': [22, 102, 12.3]}
+        self.t('[a/2 for a in x]', [11.0, 51.0, 6.15])
+
+        self.s.names = lambda x: ord(x.id)
+        self.t('[a + a for a in [b, c, d]]', [ord(x) * 2 for x in 'bcd'])
+
     def test_multiple_generators(self):
         self.s.functions = {'range': range}
         with self.assertRaises(FeatureNotAvailable):
