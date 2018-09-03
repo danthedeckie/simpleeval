@@ -95,6 +95,7 @@ from random import random
 # Module wide 'globals'
 
 MAX_STRING_LENGTH = 100000
+MAX_COMPREHENSION_LENGTH = 500
 MAX_POWER = 4000000  # highest exponent
 DISALLOW_PREFIXES = ['_', 'func_']
 DISALLOW_METHODS = ['format']
@@ -499,15 +500,21 @@ class EvalWithCompoundTypes(SimpleEval):
                 for t, v in zip(target.elts, value):
                     recurse_targets(t, v)
 
-        if len(node.generators) > 1:
-            # This would be nice to do, but again potential for DOS?
-            raise FeatureNotAvailable('Comprehensions with multiple generators not implemented, sorry')
+        def do_generator(gi=0, count=0):
+            g = node.generators[gi]
+            for i in self._eval(g.iter):
+                count += 1
 
-        g = node.generators[0]  # for g in node.generators when doing nested.
-        for i in self._eval(g.iter):
-            recurse_targets(g.target, i)
-            if (all(self._eval(iff) for iff in g.ifs)):
-                to_return.append(self._eval(node.elt))
+                if count > MAX_COMPREHENSION_LENGTH:
+                    raise IterableTooLong('Comprehension generates too many elements')
+                recurse_targets(g.target, i)
+                if all(self._eval(iff) for iff in g.ifs):
+                    if len(node.generators) > gi + 1 :
+                        do_generator(gi+1, count)
+                    else:
+                        to_return.append(self._eval(node.elt))
+
+        do_generator()
 
         self.nodes.update({ast.Name: previous_name_evaller})
 

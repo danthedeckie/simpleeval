@@ -346,10 +346,6 @@ class TestTryingToBreakOut(DRYTest):
         # it only evaluates the first statement:
         self.t("a = 11; x = 21; x + x", 11)
 
-        # list comprehensions don't work:
-        # this could be changed in a future release, if people want...
-        with self.assertRaises(simpleeval.FeatureNotAvailable):
-            self.t("[x for x in (1, 2, 3)]", (1, 2, 3))
 
     def test_function_globals_breakout(self):
         """ by accessing function.__globals__ or func_... """
@@ -488,7 +484,7 @@ class TestCompoundTypes(DRYTest):
 
 
 class TestComprehensions(DRYTest):
-    """ Test the Comprehensions support of the compound-types edition of the class. """
+    """ Test the comprehensions support of the compound-types edition of the class. """
 
     def setUp(self):
         self.s = EvalWithCompoundTypes()
@@ -529,10 +525,25 @@ class TestComprehensions(DRYTest):
 
     def test_multiple_generators(self):
         self.s.functions = {'range': range}
-        with self.assertRaises(FeatureNotAvailable):
-            self.t('[j for i in range(100) if i > 10 for j in range(i) if j < 20]', 100)
+        s = '[j for i in range(100) if i > 10 for j in range(i) if j < 20]'
+        self.t(s, eval(s))
 
+    def test_triple_generators(self):
+        self.s.functions = {'range': range}
+        s = '[(a,b,c) for a in range(4) for b in range(a) for c in range(b)]'
+        self.t(s, eval(s))
 
+    def test_too_long_generator(self):
+        self.s.functions = {'range': range}
+        s = '[j for i in range(1000) if i > 10 for j in range(i) if j < 20]'
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.s.eval(s)
+
+    def test_too_long_generator_2(self):
+        self.s.functions = {'range': range}
+        s = '[j for i in range(100) if i > 1 for j in range(i+10) if j < 100 for k in range(i*j)]'
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.s.eval(s)
 
 class TestNames(DRYTest):
     """ 'names', what other languages call variables... """
