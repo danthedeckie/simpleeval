@@ -1,5 +1,5 @@
 """
-SimpleEval - (C) 2013-2017 Daniel Fairhead
+SimpleEval - (C) 2013-2018 Daniel Fairhead
 -------------------------------------
 
 An short, easy to use, safe and reasonably extensible expression evaluator.
@@ -49,7 +49,7 @@ Contributors:
 
 
 -------------------------------------
-Usage:
+Basic Usage:
 
 >>> s = SimpleEval()
 >>> s.eval("20 + 30")
@@ -95,6 +95,7 @@ from random import random
 # Module wide 'globals'
 
 MAX_STRING_LENGTH = 100000
+MAX_COMPREHENSION_LENGTH = 500
 MAX_POWER = 4000000  # highest exponent
 DISALLOW_PREFIXES = ['_', 'func_']
 DISALLOW_METHODS = ['format']
@@ -453,7 +454,9 @@ class EvalWithCompoundTypes(SimpleEval):
             ast.Dict: self._eval_dict,
             ast.Tuple: self._eval_tuple,
             ast.List: self._eval_list,
-            ast.Set: self._eval_set
+            ast.Set: self._eval_set,
+            ast.ListComp: self._eval_comprehension,
+            ast.GeneratorExp: self._eval_comprehension,
         })
 
     def _eval_dict(self, node):
@@ -468,6 +471,55 @@ class EvalWithCompoundTypes(SimpleEval):
 
     def _eval_set(self, node):
         return set(self._eval(x) for x in node.elts)
+
+    def _eval_comprehension(self, node):
+        to_return = []
+
+        extra_names = {}
+
+        previous_name_evaller = self.nodes[ast.Name]
+
+        def eval_names_extra(node):
+            """
+                Here we hide our extra scope for within this comprehension
+            """
+            if node.id in extra_names:
+                return extra_names[node.id]
+            return previous_name_evaller(node)
+
+        self.nodes.update({ast.Name: eval_names_extra})
+
+        def recurse_targets(target, value):
+            """
+                Recursively (enter, (into, (nested, name), unpacking)) = \
+                             and, (assign, (values, to), each
+            """
+            if type(target) == ast.Name:
+                extra_names[target.id] = value
+            else:
+                for t, v in zip(target.elts, value):
+                    recurse_targets(t, v)
+
+        def do_generator(gi=0, count=0):
+            g = node.generators[gi]
+            for i in self._eval(g.iter):
+                count += 1
+
+                if count > MAX_COMPREHENSION_LENGTH:
+                    raise IterableTooLong('Comprehension generates too many elements')
+                recurse_targets(g.target, i)
+                if all(self._eval(iff) for iff in g.ifs):
+                    if len(node.generators) > gi + 1 :
+                        do_generator(gi+1, count)
+                    else:
+                        to_return.append(self._eval(node.elt))
+
+        do_generator()
+
+        self.nodes.update({ast.Name: previous_name_evaller})
+
+        return to_return
+
 
 
 def simple_eval(expr, operators=None, functions=None, names=None):
