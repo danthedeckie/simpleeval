@@ -95,7 +95,7 @@ from random import random
 # Module wide 'globals'
 
 MAX_STRING_LENGTH = 100000
-MAX_COMPREHENSION_LENGTH = 500
+MAX_COMPREHENSION_LENGTH = 10000
 MAX_POWER = 4000000  # highest exponent
 DISALLOW_PREFIXES = ['_', 'func_']
 DISALLOW_METHODS = ['format']
@@ -459,6 +459,11 @@ class EvalWithCompoundTypes(SimpleEval):
             ast.GeneratorExp: self._eval_comprehension,
         })
 
+    def eval(self, expr):
+        self._max_count = 0
+        return super(EvalWithCompoundTypes, self).eval(expr)
+
+
     def _eval_dict(self, node):
         return {self._eval(k): self._eval(v)
                 for (k, v) in zip(node.keys, node.values)}
@@ -500,17 +505,17 @@ class EvalWithCompoundTypes(SimpleEval):
                 for t, v in zip(target.elts, value):
                     recurse_targets(t, v)
 
-        def do_generator(gi=0, count=0):
+        def do_generator(gi=0):
             g = node.generators[gi]
             for i in self._eval(g.iter):
-                count += 1
+                self._max_count += 1
 
-                if count > MAX_COMPREHENSION_LENGTH:
+                if self._max_count > MAX_COMPREHENSION_LENGTH:
                     raise IterableTooLong('Comprehension generates too many elements')
                 recurse_targets(g.target, i)
                 if all(self._eval(iff) for iff in g.ifs):
                     if len(node.generators) > gi + 1 :
-                        do_generator(gi+1, count)
+                        do_generator(gi+1)
                     else:
                         to_return.append(self._eval(node.elt))
 
