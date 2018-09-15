@@ -439,9 +439,13 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return slice(lower, upper, step)
 
     def _eval_joinedstr(self, node):
-        evaluated_values = [str(self._eval(n)) for n in node.values]
-        if sum(len(v) for v in evaluated_values) > MAX_STRING_LENGTH:
-            raise IterableTooLong("Sorry, I will not evaluate something this long.")
+        length = 0
+        evaluated_values = []
+        for n in node.values:
+            val = str(self._eval(n))
+            if len(val) + length > MAX_STRING_LENGTH:
+                raise IterableTooLong("Sorry, I will not evaluate something this long.")
+            evaluated_values.append(val)
         return ''.join(evaluated_values)
 
     def _eval_formattedvalue(self, node):
