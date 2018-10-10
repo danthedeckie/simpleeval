@@ -6,7 +6,7 @@
 
 """
 # pylint: disable=too-many-public-methods, missing-docstring
-
+import sys
 import unittest
 import operator
 import ast
@@ -153,6 +153,14 @@ class TestBasic(DRYTest):
         self.t('1 is not "a"', True)
         self.t('1 is not None', True)
         self.t('None is not None', False)
+
+    def test_fstring(self):
+        if sys.version_info >= (3, 6, 0):
+            self.t('f""', "")
+            self.t('f"stuff"', "stuff")
+            self.t('f"one is {1} and two is {2}"', "one is 1 and two is 2")
+            self.t('f"1+1 is {1+1}"', "1+1 is 2")
+            self.t('f"{\'dramatic\':!<11}"', "dramatic!!!")
 
     def test_set_not_allowed(self):
         with self.assertRaises(FeatureNotAvailable):
@@ -332,6 +340,10 @@ class TestTryingToBreakOut(DRYTest):
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'" + (50000 * "stuff") + "'", 0)
 
+        if sys.version_info >= (3, 6, 0):
+            with self.assertRaises(simpleeval.IterableTooLong):
+                self.t("f'{\"foo\"*50000}'", 0)
+
     def test_bytes_array_test(self):
         self.t("'20000000000000000000'.encode() * 5000",
                '20000000000000000000'.encode() * 5000)
@@ -404,6 +416,51 @@ class TestTryingToBreakOut(DRYTest):
         # python has so many ways to break out!
         with self.assertRaises(simpleeval.FeatureNotAvailable):
              self.t('"{string.__class__}".format(string="things")', 0)
+
+        if sys.version_info >= (3, 6, 0):
+            self.s.names['x'] = 42
+
+            with self.assertRaises(simpleeval.FeatureNotAvailable):
+                self.t('f"{x.__class__}"', 0)
+
+            self.s.names['x'] = lambda y: y
+
+            with self.assertRaises(simpleeval.FeatureNotAvailable):
+                self.t('f"{x.__globals__}"', 0)
+
+            class EscapeArtist(object):
+                @staticmethod
+                def trapdoor():
+                    return 42
+
+                @staticmethod
+                def _quasi_private():
+                    return 84
+
+            self.s.names['houdini'] = EscapeArtist()  # let's just retest this, but in a f-string
+
+            with self.assertRaises(simpleeval.FeatureNotAvailable):
+                self.t('f"{houdini.trapdoor.__globals__}"', 0)
+
+            with self.assertRaises(simpleeval.FeatureNotAvailable):
+                self.t('f"{houdini.trapdoor.func_globals}"', 0)
+
+            with self.assertRaises(simpleeval.FeatureNotAvailable):
+                self.t('f"{houdini._quasi_private()}"', 0)
+
+            # and test for changing '_' to '__':
+
+            dis = simpleeval.DISALLOW_PREFIXES
+            simpleeval.DISALLOW_PREFIXES = ['func_']
+
+            self.t('f"{houdini.trapdoor()}"', "42")
+            self.t('f"{houdini._quasi_private()}"', "84")
+
+            # and return things to normal
+
+            simpleeval.DISALLOW_PREFIXES = dis
+
+
 
 class TestCompoundTypes(DRYTest):
     """ Test the compound-types edition of the library """
