@@ -162,6 +162,10 @@ class TestBasic(DRYTest):
             self.t('f"1+1 is {1+1}"', "1+1 is 2")
             self.t('f"{\'dramatic\':!<11}"', "dramatic!!!")
 
+    def test_set_not_allowed(self):
+        with self.assertRaises(FeatureNotAvailable):
+            self.t('{22}', False)
+
 
 class TestFunctions(DRYTest):
     """ Functions for expressions to play with """
@@ -358,10 +362,6 @@ class TestTryingToBreakOut(DRYTest):
         # it only evaluates the first statement:
         self.t("a = 11; x = 21; x + x", 11)
 
-        # list comprehensions don't work:
-        # this could be changed in a future release, if people want...
-        with self.assertRaises(simpleeval.FeatureNotAvailable):
-            self.t("[x for x in (1, 2, 3)]", (1, 2, 3))
 
     def test_function_globals_breakout(self):
         """ by accessing function.__globals__ or func_... """
@@ -543,6 +543,75 @@ class TestCompoundTypes(DRYTest):
         self.s = EvalWithCompoundTypes(functions={"dir": dir, "str": str})
         self.t('dir(str)', dir(str))
 
+
+class TestComprehensions(DRYTest):
+    """ Test the comprehensions support of the compound-types edition of the class. """
+
+    def setUp(self):
+        self.s = EvalWithCompoundTypes()
+
+    def test_basic(self):
+        self.t('[a + 1 for a in [1,2,3]]', [2,3,4])
+
+    def test_with_self_reference(self):
+        self.t('[a + a for a in [1,2,3]]', [2,4,6])
+
+    def test_with_if(self):
+        self.t('[a for a in [1,2,3,4,5] if a <= 3]', [1,2,3])
+
+    def test_with_multiple_if(self):
+        self.t('[a for a in [1,2,3,4,5] if a <= 3 and a > 1 ]', [2,3])
+
+    def test_attr_access_fails(self):
+        with self.assertRaises(FeatureNotAvailable):
+            self.t('[a.__class__ for a in [1,2,3]]', None)
+
+    def test_unpack(self):
+        self.t('[a+b for a,b in ((1,2),(3,4))]', [3, 7])
+
+    def test_nested_unpack(self):
+        self.t('[a+b+c for a, (b, c) in ((1,(1,1)),(3,(2,2)))]', [3, 7])
+
+    def test_other_places(self):
+        self.s.functions = {'sum': sum}
+        self.t('sum([a+1 for a in [1,2,3,4,5]])', 20)
+        self.t('sum(a+1 for a in [1,2,3,4,5])', 20)
+
+    def test_external_names_work(self):
+        self.s.names = {'x': [22, 102, 12.3]}
+        self.t('[a/2 for a in x]', [11.0, 51.0, 6.15])
+
+        self.s.names = lambda x: ord(x.id)
+        self.t('[a + a for a in [b, c, d]]', [ord(x) * 2 for x in 'bcd'])
+
+    def test_multiple_generators(self):
+        self.s.functions = {'range': range}
+        s = '[j for i in range(100) if i > 10 for j in range(i) if j < 20]'
+        self.t(s, eval(s))
+
+    def test_triple_generators(self):
+        self.s.functions = {'range': range}
+        s = '[(a,b,c) for a in range(4) for b in range(a) for c in range(b)]'
+        self.t(s, eval(s))
+
+    def test_too_long_generator(self):
+        self.s.functions = {'range': range}
+        s = '[j for i in range(1000) if i > 10 for j in range(i) if j < 20]'
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.s.eval(s)
+
+    def test_too_long_generator_2(self):
+        self.s.functions = {'range': range}
+        s = '[j for i in range(100) if i > 1 for j in range(i+10) if j < 100 for k in range(i*j)]'
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.s.eval(s)
+
+    def test_nesting_generators_to_cheat(self):
+        self.s.functions = {'range': range}
+        s = '[[[c for c in range(a)] for a in range(b)] for b in range(200)]'
+
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.s.eval(s)
 
 class TestNames(DRYTest):
     """ 'names', what other languages call variables... """
