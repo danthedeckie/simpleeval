@@ -154,6 +154,10 @@ class TestBasic(DRYTest):
         self.t('1 is not None', True)
         self.t('None is not None', False)
 
+    def test_set_not_allowed(self):
+        with self.assertRaises(FeatureNotAvailable):
+            self.t('{22}', False)
+
 
 class TestFunctions(DRYTest):
     """ Functions for expressions to play with """
@@ -261,7 +265,18 @@ class TestFunctions(DRYTest):
 
 class TestOperators(DRYTest):
     """ Test adding in new operators, removing them, make sure it works. """
+    # TODO
     pass
+
+class TestNewFeatures(DRYTest):
+    """ Tests which will break when new features are added..."""
+    def test_lambda(self):
+        with self.assertRaises(FeatureNotAvailable):
+            self.t('lambda x:22', None)
+
+    def test_lambda_application(self):
+        with self.assertRaises(FeatureNotAvailable):
+            self.t('(lambda x:22)(44)', None)
 
 
 class TestTryingToBreakOut(DRYTest):
@@ -542,6 +557,13 @@ class TestComprehensions(DRYTest):
     def test_too_long_generator_2(self):
         self.s.functions = {'range': range}
         s = '[j for i in range(100) if i > 1 for j in range(i+10) if j < 100 for k in range(i*j)]'
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.s.eval(s)
+
+    def test_nesting_generators_to_cheat(self):
+        self.s.functions = {'range': range}
+        s = '[[[c for c in range(a)] for a in range(b)] for b in range(200)]'
+
         with self.assertRaises(simpleeval.IterableTooLong):
             self.s.eval(s)
 
