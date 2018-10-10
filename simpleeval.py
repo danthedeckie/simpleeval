@@ -46,6 +46,7 @@ Contributors:
 - xaled (Khalid Grandi) method chaining correctly, double-eval bugfix.
 - EdwardBetts (Edward Betts) spelling correction.
 - charlax (Charles-Axel Dein charlax) Makefile and cleanups
+- mommothazaz123 (Andrew Zhu) f"string" support
 
 
 -------------------------------------
@@ -359,6 +360,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 func = self.functions[node.func.id]
             except KeyError:
                 raise FunctionNotDefined(node.func.id, self.expr)
+            except AttributeError as e:
+                raise FeatureNotAvailable('Lambda Functions not implemented')
 
         return func(
             *(self._eval(a) for a in node.args),

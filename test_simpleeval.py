@@ -273,7 +273,18 @@ class TestFunctions(DRYTest):
 
 class TestOperators(DRYTest):
     """ Test adding in new operators, removing them, make sure it works. """
+    # TODO
     pass
+
+class TestNewFeatures(DRYTest):
+    """ Tests which will break when new features are added..."""
+    def test_lambda(self):
+        with self.assertRaises(FeatureNotAvailable):
+            self.t('lambda x:22', None)
+
+    def test_lambda_application(self):
+        with self.assertRaises(FeatureNotAvailable):
+            self.t('(lambda x:22)(44)', None)
 
 
 class TestTryingToBreakOut(DRYTest):
