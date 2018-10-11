@@ -416,6 +416,15 @@ class TestTryingToBreakOut(DRYTest):
 
         simpleeval.DISALLOW_PREFIXES = dis
 
+    def test_mro_breakout(self):
+        class Blah(object):
+            x = 42
+
+        self.s.names['b'] = Blah
+
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('b.mro()', None)
+
     def test_builtins_private_access(self):
         # explicit attempt of the exploit from perkinslr
         with self.assertRaises(simpleeval.FeatureNotAvailable):

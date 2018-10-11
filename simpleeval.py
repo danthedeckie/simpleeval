@@ -46,6 +46,7 @@ Contributors:
 - xaled (Khalid Grandi) method chaining correctly, double-eval bugfix.
 - EdwardBetts (Edward Betts) spelling correction.
 - charlax (Charles-Axel Dein charlax) Makefile and cleanups
+- mommothazaz123 (Andrew Zhu) f"string" support
 
 
 -------------------------------------
