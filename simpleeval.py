@@ -48,6 +48,7 @@ Contributors:
 - charlax (Charles-Axel Dein charlax) Makefile and cleanups
 - mommothazaz123 (Andrew Zhu) f"string" support
 - lubieowoce (Uryga) various potential vulnerabilities
+- JCavallo (Jean Cavallo) names dict shouldn't be modified 
 
 
 -------------------------------------
@@ -221,7 +222,7 @@ DEFAULT_FUNCTIONS = {"rand": random, "randint": random_int,
                      "int": int, "float": float,
                      "str": str if PYTHON3 else unicode}
 
-DEFAULT_NAMES = {"True": True, "False": False}
+DEFAULT_NAMES = {"True": True, "False": False, "None": None}
 
 ########################################
 # And the actual evaluator:
@@ -271,8 +272,6 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         # py3k stuff:
         if hasattr(ast, 'NameConstant'):
             self.nodes[ast.NameConstant] = self._eval_nameconstant
-        elif isinstance(self.names, dict) and "None" not in self.names:
-            self.names["None"] = None
 
         # py3.6, f-strings
         if hasattr(ast, 'JoinedStr'):
@@ -379,7 +378,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             # that there is a true exression assigning to none
             # (the compiler rejects it, so you can't even
             # pass that to ast.parse)
-            if isinstance(self.names, dict):
+            if hasattr(self.names, '__getitem__'):
                 return self.names[node.id]
             elif callable(self.names):
                 return self.names(node)
