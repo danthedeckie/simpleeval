@@ -47,6 +47,7 @@ Contributors:
 - EdwardBetts (Edward Betts) spelling correction.
 - charlax (Charles-Axel Dein charlax) Makefile and cleanups
 - mommothazaz123 (Andrew Zhu) f"string" support
+- lubieowoce (Uryga) various potential vulnerabilities
 
 
 -------------------------------------
@@ -99,7 +100,7 @@ MAX_STRING_LENGTH = 100000
 MAX_COMPREHENSION_LENGTH = 10000
 MAX_POWER = 4000000  # highest exponent
 DISALLOW_PREFIXES = ['_', 'func_']
-DISALLOW_METHODS = ['format']
+DISALLOW_METHODS = ['format', 'mro']
 
 PYTHON3 = sys.version_info[0] == 3
 
