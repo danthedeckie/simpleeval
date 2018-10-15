@@ -898,5 +898,68 @@ class TestExceptions(unittest.TestCase):
             assert hasattr(e, 'expression')
             assert getattr(e, 'expression') == 'foo in bar'
 
+class TestUnusualComparisons(DRYTest):
+    def test_custom_comparison_returner(self):
+        class Blah(object):
+            def __gt__(self, other):
+                return self
+
+        b = Blah()
+        self.s.names = {'b': b}
+        self.t('b > 2', b)
+
+    def test_custom_comparison_doesnt_return_boolable(self):
+        """
+            SqlAlchemy, bless it's cotton socks, returns BinaryExpression objects
+            when asking for comparisons between things.  These BinaryExpressions
+            raise a TypeError if you try and check for Truthyiness.
+        """
+        class BinaryExpression(object):
+            def __init__(self, value):
+                self.value = value
+            def __eq__(self, other):
+                return self.value == getattr(other, 'value', other)
+            def __repr__(self):
+                return '<BinaryExpression:{}>'.format(self.value)
+            def __bool__(self):
+                # This is the only important part, to match SqlAlchemy - the rest
+                # of the methods are just to make testing a bit easier...
+                raise TypeError("Boolean value of this clause is not defined")
+
+        class Blah(object):
+            def __gt__(self, other):
+                return BinaryExpression('GT')
+            def __lt__(self, other):
+                return BinaryExpression('LT')
+
+        b = Blah()
+        self.s.names = {'b': b}
+        e = eval('b > 2', self.s.names)
+
+        self.t('b > 2', BinaryExpression('GT'))
+        self.t('1 < 5 > b', BinaryExpression('LT'))
+
+class TestShortCircuiting(DRYTest):
+    def test_shortcircuit_if(self):
+        x = []
+        self.s.functions = {'foo':lambda y:x.append(y)}
+        self.t('foo(1) if foo(2) else foo(3)', None)
+        self.assertListEqual(x, [2, 3])
+
+        x = []
+        self.t('42 if True else foo(99)', 42)
+        self.assertListEqual(x, [])
+
+    def test_shortcircuit_comparison(self):
+        x = []
+        self.s.functions = {'foo': lambda y:x.append(y)}
+        with self.assertRaises(TypeError):
+            self.t('foo(11) < 12', False)
+        self.assertListEqual(x, [11])
+        x = []
+       
+        self.t('1 > 2 < foo(22)', False)
+        self.assertListEqual(x, [])
+
 if __name__ == '__main__':  # pragma: no cover
     unittest.main()

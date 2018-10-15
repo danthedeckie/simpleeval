@@ -48,7 +48,7 @@ Contributors:
 - charlax (Charles-Axel Dein charlax) Makefile and cleanups
 - mommothazaz123 (Andrew Zhu) f"string" support
 - lubieowoce (Uryga) various potential vulnerabilities
-- JCavallo (Jean Cavallo) names dict shouldn't be modified 
+- JCavallo (Jean Cavallo) names dict shouldn't be modified
 
 
 -------------------------------------
@@ -339,14 +339,15 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             return False
 
     def _eval_compare(self, node):
-        left = self._eval(node.left)
+        right = self._eval(node.left)
+        to_return = True
         for operation, comp in zip(node.ops, node.comparators):
+            if not to_return:
+                break
+            left = right
             right = self._eval(comp)
-            if self.operators[type(operation)](left, right):
-                left = right  # Hi Dr. Seuss...
-            else:
-                return False
-        return True
+            to_return = self.operators[type(operation)](left, right)
+        return to_return
 
     def _eval_ifexp(self, node):
         return self._eval(node.body) if self._eval(node.test) \
@@ -488,7 +489,6 @@ class EvalWithCompoundTypes(SimpleEval):
         self._max_count = 0
         return super(EvalWithCompoundTypes, self).eval(expr)
 
-
     def _eval_dict(self, node):
         return {self._eval(k): self._eval(v)
                 for (k, v) in zip(node.keys, node.values)}
@@ -539,7 +539,7 @@ class EvalWithCompoundTypes(SimpleEval):
                     raise IterableTooLong('Comprehension generates too many elements')
                 recurse_targets(g.target, i)
                 if all(self._eval(iff) for iff in g.ifs):
-                    if len(node.generators) > gi + 1 :
+                    if len(node.generators) > gi + 1:
                         do_generator(gi+1)
                     else:
                         to_return.append(self._eval(node.elt))
@@ -549,7 +549,6 @@ class EvalWithCompoundTypes(SimpleEval):
         self.nodes.update({ast.Name: previous_name_evaller})
 
         return to_return
-
 
 
 def simple_eval(expr, operators=None, functions=None, names=None):
