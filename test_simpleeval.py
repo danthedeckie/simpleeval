@@ -942,9 +942,12 @@ class TestUnusualComparisons(DRYTest):
 class TestShortCircuiting(DRYTest):
     def test_shortcircuit_if(self):
         x = []
-        self.s.functions = {'foo':lambda y:x.append(y)}
-        self.t('foo(1) if foo(2) else foo(3)', None)
-        self.assertListEqual(x, [2, 3])
+        def foo(y):
+            x.append(y)
+            return y
+        self.s.functions = {'foo': foo}
+        self.t('foo(1) if foo(2) else foo(3)', 1)
+        self.assertListEqual(x, [2, 1])
 
         x = []
         self.t('42 if True else foo(99)', 42)
@@ -952,9 +955,11 @@ class TestShortCircuiting(DRYTest):
 
     def test_shortcircuit_comparison(self):
         x = []
-        self.s.functions = {'foo': lambda y:x.append(y)}
-        with self.assertRaises(TypeError):
-            self.t('foo(11) < 12', False)
+        def foo(y):
+            x.append(y)
+            return y
+        self.s.functions = {'foo': foo}
+        self.t('foo(11) < 12', True)
         self.assertListEqual(x, [11])
         x = []
        
