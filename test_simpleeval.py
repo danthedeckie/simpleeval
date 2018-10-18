@@ -709,7 +709,10 @@ class TestNames(DRYTest):
 
         self.assertEqual(self.s.names['c']['c']['c'], 11)
 
+    def test_dict_attr_access(self):
         # nested dict
+
+        self.assertEqual(self.s.ATTR_INDEX_FALLBACK, True)
 
         self.s.names = {'a': {'b': {'c': 42}}}
 
@@ -719,10 +722,27 @@ class TestNames(DRYTest):
 
         self.assertEqual(self.s.names['a']['b']['c'], 42)
 
+        # TODO: Wat?
         self.t("a.d = 11", 11)
 
         with self.assertRaises(KeyError):
             self.assertEqual(self.s.names['a']['d'], 11)
+
+    def test_dict_attr_access_disabled(self):
+        # nested dict
+
+        self.s.ATTR_INDEX_FALLBACK = False
+        self.assertEqual(self.s.ATTR_INDEX_FALLBACK, False)
+
+        self.s.names = {'a': {'b': {'c': 42}}}
+
+        with self.assertRaises(simpleeval.AttributeDoesNotExist):
+            self.t("a.b.c * 2", 84)
+
+        self.t("a['b']['c'] * 2", 84)
+
+        self.assertEqual(self.s.names['a']['b']['c'], 42)
+
 
     def test_object(self):
         """ using an object for name lookup """
@@ -934,10 +954,42 @@ class TestUnusualComparisons(DRYTest):
 
         b = Blah()
         self.s.names = {'b': b}
+        # This should not crash:
         e = eval('b > 2', self.s.names)
 
         self.t('b > 2', BinaryExpression('GT'))
         self.t('1 < 5 > b', BinaryExpression('LT'))
+
+class TestGetItemUnhappy(DRYTest):
+    # Again, SqlAlchemy doing unusual things.  Throwing it's own errors, rather than
+    # expected types...
+
+    def test_getitem_not_implemented(self):
+        class Meh(object):
+            def __getitem__(self, key):
+                raise NotImplementedError("booya!")
+            def __getattr__(self, key):
+                return 42
+
+        m = Meh()
+
+        self.assertEqual(m.anything, 42)
+        with self.assertRaises(NotImplementedError):
+            m['nothing']
+
+        self.s.names = {"m": m}
+        self.t("m.anything", 42)
+
+        with self.assertRaises(NotImplementedError):
+            self.t("m['nothing']", None)
+
+        self.s.ATTR_INDEX_FALLBACK = False
+
+        self.t("m.anything", 42)
+
+        with self.assertRaises(NotImplementedError):
+            self.t("m['nothing']", None)
+
 
 class TestShortCircuiting(DRYTest):
     def test_shortcircuit_if(self):

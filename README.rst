@@ -329,6 +329,16 @@ eg: ``[x + 1 for x in [1,2,3]]``.  There's a safety `MAX_COMPREHENSION_LENGTH` t
 how many items it'll allow before bailing too.  This also takes into account nested
 comprehensions.
 
+Since the primary intention of this library is short expressions - an extra 'sweetener' is
+enabled by default.  You can access a dict (or similar's) keys using the .attr syntax:
+
+.. code-block:: python
+   >>>  simple_eval("foo.bar", names={"foo": {"bar": 42}})
+   42
+
+for instance.  You can turn this off either by setting the module global `ATTR_INDEX_FALLBACK`
+to `False`, or on the ``SimpleEval`` instance itself. e.g. ``evaller.ATTR_INDEX_FALLBACK=False``.
+
 Extending
 ---------
 

@@ -224,6 +224,8 @@ DEFAULT_FUNCTIONS = {"rand": random, "randint": random_int,
 
 DEFAULT_NAMES = {"True": True, "False": False, "None": None}
 
+ATTR_INDEX_FALLBACK = True
+
 ########################################
 # And the actual evaluator:
 
@@ -277,6 +279,11 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if hasattr(ast, 'JoinedStr'):
             self.nodes[ast.JoinedStr] = self._eval_joinedstr  # f-string
             self.nodes[ast.FormattedValue] = self._eval_formattedvalue  # formatted value in f-string
+
+        # Defaults:
+
+        self.ATTR_INDEX_FALLBACK = ATTR_INDEX_FALLBACK
+
 
     def eval(self, expr):
         """ evaluate an expresssion, using the operators, functions and
@@ -414,18 +421,20 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 "Sorry, this method is not available. "
                 "({0})".format(node.attr))
         # eval node
-        node_evaulated = self._eval(node.value)
-
-        try:
-            return node_evaulated[node.attr]
-        except (KeyError, TypeError):
-            pass
+        node_evaluated = self._eval(node.value)
 
         # Maybe the base object is an actual object, not just a dict
         try:
-            return getattr(node_evaulated, node.attr)
+            return getattr(node_evaluated, node.attr)
         except (AttributeError, TypeError):
             pass
+
+        # TODO: is this a good idea?  Try and look for [x] if .x doesn't work?
+        if self.ATTR_INDEX_FALLBACK:
+            try:
+                return node_evaluated[node.attr]
+            except (KeyError, TypeError):
+                pass
 
         # If it is neither, raise an exception
         raise AttributeDoesNotExist(node.attr, self.expr)
@@ -457,8 +466,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if node.format_spec:
             fmt = "{:" + self._eval(node.format_spec) + "}"
             return fmt.format(self._eval(node.value))
-        else:
-            return self._eval(node.value)
+        return self._eval(node.value)
 
 
 class EvalWithCompoundTypes(SimpleEval):
@@ -524,7 +532,7 @@ class EvalWithCompoundTypes(SimpleEval):
                 Recursively (enter, (into, (nested, name), unpacking)) = \
                              and, (assign, (values, to), each
             """
-            if type(target) == ast.Name:
+            if isinstance(target, ast.Name):
                 extra_names[target.id] = value
             else:
                 for t, v in zip(target.elts, value):
