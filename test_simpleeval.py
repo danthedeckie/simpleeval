@@ -1014,7 +1014,7 @@ class TestShortCircuiting(DRYTest):
         self.t('foo(11) < 12', True)
         self.assertListEqual(x, [11])
         x = []
-       
+
         self.t('1 > 2 < foo(22)', False)
         self.assertListEqual(x, [])
 

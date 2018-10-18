@@ -90,8 +90,8 @@ well:
 """
 
 import ast
-import sys
 import operator as op
+import sys
 from random import random
 
 ########################################
@@ -105,17 +105,20 @@ DISALLOW_METHODS = ['format', 'mro']
 
 PYTHON3 = sys.version_info[0] == 3
 
+
 ########################################
 # Exceptions:
 
 
 class InvalidExpression(Exception):
     """ Generic Exception """
+
     pass
 
 
 class FunctionNotDefined(InvalidExpression):
     """ sorry! That function isn't defined! """
+
     def __init__(self, func_name, expression):
         self.message = "Function '{0}' not defined," \
                        " for expression '{1}'.".format(func_name, expression)
@@ -128,6 +131,7 @@ class FunctionNotDefined(InvalidExpression):
 
 class NameNotDefined(InvalidExpression):
     """ a name isn't defined. """
+
     def __init__(self, name, expression):
         self.name = name
         self.message = "'{0}' is not defined for expression '{1}'".format(
@@ -140,6 +144,7 @@ class NameNotDefined(InvalidExpression):
 
 class AttributeDoesNotExist(InvalidExpression):
     """attribute does not exist"""
+
     def __init__(self, attr, expression):
         self.message = \
             "Attribute '{0}' does not exist in expression '{1}'".format(
@@ -150,17 +155,20 @@ class AttributeDoesNotExist(InvalidExpression):
 
 class FeatureNotAvailable(InvalidExpression):
     """ What you're trying to do is not allowed. """
+
     pass
 
 
 class NumberTooHigh(InvalidExpression):
     """ Sorry! That number is too high. I don't want to spend the
         next 10 years evaluating this expression! """
+
     pass
 
 
 class IterableTooLong(InvalidExpression):
     """ That iterable is **way** too long, baby. """
+
     pass
 
 
@@ -170,11 +178,13 @@ class IterableTooLong(InvalidExpression):
 
 def random_int(top):
     """ return a random int below <top> """
+
     return int(random() * top)
 
 
 def safe_power(a, b):  # pylint: disable=invalid-name
     """ a limited exponent/to-the-power-of function, for safety reasons """
+
     if abs(a) > MAX_POWER or abs(b) > MAX_POWER:
         raise NumberTooHigh("Sorry! I don't want to evaluate {0} ** {1}"
                             .format(a, b))
@@ -184,9 +194,9 @@ def safe_power(a, b):  # pylint: disable=invalid-name
 def safe_mult(a, b):  # pylint: disable=invalid-name
     """ limit the number of times an iterable can be repeated... """
 
-    if hasattr(a, '__len__') and b*len(a) > MAX_STRING_LENGTH:
+    if hasattr(a, '__len__') and b * len(a) > MAX_STRING_LENGTH:
         raise IterableTooLong('Sorry, I will not evalute something that long.')
-    if hasattr(b, '__len__') and a*len(b) > MAX_STRING_LENGTH:
+    if hasattr(b, '__len__') and a * len(b) > MAX_STRING_LENGTH:
         raise IterableTooLong('Sorry, I will not evalute something that long.')
 
     return a * b
@@ -194,6 +204,7 @@ def safe_mult(a, b):  # pylint: disable=invalid-name
 
 def safe_add(a, b):  # pylint: disable=invalid-name
     """ iterable length limit again """
+
     if hasattr(a, '__len__') and hasattr(b, '__len__'):
         if len(a) + len(b) > MAX_STRING_LENGTH:
             raise IterableTooLong("Sorry, adding those two together would"
@@ -225,6 +236,7 @@ DEFAULT_FUNCTIONS = {"rand": random, "randint": random_int,
 DEFAULT_NAMES = {"True": True, "False": False, "None": None}
 
 ATTR_INDEX_FALLBACK = True
+
 
 ########################################
 # And the actual evaluator:
