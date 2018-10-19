@@ -160,7 +160,7 @@ limit, it throws a ``NumberTooHigh`` exception for you. (Otherwise it would go
 on for hours, or until the computer runs out of memory)
 
 Strings (and other Iterables) Safety
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are also limits on string length (100000 characters,
 ``MAX_STRING_LENGTH``).  This can be changed if you wish.
@@ -333,6 +333,7 @@ Since the primary intention of this library is short expressions - an extra 'swe
 enabled by default.  You can access a dict (or similar's) keys using the .attr syntax:
 
 .. code-block:: python
+
     >>>  simple_eval("foo.bar", names={"foo": {"bar": 42}})
     42
 
