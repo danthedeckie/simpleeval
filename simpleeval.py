@@ -94,6 +94,8 @@ import operator as op
 import sys
 from random import random
 
+PYTHON3 = sys.version_info[0] == 3
+
 ########################################
 # Module wide 'globals'
 
@@ -103,7 +105,17 @@ MAX_POWER = 4000000  # highest exponent
 DISALLOW_PREFIXES = ['_', 'func_']
 DISALLOW_METHODS = ['format', 'mro']
 
-PYTHON3 = sys.version_info[0] == 3
+# Disallow functions:
+# This, strictly speaking, is not necessary.  These /should/ never be accessable anyway,
+# if DISALLOW_PREFIXES and DISALLOW_METHODS are all right.  This is here to try and help
+# people not be stupid.  Allowing these functions opens up all sorts of holes - if any of
+# their functionality is required, then please wrap them up in a safe container.  And think
+# very hard about it first.  And don't say I didn't warn you.
+
+DISALLOW_FUNCTIONS = {type, isinstance, eval, getattr, setattr, help, repr, compile, open}
+
+if PYTHON3:
+    exec('DISALLOW_FUNCTIONS.add(exec)') # exec is not a function in Python2...
 
 
 ########################################
@@ -256,11 +268,11 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             functions (add, random, get_val, whatever) and names. """
 
         if not operators:
-            operators = DEFAULT_OPERATORS
+            operators = DEFAULT_OPERATORS.copy()
         if not functions:
-            functions = DEFAULT_FUNCTIONS
+            functions = DEFAULT_FUNCTIONS.copy()
         if not names:
-            names = DEFAULT_NAMES
+            names = DEFAULT_NAMES.copy()
 
         self.operators = operators
         self.functions = functions
@@ -295,6 +307,12 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         # Defaults:
 
         self.ATTR_INDEX_FALLBACK = ATTR_INDEX_FALLBACK
+        
+        # Check for forbidden functions:
+
+        for f in self.functions.values():
+            if f in DISALLOW_FUNCTIONS:
+                raise FeatureNotAvailable('This function {} is a really bad idea.'.format(f))
 
 
     def eval(self, expr):
@@ -382,6 +400,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 raise FunctionNotDefined(node.func.id, self.expr)
             except AttributeError as e:
                 raise FeatureNotAvailable('Lambda Functions not implemented')
+
+            if func in DISALLOW_FUNCTIONS:
+                raise FeatureNotAvailable('This function is forbidden')
 
         return func(
             *(self._eval(a) for a in node.args),

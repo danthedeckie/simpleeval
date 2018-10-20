@@ -368,6 +368,10 @@ Object attributes that start with ``_`` or ``func_`` are disallowed by default.
 If you really need that (BE CAREFUL!), then modify the module global
 ``simpleeval.DISALLOW_PREFIXES``.
 
+A few builtin functions are listed in ``simpleeval.DISALLOW_FUNCTIONS``.  ``type``, ``open``, etc.
+If you need to give access to this kind of functionality to your expressions, then be very
+careful.  You'd be better wrapping the functions in your own safe wrappers.
+
 The initial idea came from J.F. Sebastian on Stack Overflow
 ( http://stackoverflow.com/a/9558001/1973500 ) with modifications and many improvements,
 see the head of the main file for contributors list.
@@ -388,3 +392,10 @@ Or to set the tests running on every file change:
     $ make autotest
 
 (requires ``entr``) 
+
+BEWARE
+------
+
+I've done the best I can with this library - but there's no warrenty, no guarentee, nada.  A lot of
+very clever people think the whole idea of trying to sandbox CPython is impossible.  Read the code
+yourself, and use it at your own risk.

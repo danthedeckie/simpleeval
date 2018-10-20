@@ -208,10 +208,12 @@ class TestFunctions(DRYTest):
     def test_randoms(self):
         """ test the rand() and randint() functions """
 
-        self.s.functions['type'] = type
+        i = self.s.eval('randint(1000)')
+        self.assertEqual(type(i), int)
+        self.assertLessEqual(i, 1000)
 
-        self.t('type(randint(1000))', int)
-        self.t('type(rand())', float)
+        f = self.s.eval('rand()')
+        self.assertEqual(type(f), float)
 
         self.t("randint(20)<20", True)
         self.t("rand()<1.0", True)
@@ -1017,6 +1019,41 @@ class TestShortCircuiting(DRYTest):
 
         self.t('1 > 2 < foo(22)', False)
         self.assertListEqual(x, [])
+
+
+class TestDisallowedFunctions(DRYTest):
+    def test_functions_are_disallowed_at_init(self):
+        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open]
+        if simpleeval.PYTHON3:
+            exec('DISALLOWED.append(exec)') # exec is not a function in Python2...
+
+        for f in simpleeval.DISALLOW_FUNCTIONS:
+            assert f in DISALLOWED
+
+        for x in DISALLOWED:
+            with self.assertRaises(FeatureNotAvailable):
+                s = SimpleEval(functions ={'foo': x})
+
+    def test_functions_are_disallowed_in_expressions(self):
+        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open]
+
+        if simpleeval.PYTHON3:
+            exec('DISALLOWED.append(exec)') # exec is not a function in Python2...
+
+        for f in simpleeval.DISALLOW_FUNCTIONS:
+            assert f in DISALLOWED
+
+
+        DF = simpleeval.DEFAULT_FUNCTIONS.copy()
+
+        for x in DISALLOWED:
+            simpleeval.DEFAULT_FUNCTIONS = DF.copy()
+            with self.assertRaises(FeatureNotAvailable):
+                s = SimpleEval()
+                s.functions['foo'] = x
+                s.eval('foo(42)')
+
+        simpleeval.DEFAULT_FUNCTIONS = DF.copy()
 
 if __name__ == '__main__':  # pragma: no cover
     unittest.main()
