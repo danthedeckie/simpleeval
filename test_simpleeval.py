@@ -439,6 +439,10 @@ class TestTryingToBreakOut(DRYTest):
         with self.assertRaises(simpleeval.FeatureNotAvailable):
              self.t('"{string.__class__}".format(string="things")', 0)
 
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+             self.s.names['x'] = {"a": 1}
+             self.t('"{a.__class__}".format_map(x)', 0)
+
         if sys.version_info >= (3, 6, 0):
             self.s.names['x'] = 42
 
