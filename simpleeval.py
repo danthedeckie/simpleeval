@@ -585,9 +585,10 @@ class EvalWithCompoundTypes(SimpleEval):
                     else:
                         to_return.append(self._eval(node.elt))
 
-        do_generator()
-
-        self.nodes.update({ast.Name: previous_name_evaller})
+        try:
+            do_generator()
+        finally:
+            self.nodes.update({ast.Name: previous_name_evaller})
 
         return to_return
 

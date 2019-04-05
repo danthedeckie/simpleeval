@@ -639,6 +639,15 @@ class TestComprehensions(DRYTest):
         with self.assertRaises(simpleeval.IterableTooLong):
             self.s.eval(s)
 
+    def test_no_leaking_names(self):
+        # see issue #52, failing list comprehensions could leak locals
+        with self.assertRaises(simpleeval.NameNotDefined):
+            self.s.eval('[x if x == "2" else y for x in "123"]')
+
+        with self.assertRaises(simpleeval.NameNotDefined):
+            self.s.eval('x')
+
+
 class TestNames(DRYTest):
     """ 'names', what other languages call variables... """
 
