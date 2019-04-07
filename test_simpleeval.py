@@ -55,6 +55,8 @@ class TestBasic(DRYTest):
         self.t('110 != 100 + 10 and True', False)
         self.t('False or 42', 42)
 
+        self.t('False or None', None)
+
         self.s.names = {'out': True, 'position': 3}
         self.t('(out and position <=6 and -10)'
                ' or (out and position > 6 and -5)'

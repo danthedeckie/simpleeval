@@ -1,5 +1,5 @@
 """
-SimpleEval - (C) 2013-2018 Daniel Fairhead
+SimpleEval - (C) 2013-2019 Daniel Fairhead
 -------------------------------------
 
 An short, easy to use, safe and reasonably extensible expression evaluator.
@@ -49,7 +49,8 @@ Contributors:
 - mommothazaz123 (Andrew Zhu) f"string" support
 - lubieowoce (Uryga) various potential vulnerabilities
 - JCavallo (Jean Cavallo) names dict shouldn't be modified
-
+- Birne94 (Daniel Birnstiel) for fixing leaking generators.
+- patricksurry (Patrick Surry) or should return last value, even if falsy.
 
 -------------------------------------
 Basic Usage:
@@ -373,7 +374,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 vout = self._eval(value)
                 if vout:
                     return vout
-            return False
+            return vout
 
     def _eval_compare(self, node):
         right = self._eval(node.left)
