@@ -96,6 +96,7 @@ import sys
 from random import random
 
 PYTHON3 = sys.version_info[0] == 3
+PYTHON35 = PYTHON3 and sys.version_info > (3, 5)
 
 ########################################
 # Module wide 'globals'
@@ -535,7 +536,7 @@ class EvalWithCompoundTypes(SimpleEval):
         result = {}
 
         for (key, value) in zip(node.keys, node.values):
-            if key is None:
+            if PYTHON35 and key is None:
                 # "{**x}" gets parsed as a key-value pair of (None, Name(x))
                 result.update(self._eval(value))
             else:
@@ -547,7 +548,7 @@ class EvalWithCompoundTypes(SimpleEval):
         result = []
 
         for item in node.elts:
-            if isinstance(item, ast.Starred):
+            if PYTHON3 and isinstance(item, ast.Starred):
                 result.extend(self._eval(item.value))
             else:
                 result.append(self._eval(item))
