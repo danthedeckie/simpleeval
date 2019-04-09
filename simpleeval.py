@@ -532,14 +532,30 @@ class EvalWithCompoundTypes(SimpleEval):
         return super(EvalWithCompoundTypes, self).eval(expr)
 
     def _eval_dict(self, node):
-        return {self._eval(k): self._eval(v)
-                for (k, v) in zip(node.keys, node.values)}
+        result = {}
+
+        for (key, value) in zip(node.keys, node.values):
+            if key is None:
+                # "{**x}" gets parsed as a key-value pair of (None, Name(x))
+                result.update(self._eval(value))
+            else:
+                result[self._eval(key)] = self._eval(value)
+
+        return result
+
+    def _eval_list(self, node):
+        result = []
+
+        for item in node.elts:
+            if isinstance(item, ast.Starred):
+                result.extend(self._eval(item.value))
+            else:
+                result.append(self._eval(item))
+
+        return result
 
     def _eval_tuple(self, node):
         return tuple(self._eval(x) for x in node.elts)
-
-    def _eval_list(self, node):
-        return list(self._eval(x) for x in node.elts)
 
     def _eval_set(self, node):
         return set(self._eval(x) for x in node.elts)

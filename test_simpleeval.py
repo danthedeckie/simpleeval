@@ -511,6 +511,10 @@ class TestCompoundTypes(DRYTest):
         self.t('{"a": 24}.get("b", 11)', 11)
         self.t('"a" in {"a": 24}', True)
 
+    def test_dict_star_expression(self):
+        self.s.names['x'] = {'a': 1, 'b': 2}
+        self.t('{"a": 0, **x, "c": 3}', {'a': 1, 'b': 2, 'c': 3})
+
     def test_tuple(self):
         self.t('()', ())
         self.t('(1,)', (1,))
@@ -540,6 +544,10 @@ class TestCompoundTypes(DRYTest):
             self.t('("a","b")[5]', 'b')
 
         self.t('"b" in ["a","b"]', True)
+
+    def test_list_star_expression(self):
+        self.s.names['x'] = [1, 2, 3]
+        self.t('["a", *x, "b"]', ['a', 1, 2, 3, 'b'])
 
     def test_set(self):
         self.t('{1}', {1})
