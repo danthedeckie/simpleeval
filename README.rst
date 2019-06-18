@@ -160,7 +160,7 @@ limit, it throws a ``NumberTooHigh`` exception for you. (Otherwise it would go
 on for hours, or until the computer runs out of memory)
 
 Strings (and other Iterables) Safety
-~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 There are also limits on string length (100000 characters,
 ``MAX_STRING_LENGTH``).  This can be changed if you wish.
@@ -329,6 +329,17 @@ eg: ``[x + 1 for x in [1,2,3]]``.  There's a safety `MAX_COMPREHENSION_LENGTH` t
 how many items it'll allow before bailing too.  This also takes into account nested
 comprehensions.
 
+Since the primary intention of this library is short expressions - an extra 'sweetener' is
+enabled by default.  You can access a dict (or similar's) keys using the .attr syntax:
+
+.. code-block:: python
+
+    >>>  simple_eval("foo.bar", names={"foo": {"bar": 42}})
+    42
+
+for instance.  You can turn this off either by setting the module global `ATTR_INDEX_FALLBACK`
+to `False`, or on the ``SimpleEval`` instance itself. e.g. ``evaller.ATTR_INDEX_FALLBACK=False``.
+
 Extending
 ---------
 
@@ -357,6 +368,10 @@ Object attributes that start with ``_`` or ``func_`` are disallowed by default.
 If you really need that (BE CAREFUL!), then modify the module global
 ``simpleeval.DISALLOW_PREFIXES``.
 
+A few builtin functions are listed in ``simpleeval.DISALLOW_FUNCTIONS``.  ``type``, ``open``, etc.
+If you need to give access to this kind of functionality to your expressions, then be very
+careful.  You'd be better wrapping the functions in your own safe wrappers.
+
 The initial idea came from J.F. Sebastian on Stack Overflow
 ( http://stackoverflow.com/a/9558001/1973500 ) with modifications and many improvements,
 see the head of the main file for contributors list.
@@ -377,3 +392,10 @@ Or to set the tests running on every file change:
     $ make autotest
 
 (requires ``entr``) 
+
+BEWARE
+------
+
+I've done the best I can with this library - but there's no warrenty, no guarentee, nada.  A lot of
+very clever people think the whole idea of trying to sandbox CPython is impossible.  Read the code
+yourself, and use it at your own risk.

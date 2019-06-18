@@ -55,6 +55,9 @@ class TestBasic(DRYTest):
         self.t('110 != 100 + 10 and True', False)
         self.t('False or 42', 42)
 
+        self.t('False or None', None)
+        self.t('None or None', None)
+
         self.s.names = {'out': True, 'position': 3}
         self.t('(out and position <=6 and -10)'
                ' or (out and position > 6 and -5)'
@@ -208,10 +211,12 @@ class TestFunctions(DRYTest):
     def test_randoms(self):
         """ test the rand() and randint() functions """
 
-        self.s.functions['type'] = type
+        i = self.s.eval('randint(1000)')
+        self.assertEqual(type(i), int)
+        self.assertLessEqual(i, 1000)
 
-        self.t('type(randint(1000))', int)
-        self.t('type(rand())', float)
+        f = self.s.eval('rand()')
+        self.assertEqual(type(f), float)
 
         self.t("randint(20)<20", True)
         self.t("rand()<1.0", True)
@@ -437,6 +442,10 @@ class TestTryingToBreakOut(DRYTest):
         with self.assertRaises(simpleeval.FeatureNotAvailable):
              self.t('"{string.__class__}".format(string="things")', 0)
 
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+             self.s.names['x'] = {"a": 1}
+             self.t('"{a.__class__}".format_map(x)', 0)
+
         if sys.version_info >= (3, 6, 0):
             self.s.names['x'] = 42
 
@@ -633,6 +642,15 @@ class TestComprehensions(DRYTest):
         with self.assertRaises(simpleeval.IterableTooLong):
             self.s.eval(s)
 
+    def test_no_leaking_names(self):
+        # see issue #52, failing list comprehensions could leak locals
+        with self.assertRaises(simpleeval.NameNotDefined):
+            self.s.eval('[x if x == "2" else y for x in "123"]')
+
+        with self.assertRaises(simpleeval.NameNotDefined):
+            self.s.eval('x')
+
+
 class TestNames(DRYTest):
     """ 'names', what other languages call variables... """
 
@@ -709,7 +727,10 @@ class TestNames(DRYTest):
 
         self.assertEqual(self.s.names['c']['c']['c'], 11)
 
+    def test_dict_attr_access(self):
         # nested dict
+
+        self.assertEqual(self.s.ATTR_INDEX_FALLBACK, True)
 
         self.s.names = {'a': {'b': {'c': 42}}}
 
@@ -719,10 +740,27 @@ class TestNames(DRYTest):
 
         self.assertEqual(self.s.names['a']['b']['c'], 42)
 
+        # TODO: Wat?
         self.t("a.d = 11", 11)
 
         with self.assertRaises(KeyError):
             self.assertEqual(self.s.names['a']['d'], 11)
+
+    def test_dict_attr_access_disabled(self):
+        # nested dict
+
+        self.s.ATTR_INDEX_FALLBACK = False
+        self.assertEqual(self.s.ATTR_INDEX_FALLBACK, False)
+
+        self.s.names = {'a': {'b': {'c': 42}}}
+
+        with self.assertRaises(simpleeval.AttributeDoesNotExist):
+            self.t("a.b.c * 2", 84)
+
+        self.t("a['b']['c'] * 2", 84)
+
+        self.assertEqual(self.s.names['a']['b']['c'], 42)
+
 
     def test_object(self):
         """ using an object for name lookup """
@@ -897,6 +935,141 @@ class TestExceptions(unittest.TestCase):
             assert getattr(e, 'attr') == 'foo'
             assert hasattr(e, 'expression')
             assert getattr(e, 'expression') == 'foo in bar'
+
+class TestUnusualComparisons(DRYTest):
+    def test_custom_comparison_returner(self):
+        class Blah(object):
+            def __gt__(self, other):
+                return self
+
+        b = Blah()
+        self.s.names = {'b': b}
+        self.t('b > 2', b)
+
+    def test_custom_comparison_doesnt_return_boolable(self):
+        """
+            SqlAlchemy, bless it's cotton socks, returns BinaryExpression objects
+            when asking for comparisons between things.  These BinaryExpressions
+            raise a TypeError if you try and check for Truthyiness.
+        """
+        class BinaryExpression(object):
+            def __init__(self, value):
+                self.value = value
+            def __eq__(self, other):
+                return self.value == getattr(other, 'value', other)
+            def __repr__(self):
+                return '<BinaryExpression:{}>'.format(self.value)
+            def __bool__(self):
+                # This is the only important part, to match SqlAlchemy - the rest
+                # of the methods are just to make testing a bit easier...
+                raise TypeError("Boolean value of this clause is not defined")
+
+        class Blah(object):
+            def __gt__(self, other):
+                return BinaryExpression('GT')
+            def __lt__(self, other):
+                return BinaryExpression('LT')
+
+        b = Blah()
+        self.s.names = {'b': b}
+        # This should not crash:
+        e = eval('b > 2', self.s.names)
+
+        self.t('b > 2', BinaryExpression('GT'))
+        self.t('1 < 5 > b', BinaryExpression('LT'))
+
+class TestGetItemUnhappy(DRYTest):
+    # Again, SqlAlchemy doing unusual things.  Throwing it's own errors, rather than
+    # expected types...
+
+    def test_getitem_not_implemented(self):
+        class Meh(object):
+            def __getitem__(self, key):
+                raise NotImplementedError("booya!")
+            def __getattr__(self, key):
+                return 42
+
+        m = Meh()
+
+        self.assertEqual(m.anything, 42)
+        with self.assertRaises(NotImplementedError):
+            m['nothing']
+
+        self.s.names = {"m": m}
+        self.t("m.anything", 42)
+
+        with self.assertRaises(NotImplementedError):
+            self.t("m['nothing']", None)
+
+        self.s.ATTR_INDEX_FALLBACK = False
+
+        self.t("m.anything", 42)
+
+        with self.assertRaises(NotImplementedError):
+            self.t("m['nothing']", None)
+
+
+class TestShortCircuiting(DRYTest):
+    def test_shortcircuit_if(self):
+        x = []
+        def foo(y):
+            x.append(y)
+            return y
+        self.s.functions = {'foo': foo}
+        self.t('foo(1) if foo(2) else foo(3)', 1)
+        self.assertListEqual(x, [2, 1])
+
+        x = []
+        self.t('42 if True else foo(99)', 42)
+        self.assertListEqual(x, [])
+
+    def test_shortcircuit_comparison(self):
+        x = []
+        def foo(y):
+            x.append(y)
+            return y
+        self.s.functions = {'foo': foo}
+        self.t('foo(11) < 12', True)
+        self.assertListEqual(x, [11])
+        x = []
+
+        self.t('1 > 2 < foo(22)', False)
+        self.assertListEqual(x, [])
+
+
+class TestDisallowedFunctions(DRYTest):
+    def test_functions_are_disallowed_at_init(self):
+        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open]
+        if simpleeval.PYTHON3:
+            exec('DISALLOWED.append(exec)') # exec is not a function in Python2...
+
+        for f in simpleeval.DISALLOW_FUNCTIONS:
+            assert f in DISALLOWED
+
+        for x in DISALLOWED:
+            with self.assertRaises(FeatureNotAvailable):
+                s = SimpleEval(functions ={'foo': x})
+
+    def test_functions_are_disallowed_in_expressions(self):
+        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open]
+
+        if simpleeval.PYTHON3:
+            exec('DISALLOWED.append(exec)') # exec is not a function in Python2...
+
+        for f in simpleeval.DISALLOW_FUNCTIONS:
+            assert f in DISALLOWED
+
+
+        DF = simpleeval.DEFAULT_FUNCTIONS.copy()
+
+        for x in DISALLOWED:
+            simpleeval.DEFAULT_FUNCTIONS = DF.copy()
+            with self.assertRaises(FeatureNotAvailable):
+                s = SimpleEval()
+                s.functions['foo'] = x
+                s.eval('foo(42)')
+
+        simpleeval.DEFAULT_FUNCTIONS = DF.copy()
 
 if __name__ == '__main__':  # pragma: no cover
     unittest.main()

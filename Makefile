@@ -6,10 +6,12 @@ autotest:
 
 .PHONY: test
 
-dist/:
+dist/: setup.py simpleeval.py README.rst
 	python setup.py build sdist
+	twine check dist/*
 
 pypi: test dist/
+	twine check dist/*
 	twine upload dist/*
 
 clean:
