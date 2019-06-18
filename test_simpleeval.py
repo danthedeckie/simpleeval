@@ -56,6 +56,7 @@ class TestBasic(DRYTest):
         self.t('False or 42', 42)
 
         self.t('False or None', None)
+        self.t('None or None', None)
 
         self.s.names = {'out': True, 'position': 3}
         self.t('(out and position <=6 and -10)'
