@@ -367,7 +367,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             for value in node.values:
                 vout = self._eval(value)
                 if not vout:
-                    return False
+                    return vout
             return vout
         elif isinstance(node.op, ast.Or):
             for value in node.values:

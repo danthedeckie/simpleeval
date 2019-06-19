@@ -46,6 +46,7 @@ class TestBasic(DRYTest):
         self.t("100 % 9", 1)
 
     def test_bools_and_or(self):
+        self.t('True and ""', "")
         self.t('True and False', False)
         self.t('True or False', True)
         self.t('False or False', False)
