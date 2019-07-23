@@ -279,6 +279,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         self.functions = functions
         self.names = names
 
+        self.previously_parsed_expressions = {}
+
         self.nodes = {
             ast.Num: self._eval_num,
             ast.Str: self._eval_str,
@@ -325,7 +327,16 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         self.expr = expr
 
         # and evaluate:
-        return self._eval(ast.parse(expr.strip()).body[0].value)
+        stripped_expr = expr.strip()
+        previously_parsed_ast = self.previously_parsed_expressions.get(stripped_expr)
+        if previously_parsed_ast:
+            # Return previously ast parsed expression if seen before
+            return self._eval(previously_parsed_ast)
+
+        # Add to previously_parsed_ast if not seen before
+        ast_parsed_expr = ast.parse(stripped_expr).body[0].value
+        self.previously_parsed_expressions[stripped_expr] = ast_parsed_expr
+        return self._eval(ast_parsed_expr)
 
     def _eval(self, node):
         """ The internal evaluator used on each node in the parsed tree. """
