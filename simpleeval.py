@@ -524,6 +524,8 @@ class EvalWithCompoundTypes(SimpleEval):
             ast.List: self._eval_list,
             ast.Set: self._eval_set,
             ast.ListComp: self._eval_listcomp,
+            ast.SetComp: self._eval_setcomp,
+            ast.DictComp: self._eval_dictcomp,
             ast.GeneratorExp: self._eval_generatorexp,
         })
 
@@ -546,6 +548,12 @@ class EvalWithCompoundTypes(SimpleEval):
 
     def _eval_listcomp(self, node):
         return list(self._do_comprehension(node))
+
+    def _eval_setcomp(self, node):
+        return set(self._do_comprehension(node))
+
+    def _eval_dictcomp(self, node):
+        return dict(self._do_comprehension(node, is_dictcomp=True))
 
     def _eval_generatorexp(self, node):
         for item in self._do_comprehension(node):
