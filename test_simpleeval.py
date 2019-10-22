@@ -630,11 +630,15 @@ class TestComprehensions(DRYTest):
         with self.assertRaises(simpleeval.IterableTooLong):
             self.s.eval(s)
 
+        # ensure we didn't actually run more than necessary
+        assert self.s._max_count == simpleeval.MAX_COMPREHENSION_LENGTH + 1
+
     def test_too_long_generator_2(self):
         self.s.functions = {'range': range}
         s = '[j for i in range(100) if i > 1 for j in range(i+10) if j < 100 for k in range(i*j)]'
         with self.assertRaises(simpleeval.IterableTooLong):
             self.s.eval(s)
+        assert self.s._max_count == simpleeval.MAX_COMPREHENSION_LENGTH + 1
 
     def test_nesting_generators_to_cheat(self):
         self.s.functions = {'range': range}
@@ -642,6 +646,7 @@ class TestComprehensions(DRYTest):
 
         with self.assertRaises(simpleeval.IterableTooLong):
             self.s.eval(s)
+        assert self.s._max_count == simpleeval.MAX_COMPREHENSION_LENGTH + 1
 
     def test_no_leaking_names(self):
         # see issue #52, failing list comprehensions could leak locals
