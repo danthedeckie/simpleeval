@@ -594,6 +594,105 @@ class EvalWithCompoundTypes(SimpleEval):
         return to_return
 
 
+class EvalWithAssignments(SimpleEval):
+    """
+    SimpleEval with the ability to assign names using ``name=value`` syntax.
+    In this case, ``names`` must be a :type:`dict`.
+    """
+
+    def __init__(self, operators=None, functions=None, names=None):
+        super(EvalWithAssignments, self).__init__(operators, functions, names)
+
+        self.assign_nodes = {
+            ast.Name: self._assign_name,
+            ast.Tuple: self._assign_unpack,
+            ast.List: self._assign_unpack
+        }
+
+    def eval(self, expr):  # allow for ast.Assign to set names
+        """ evaluate an expression, using the operators, functions and
+            names previously set up. """
+        # set a copy of the expression aside, so we can give nice errors...
+        self.expr = expr
+
+        # and evaluate:
+        expression = ast.parse(expr.strip()).body[0]
+        if isinstance(expression, ast.Expr):
+            return self._eval(expression.value)
+        elif isinstance(expression, ast.Assign):
+            for target in expression.targets:  # a = b = 1
+                self._assign(target, expression.value)
+        elif isinstance(expression, ast.AugAssign):  # a += 1
+            self._aug_assign(expression.target, expression.op, expression.value)
+        # TODO py 3.8 walrus op
+        else:
+            raise FeatureNotAvailable("Unknown ast body type: {}".format(type(expression).__name__))
+
+    def _assign(self, names, values):
+        if not isinstance(self.names, dict):
+            raise TypeError("cannot set name: names must be a dict to use assignment")
+        try:
+            handler = self.assign_nodes[type(names)]
+        except KeyError:
+            raise FeatureNotAvailable("Assignment to {} is not allowed".format(type(names).__name__))
+        return handler(names, values)
+
+    def _aug_assign(self, target, op, value):
+        # transform a += 1 to a = a + 1, then we can use assign and eval
+        new_value = ast.BinOp(left=target, op=op, right=value)
+        self._assign(target, new_value)
+
+    def _assign_name(self, name, value):
+        value = self._eval(value)
+        self.names[name.id] = value
+
+    def _assign_unpack(self, names, values):
+        new_names = {}
+
+        def recurse_targets(target, value):
+            """
+                Recursively (enter, (into, (nested, name), unpacking)) = \
+                             and, (assign, (values, to), each
+            """
+            if isinstance(target, ast.Name):
+                new_names[target.id] = value
+            else:
+                try:
+                    value = list(iter(value))
+                except TypeError:
+                    raise InvalidExpression("Cannot unpack non-iterable {} object".format(type(value).__name__))
+                if not len(target.elts) == len(value):
+                    raise InvalidExpression("Unequal unpack: {} names, {} values".format(len(target.elts), len(value)))
+                for t, v in zip(target.elts, value):
+                    recurse_targets(t, v)
+
+        values = self._eval(values)
+
+        recurse_targets(names, values)
+        self.names.update(new_names)
+
+
+class CompoundEvalWithAssignments(EvalWithCompoundTypes, EvalWithAssignments):
+    """
+    EvalWithAssignments with the ability to assign to compound types.
+    """
+
+    def __init__(self, operators=None, functions=None, names=None):
+        super(CompoundEvalWithAssignments, self).__init__(operators, functions, names)
+
+        # noinspection PyTypeChecker
+        # bad pycharm!
+        # not included: ast.Attribute
+        self.assign_nodes.update({
+            ast.Subscript: self._assign_subscript
+        })
+
+    def _assign_subscript(self, name, value):
+        container = self._eval(name.value)
+        key = self._eval(name.slice)
+        container[key] = value  # no further evaluation needed, if container is in names it will update
+
+
 def simple_eval(expr, operators=None, functions=None, names=None):
     """ Simply evaluate an expresssion """
     s = SimpleEval(operators=operators,

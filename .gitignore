@@ -3,5 +3,6 @@ build
 dist
 MANIFEST
 .idea
+venv
 
 testfile.txt
