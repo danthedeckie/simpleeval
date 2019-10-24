@@ -605,8 +605,6 @@ class EvalWithAssignments(SimpleEval):
 
         self.assign_nodes = {
             ast.Name: self._assign_name,
-            ast.Tuple: self._assign_unpack,
-            ast.List: self._assign_unpack
         }
 
     def eval(self, expr):  # allow for ast.Assign to set names
@@ -646,6 +644,29 @@ class EvalWithAssignments(SimpleEval):
         value = self._eval(value)
         self.names[name.id] = value
 
+
+class CompoundEvalWithAssignments(EvalWithCompoundTypes, EvalWithAssignments):
+    """
+    EvalWithAssignments with the ability to assign to compound types.
+    """
+
+    def __init__(self, operators=None, functions=None, names=None):
+        super(CompoundEvalWithAssignments, self).__init__(operators, functions, names)
+
+        # noinspection PyTypeChecker
+        # bad pycharm!
+        # not included: ast.Attribute
+        self.assign_nodes.update({
+            ast.Tuple: self._assign_unpack,
+            ast.List: self._assign_unpack,
+            ast.Subscript: self._assign_subscript
+        })
+
+    def _assign_subscript(self, name, value):
+        container = self._eval(name.value)
+        key = self._eval(name.slice)
+        container[key] = value  # no further evaluation needed, if container is in names it will update
+
     def _assign_unpack(self, names, values):
         new_names = {}
 
@@ -670,27 +691,6 @@ class EvalWithAssignments(SimpleEval):
 
         recurse_targets(names, values)
         self.names.update(new_names)
-
-
-class CompoundEvalWithAssignments(EvalWithCompoundTypes, EvalWithAssignments):
-    """
-    EvalWithAssignments with the ability to assign to compound types.
-    """
-
-    def __init__(self, operators=None, functions=None, names=None):
-        super(CompoundEvalWithAssignments, self).__init__(operators, functions, names)
-
-        # noinspection PyTypeChecker
-        # bad pycharm!
-        # not included: ast.Attribute
-        self.assign_nodes.update({
-            ast.Subscript: self._assign_subscript
-        })
-
-    def _assign_subscript(self, name, value):
-        container = self._eval(name.value)
-        key = self._eval(name.slice)
-        container[key] = value  # no further evaluation needed, if container is in names it will update
 
 
 def simple_eval(expr, operators=None, functions=None, names=None):
