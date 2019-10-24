@@ -791,6 +791,23 @@ class TestCompoundAssignments(DRYTest):
         self.s.eval('b["foo"] = "bletch"')
         self.t('b', {"foo": "bletch", 0: 0})
 
+    def test_assign_slice(self):
+        self.s.eval('a = [1, 2, 3]')
+        self.s.functions['range'] = range
+
+        self.s.eval('a[0:2] = range(2)')
+        self.t('a', [0, 1, 3])
+
+    def test_deep_assign(self):
+        self.s.eval('a = [[[0]]]')
+        self.s.eval('b = {0:{0:{0: 0}}}')
+
+        self.s.eval('a[0][0][0] = 1')
+        self.t('a', [[[1]]])
+
+        self.s.eval('b[0][0][0] = 1')
+        self.t('b', {0:{0:{0: 1}}})
+
 
 class TestNames(DRYTest):
     """ 'names', what other languages call variables... """
