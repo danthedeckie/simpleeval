@@ -665,6 +665,7 @@ class CompoundEvalWithAssignments(EvalWithCompoundTypes, EvalWithAssignments):
     def _assign_subscript(self, name, value):
         container = self._eval(name.value)
         key = self._eval(name.slice)
+        value = self._eval(value)
         container[key] = value  # no further evaluation needed, if container is in names it will update
 
     def _assign_unpack(self, names, values):

@@ -6,16 +6,15 @@
 
 """
 # pylint: disable=too-many-public-methods, missing-docstring
+import ast
+import operator
+import os
 import sys
 import unittest
-import operator
-import ast
+
 import simpleeval
-import os
-from simpleeval import (
-    SimpleEval, EvalWithCompoundTypes, FeatureNotAvailable, FunctionNotDefined, NameNotDefined,
-    InvalidExpression, AttributeDoesNotExist, simple_eval
-)
+from simpleeval import (AttributeDoesNotExist, EvalWithCompoundTypes, FeatureNotAvailable, FunctionNotDefined,
+                        InvalidExpression, NameNotDefined, SimpleEval, simple_eval)
 
 
 class DRYTest(unittest.TestCase):
@@ -650,6 +649,147 @@ class TestComprehensions(DRYTest):
 
         with self.assertRaises(simpleeval.NameNotDefined):
             self.s.eval('x')
+
+
+class TestAssignments(DRYTest):
+    """Test assignments in a basic simpleeval."""
+
+    def setUp(self):
+        self.s = simpleeval.EvalWithAssignments()
+
+    def test_names(self):
+        self.s.eval('a = 1')
+        self.t('a', 1)
+
+        self.s.eval('b = c = 2')
+        self.t('b', 2)
+        self.t('c', 2)
+
+        self.s.eval('d = c + 1')
+        self.t('d', 3)
+
+        with self.assertRaises(simpleeval.NameNotDefined):
+            self.s.eval('e = x')
+
+    def test_augassign(self):
+        self.s.eval('a = 1')
+        self.t('a', 1)
+
+        self.s.eval('a += 1')
+        self.t('a', 2)
+
+        self.s.eval('a *= 2')
+        self.t('a', 4)
+
+        self.s.eval('a /= 4')
+        self.t('a', 1)
+
+        self.s.eval('a += a + 1')
+        self.t('a', 3)
+
+        self.s.eval('a += -2')
+        self.t('a', 1)
+
+        with self.assertRaises(simpleeval.NameNotDefined):
+            self.s.eval('b += 1')
+
+        with self.assertRaises(SyntaxError):
+            self.s.eval('a + 1 += 1')
+
+    def test_assigning_expressions(self):
+        self.s.eval('a = 1')
+        self.s.eval('b = 2')
+        self.s.eval('c = "foo"')
+
+        self.s.eval('ab = a + b')
+        self.t('ab', 3)
+
+        self.s.eval('cb = c * b')
+        self.t('cb', 'foofoo')
+
+        self.s.eval('cb *= 2')
+        self.t('cb', 'foofoofoofoo')
+
+        self.s.eval('cb = cb.upper()')
+        self.t('cb', 'FOOFOOFOOFOO')
+
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.s.eval('cb = cb * 1000000')
+
+
+class TestCompoundAssignments(DRYTest):
+    def setUp(self):
+        self.s = simpleeval.CompoundEvalWithAssignments()
+
+    def test_unpack(self):
+        self.s.names['x'] = (1, 2)
+        self.s.names['y'] = (1, (2, 3), 4)
+
+        self.s.eval('a, b = (1, 2)')
+        self.t('a', 1)
+        self.t('b', 2)
+
+        self.s.eval('a, (b, c), d = (1, (2, 3), 4)')
+        self.t('a', 1)
+        self.t('b', 2)
+        self.t('c', 3)
+        self.t('d', 4)
+
+        self.s.eval('e = (1, (2, 3), 4)')
+        self.t('e', (1, (2, 3), 4))
+
+        self.s.eval('a, (b, c), d = (1, (a, (3, 3)), "foo")')
+        self.t('a', 1)
+        self.t('b', 1)
+        self.t('c', (3, 3))
+        self.t('d', 'foo')
+
+    def test_bad_unpacks(self):
+        with self.assertRaises(simpleeval.InvalidExpression):
+            self.s.eval('a, b, c = (1, 2)')
+
+        with self.assertRaises(simpleeval.InvalidExpression):
+            self.s.eval('a, b = (1, 2, 3)')
+
+        with self.assertRaises(simpleeval.InvalidExpression):
+            self.s.eval('a, b = 1')
+
+    def test_iterator_unpack(self):
+        self.s.functions['range'] = range
+        self.s.eval('a, b, c, d = range(4)')
+        self.t('a', 0)
+        self.t('b', 1)
+        self.t('c', 2)
+        self.t('d', 3)
+
+        self.s.eval('a, b, c, d = [i + 1 for i in range(4)]')
+        self.t('a', 1)
+        self.t('b', 2)
+        self.t('c', 3)
+        self.t('d', 4)
+
+    def test_compound_assignments(self):
+        self.s.eval('a = [1, 2, 3]')
+        self.s.eval('b = {"foo": "bar"}')
+
+        self.s.eval('a[0] = 0')
+        self.t('a', [0, 2, 3])
+
+        self.s.eval('a[1] = (1, 2)')
+        self.t('a', [0, (1, 2), 3])
+
+        self.s.eval('a[2] = a')  # oh boy
+        # this = [0, (1, 2), 0]
+        # this[2] = this
+        # self.t('a', this)  # this causes a RecursionError in comparison
+        # but making a self-referencing list does not explode here, which is the real test
+        self.t('a[2] is a', True)
+
+        self.s.eval('b[0] = 0')
+        self.t('b', {"foo": "bar", 0: 0})
+
+        self.s.eval('b["foo"] = "bletch"')
+        self.t('b', {"foo": "bletch", 0: 0})
 
 
 class TestNames(DRYTest):
