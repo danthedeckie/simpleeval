@@ -808,6 +808,17 @@ class TestCompoundAssignments(DRYTest):
         self.s.eval('b[0][0][0] = 1')
         self.t('b', {0:{0:{0: 1}}})
 
+    def test_references(self):
+        self.s.eval('a = [1, 2, 3]')
+        self.s.eval('b = a')
+
+        self.t('a is b', True)
+
+        self.s.eval('b[0] = 0')
+        self.t('a', [0, 2, 3])
+        self.t('b', [0, 2, 3])
+
+
 
 class TestNames(DRYTest):
     """ 'names', what other languages call variables... """
