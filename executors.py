@@ -16,7 +16,7 @@ class SimpleExecutor(EvalWithAssignments):
         for expression in body:
             try:
                 self._eval(expression)
-            except Return as r:
+            except _Return as r:
                 return r.value
 
 
@@ -28,7 +28,7 @@ class ExecutorWithControl(SimpleExecutor, CompoundEvalWithAssignments):
             ast.If: self._exec_if,
             ast.For: self._exec_for,
             ast.While: self._exec_while,
-            Value: lambda val: val.value,
+            _Value: lambda val: val.value,
             ast.Break: self._exec_break,
             ast.Continue: self._exec_continue,
             ast.Return: self._exec_return
@@ -43,12 +43,12 @@ class ExecutorWithControl(SimpleExecutor, CompoundEvalWithAssignments):
 
     def _exec_for(self, node):
         for item in self._eval(node.iter):
-            self._assign(node.target, Value(item))
+            self._assign(node.target, _Value(item))
             try:
                 self._exec(node.body)
-            except Break:
+            except _Break:
                 break
-            except Continue:
+            except _Continue:
                 continue
         else:
             self._exec(node.orelse)
@@ -57,37 +57,37 @@ class ExecutorWithControl(SimpleExecutor, CompoundEvalWithAssignments):
         while self._eval(node.test):
             try:
                 self._exec(node.body)
-            except Break:
+            except _Break:
                 break
-            except Continue:
+            except _Continue:
                 continue
         else:
             self._exec(node.orelse)
 
     def _exec_break(self, node):
-        raise Break
+        raise _Break
 
     def _exec_continue(self, node):
-        raise Continue
+        raise _Continue
 
     def _exec_return(self, node):
-        raise Return(self._eval(node.value))
+        raise _Return(self._eval(node.value))
 
 
-class Value:  # used to pass already-evaluated values to assignments
+class _Value:  # used to pass already-evaluated values to assignments
     def __init__(self, value):
         self.value = value
 
 
 # exceptions used to propogate loop-breaking signals
-class Return(BaseException):
+class _Return(BaseException):
     def __init__(self, retval):
         self.value = retval
 
 
-class Break(BaseException):
+class _Break(BaseException):
     pass
 
 
-class Continue(BaseException):
+class _Continue(BaseException):
     pass
