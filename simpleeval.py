@@ -631,6 +631,12 @@ class EvalWithAssignments(SimpleEval):
     def __init__(self, operators=None, functions=None, names=None):
         super(EvalWithAssignments, self).__init__(operators, functions, names)
 
+        self.nodes.update({
+            ast.Expr: self._eval_expr,
+            ast.Assign: self._eval_assign,
+            ast.AugAssign: self._eval_augassign
+        })
+
         self.assign_nodes = {
             ast.Name: self._assign_name,
         }
@@ -643,16 +649,17 @@ class EvalWithAssignments(SimpleEval):
 
         # and evaluate:
         expression = ast.parse(expr.strip()).body[0]
-        if isinstance(expression, ast.Expr):
-            return self._eval(expression.value)
-        elif isinstance(expression, ast.Assign):
-            for target in expression.targets:  # a = b = 1
-                self._assign(target, expression.value)
-        elif isinstance(expression, ast.AugAssign):  # a += 1
-            self._aug_assign(expression.target, expression.op, expression.value)
-        # TODO py 3.8 walrus op
-        else:
-            raise FeatureNotAvailable("Unknown ast body type: {}".format(type(expression).__name__))
+        return self._eval(expression)
+
+    def _eval_expr(self, node):
+        return self._eval(node.value)
+
+    def _eval_assign(self, node):
+        for target in node.targets:  # a = b = 1
+            self._assign(target, node.value)
+
+    def _eval_augassign(self, node):
+        self._aug_assign(node.target, node.op, node.value)
 
     def _assign(self, names, values):
         if not isinstance(self.names, dict):
