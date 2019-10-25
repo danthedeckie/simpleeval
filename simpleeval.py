@@ -308,7 +308,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         # Defaults:
 
         self.ATTR_INDEX_FALLBACK = ATTR_INDEX_FALLBACK
-        
+
         # Check for forbidden functions:
 
         for f in self.functions.values():
@@ -523,8 +523,10 @@ class EvalWithCompoundTypes(SimpleEval):
             ast.Tuple: self._eval_tuple,
             ast.List: self._eval_list,
             ast.Set: self._eval_set,
-            ast.ListComp: self._eval_comprehension,
-            ast.GeneratorExp: self._eval_comprehension,
+            ast.ListComp: self._eval_listcomp,
+            ast.SetComp: self._eval_setcomp,
+            ast.DictComp: self._eval_dictcomp,
+            ast.GeneratorExp: self._eval_generatorexp,
         })
 
     def eval(self, expr):
@@ -544,11 +546,28 @@ class EvalWithCompoundTypes(SimpleEval):
     def _eval_set(self, node):
         return set(self._eval(x) for x in node.elts)
 
-    def _eval_comprehension(self, node):
-        to_return = []
+    def _eval_listcomp(self, node):
+        return list(self._do_comprehension(node))
+
+    def _eval_setcomp(self, node):
+        return set(self._do_comprehension(node))
+
+    def _eval_dictcomp(self, node):
+        return dict(self._do_comprehension(node, is_dictcomp=True))
+
+    def _eval_generatorexp(self, node):
+        for item in self._do_comprehension(node):
+            yield item
+
+    def _do_comprehension(self, comprehension_node, is_dictcomp=False):
+        if is_dictcomp:
+            def do_value(node):
+                return self._eval(node.key), self._eval(node.value)
+        else:
+            def do_value(node):
+                return self._eval(node.elt)
 
         extra_names = {}
-
         previous_name_evaller = self.nodes[ast.Name]
 
         def eval_names_extra(node):
@@ -573,25 +592,34 @@ class EvalWithCompoundTypes(SimpleEval):
                     recurse_targets(t, v)
 
         def do_generator(gi=0):
-            g = node.generators[gi]
-            for i in self._eval(g.iter):
+            """
+            For each generator, set the names used in the final emitted value/the next generator.
+            Only the final generator (gi = len(comprehension_node.generator)-1) should emit the final values,
+            since only then are all possible necessary values set in extra_names.
+            """
+            generator_node = comprehension_node.generators[gi]
+            for i in self._eval(generator_node.iter):
                 self._max_count += 1
-
                 if self._max_count > MAX_COMPREHENSION_LENGTH:
                     raise IterableTooLong('Comprehension generates too many elements')
-                recurse_targets(g.target, i)
-                if all(self._eval(iff) for iff in g.ifs):
-                    if len(node.generators) > gi + 1:
-                        do_generator(gi+1)
+
+                # set names
+                recurse_targets(generator_node.target, i)
+
+                if all(self._eval(iff) for iff in generator_node.ifs):
+                    if len(comprehension_node.generators) > gi + 1:
+                        # next generator
+                        for v in do_generator(gi + 1):  # bubble up emitted values
+                            yield v
                     else:
-                        to_return.append(self._eval(node.elt))
+                        # emit values
+                        yield do_value(comprehension_node)
 
         try:
-            do_generator()
+            for item in do_generator():
+                yield item
         finally:
             self.nodes.update({ast.Name: previous_name_evaller})
-
-        return to_return
 
 
 class EvalWithAssignments(SimpleEval):
