@@ -791,6 +791,17 @@ class TestCompoundAssignments(DRYTest):
         self.s.eval('b["foo"] = "bletch"')
         self.t('b', {"foo": "bletch", 0: 0})
 
+    def test_compound_unpack(self):
+        self.s.names['x'] = (1, 2)
+        self.s.names['y'] = (1, (2, 3), 4)
+        self.s.eval('a = [1, 2, 3]')
+
+        self.s.eval('a[0], a[1] = (-1, -2)')
+        self.t('a', [-1, -2, 3])
+
+        self.s.eval('a[0], a[1], _ = y')
+        self.t('a', [1, (2, 3), 3])
+
     def test_assign_slice(self):
         self.s.eval('a = [1, 2, 3]')
         self.s.functions['range'] = range
