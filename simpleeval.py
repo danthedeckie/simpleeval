@@ -772,7 +772,7 @@ class SimpleExecutor(EvalWithAssignments):
         self._num_stmts = 0
         return super(SimpleExecutor, self).eval(expr)
 
-    def exec(self, expr):
+    def execute(self, expr):
         self._num_stmts = 0
         self.expr = expr
         body = ast.parse(expr.strip()).body
@@ -821,9 +821,9 @@ class ExecutorWithControl(SimpleExecutor, CompoundEvalWithAssignments):
             ast.Pass: lambda node: None
         })
 
-    def exec(self, expr):
+    def execute(self, expr):
         self._max_count = 0
-        return super(ExecutorWithControl, self).exec(expr)
+        return super(ExecutorWithControl, self).execute(expr)
 
     def _exec_if(self, node):
         test = self._eval(node.test)
