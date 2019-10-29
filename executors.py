@@ -28,7 +28,6 @@ class ExecutorWithControl(SimpleExecutor, CompoundEvalWithAssignments):
             ast.If: self._exec_if,
             ast.For: self._exec_for,
             ast.While: self._exec_while,
-            _Value: lambda val: val.value,
             ast.Break: self._exec_break,
             ast.Continue: self._exec_continue,
             ast.Return: self._exec_return
@@ -43,7 +42,7 @@ class ExecutorWithControl(SimpleExecutor, CompoundEvalWithAssignments):
 
     def _exec_for(self, node):
         for item in self._eval(node.iter):
-            self._assign(node.target, _Value(item))
+            self._assign(node.target, self._FinalValue(value=item))
             try:
                 self._exec(node.body)
             except _Break:
@@ -72,11 +71,6 @@ class ExecutorWithControl(SimpleExecutor, CompoundEvalWithAssignments):
 
     def _exec_return(self, node):
         raise _Return(self._eval(node.value))
-
-
-class _Value:  # used to pass already-evaluated values to assignments
-    def __init__(self, value):
-        self.value = value
 
 
 # exceptions used to propogate loop-breaking signals
