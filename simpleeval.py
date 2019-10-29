@@ -103,6 +103,7 @@ PYTHON3 = sys.version_info[0] == 3
 MAX_STRING_LENGTH = 100000
 MAX_COMPREHENSION_LENGTH = 10000
 MAX_POWER = 4000000  # highest exponent
+MAX_NUM_STATEMENTS = 100000  # for executors; don't exec a billion stmts
 DISALLOW_PREFIXES = ['_', 'func_']
 DISALLOW_METHODS = ['format', 'format_map', 'mro']
 
@@ -182,6 +183,12 @@ class NumberTooHigh(InvalidExpression):
 class IterableTooLong(InvalidExpression):
     """ That iterable is **way** too long, baby. """
 
+    pass
+
+
+class TooManyStatements(InvalidExpression):
+    """I've only got so much time to spare!
+    Used in executors to limit the number of total statements."""
     pass
 
 
@@ -734,6 +741,133 @@ class CompoundEvalWithAssignments(EvalWithCompoundTypes, EvalWithAssignments):
 
         values = self._eval(values)
         do_assign(names, values)
+
+
+###########################################################
+# Executors - run multiple statements like normal Python!
+###########################################################
+
+class SimpleExecutor(EvalWithAssignments):
+    """
+    The simplest executor - we can set names, use them in later expressions, and return a value using
+    the ``return`` keyword
+
+    Note that this is a subclass of :class:`EvalWithAssignments`.
+    """
+    class _Return(BaseException):
+        """We propogate a ``return`` up by using a custom exception."""
+        def __init__(self, retval):
+            self.value = retval
+
+    def __init__(self, operators=None, functions=None, names=None):
+        super(SimpleExecutor, self).__init__(operators, functions, names)
+
+        self.nodes.update({
+            ast.Return: self._exec_return
+        })
+
+        self._num_stmts = 0
+
+    def eval(self, expr):
+        self._num_stmts = 0
+        return super(SimpleExecutor, self).eval(expr)
+
+    def exec(self, expr):
+        self._num_stmts = 0
+        self.expr = expr
+        body = ast.parse(expr.strip()).body
+        return self._exec(body)
+
+    def _eval(self, node):
+        self._num_stmts += 1
+        if self._num_stmts > MAX_NUM_STATEMENTS:
+            raise TooManyStatements("You are trying to execute too many statements.")
+
+        return super(SimpleExecutor, self)._eval(node)
+
+    def _exec(self, body):
+        for expression in body:
+            try:
+                self._eval(expression)
+            except self._Return as r:
+                return r.value
+
+    def _exec_return(self, node):
+        raise self._Return(self._eval(node.value))
+
+
+class ExecutorWithControl(SimpleExecutor, CompoundEvalWithAssignments):
+    """
+    And even more familiar syntax: ``if``, ``for``, and ``while``, and the keywords to control their flow
+
+    Note that this is a subclass of both :class:`SimpleExecutor` and :class:`CompoundEvalWithAssignments`.
+    """
+    class _Break(BaseException):
+        """Similar to ``return``, ``break`` and ``continue`` are propogated by exceptions."""
+        pass
+
+    class _Continue(BaseException):
+        pass
+
+    def __init__(self, operators=None, functions=None, names=None):
+        super(ExecutorWithControl, self).__init__(operators, functions, names)
+
+        self.nodes.update({
+            ast.If: self._exec_if,
+            ast.For: self._exec_for,
+            ast.While: self._exec_while,
+            ast.Break: self._exec_break,
+            ast.Continue: self._exec_continue,
+            ast.Pass: lambda node: None
+        })
+
+    def exec(self, expr):
+        self._max_count = 0
+        return super(ExecutorWithControl, self).exec(expr)
+
+    def _exec_if(self, node):
+        test = self._eval(node.test)
+        if test:
+            self._exec(node.body)
+        else:
+            self._exec(node.orelse)
+
+    def _exec_for(self, node):
+        for item in self._eval(node.iter):
+            self._max_count += 1
+            if self._max_count > MAX_COMPREHENSION_LENGTH:  # todo maybe use a different constant for max loops?
+                raise IterableTooLong('Too many loops (in for block)')
+
+            self._assign(node.target, self._FinalValue(value=item))
+            try:
+                self._exec(node.body)
+            except self._Break:
+                break
+            except self._Continue:
+                continue
+        else:
+            self._exec(node.orelse)
+
+    def _exec_while(self, node):
+        while self._eval(node.test):
+            self._max_count += 1
+            if self._max_count > MAX_COMPREHENSION_LENGTH:
+                raise IterableTooLong('Too many loops (in while block)')
+
+            try:
+                self._exec(node.body)
+            except self._Break:
+                break
+            except self._Continue:
+                continue
+        else:
+            self._exec(node.orelse)
+
+    def _exec_break(self, node):
+        raise self._Break
+
+    def _exec_continue(self, node):
+        raise self._Continue
 
 
 def simple_eval(expr, operators=None, functions=None, names=None):
