@@ -685,6 +685,10 @@ class CompoundEvalWithAssignments(EvalWithCompoundTypes, EvalWithAssignments):
     EvalWithAssignments with the ability to assign to compound types.
     """
 
+    class _FinalValue(object):
+        def __init__(self, value):
+            self.value = value
+
     def __init__(self, operators=None, functions=None, names=None):
         super(CompoundEvalWithAssignments, self).__init__(operators, functions, names)
 
@@ -697,6 +701,10 @@ class CompoundEvalWithAssignments(EvalWithCompoundTypes, EvalWithAssignments):
             ast.Subscript: self._assign_subscript
         })
 
+        self.nodes.update({
+            self._FinalValue: lambda v: v.value
+        })
+
     def _assign_subscript(self, name, value):
         container = self._eval(name.value)
         key = self._eval(name.slice)
@@ -704,15 +712,9 @@ class CompoundEvalWithAssignments(EvalWithCompoundTypes, EvalWithAssignments):
         container[key] = value  # no further evaluation needed, if container is in names it will update
 
     def _assign_unpack(self, names, values):
-        new_names = {}
-
-        def recurse_targets(target, value):
-            """
-                Recursively (enter, (into, (nested, name), unpacking)) = \
-                             and, (assign, (values, to), each
-            """
-            if isinstance(target, ast.Name):
-                new_names[target.id] = value
+        def do_assign(target, value):
+            if not isinstance(target, (ast.Tuple, ast.List)):
+                self._assign(target, self._FinalValue(value=value))
             else:
                 try:
                     value = list(iter(value))
@@ -721,12 +723,10 @@ class CompoundEvalWithAssignments(EvalWithCompoundTypes, EvalWithAssignments):
                 if not len(target.elts) == len(value):
                     raise InvalidExpression("Unequal unpack: {} names, {} values".format(len(target.elts), len(value)))
                 for t, v in zip(target.elts, value):
-                    recurse_targets(t, v)
+                    do_assign(t, v)
 
         values = self._eval(values)
-
-        recurse_targets(names, values)
-        self.names.update(new_names)
+        do_assign(names, values)
 
 
 def simple_eval(expr, operators=None, functions=None, names=None):
