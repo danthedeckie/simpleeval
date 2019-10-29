@@ -652,14 +652,15 @@ class EvalWithAssignments(SimpleEval):
         self.names[name.id] = value
 
 
+class _FinalValue:
+    def __init__(self, value):
+        self.value = value
+
+
 class CompoundEvalWithAssignments(EvalWithCompoundTypes, EvalWithAssignments):
     """
     EvalWithAssignments with the ability to assign to compound types.
     """
-    class _FinalValue:
-        def __init__(self, value):
-            self.value = value
-
     def __init__(self, operators=None, functions=None, names=None):
         super(CompoundEvalWithAssignments, self).__init__(operators, functions, names)
 
@@ -673,7 +674,7 @@ class CompoundEvalWithAssignments(EvalWithCompoundTypes, EvalWithAssignments):
         })
 
         self.nodes.update({
-            self._FinalValue: lambda v: v.value
+            _FinalValue: lambda v: v.value
         })
 
     def _assign_subscript(self, name, value):
@@ -685,7 +686,7 @@ class CompoundEvalWithAssignments(EvalWithCompoundTypes, EvalWithAssignments):
     def _assign_unpack(self, names, values):
         def do_assign(target, value):
             if not isinstance(target, (ast.Tuple, ast.List)):
-                self._assign(target, self._FinalValue(value=value))
+                self._assign(target, _FinalValue(value=value))
             else:
                 try:
                     value = list(iter(value))
