@@ -1,16 +1,37 @@
 import ast
 
-from simpleeval import CompoundEvalWithAssignments, EvalWithAssignments
+from simpleeval import CompoundEvalWithAssignments, EvalWithAssignments, MAX_COMPREHENSION_LENGTH, IterableTooLong, \
+    InvalidExpression
+
+MAX_NUM_STATEMENTS = 100000
+
+
+class TooManyStatements(InvalidExpression):
+    """I've only got so much time to spare!"""
+    pass
 
 
 class SimpleExecutor(EvalWithAssignments):
     def __init__(self, operators=None, functions=None, names=None):
         super(SimpleExecutor, self).__init__(operators, functions, names)
+        self._num_stmts = 0
+
+    def eval(self, expr):
+        self._num_stmts = 0
+        return super(SimpleExecutor, self).eval(expr)
 
     def exec(self, expr):
+        self._num_stmts = 0
         self.expr = expr
         body = ast.parse(expr.strip()).body
         return self._exec(body)
+
+    def _eval(self, node):
+        self._num_stmts += 1
+        if self._num_stmts > MAX_NUM_STATEMENTS:
+            raise TooManyStatements("You are trying to execute too many statements.")
+
+        return super(SimpleExecutor, self)._eval(node)
 
     def _exec(self, body):
         for expression in body:
@@ -33,6 +54,10 @@ class ExecutorWithControl(SimpleExecutor, CompoundEvalWithAssignments):
             ast.Return: self._exec_return
         })
 
+    def exec(self, expr):
+        self._max_count = 0
+        return super(ExecutorWithControl, self).exec(expr)
+
     def _exec_if(self, node):
         test = self._eval(node.test)
         if test:
@@ -42,6 +67,10 @@ class ExecutorWithControl(SimpleExecutor, CompoundEvalWithAssignments):
 
     def _exec_for(self, node):
         for item in self._eval(node.iter):
+            self._max_count += 1
+            if self._max_count > MAX_COMPREHENSION_LENGTH:
+                raise IterableTooLong('Too many loops (in for block)')
+
             self._assign(node.target, self._FinalValue(value=item))
             try:
                 self._exec(node.body)
@@ -54,6 +83,10 @@ class ExecutorWithControl(SimpleExecutor, CompoundEvalWithAssignments):
 
     def _exec_while(self, node):
         while self._eval(node.test):
+            self._max_count += 1
+            if self._max_count > MAX_COMPREHENSION_LENGTH:
+                raise IterableTooLong('Too many loops (in while block)')
+
             try:
                 self._exec(node.body)
             except _Break:
