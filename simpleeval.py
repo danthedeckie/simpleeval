@@ -46,7 +46,7 @@ Contributors:
 - xaled (Khalid Grandi) method chaining correctly, double-eval bugfix.
 - EdwardBetts (Edward Betts) spelling correction.
 - charlax (Charles-Axel Dein charlax) Makefile and cleanups
-- mommothazaz123 (Andrew Zhu) f"string" support
+- mommothazaz123 (Andrew Zhu) f"string" support, Python 3.8 support
 - lubieowoce (Uryga) various potential vulnerabilities
 - JCavallo (Jean Cavallo) names dict shouldn't be modified
 - Birne94 (Daniel Birnstiel) for fixing leaking generators.
