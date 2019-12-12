@@ -51,6 +51,7 @@ Contributors:
 - JCavallo (Jean Cavallo) names dict shouldn't be modified
 - Birne94 (Daniel Birnstiel) for fixing leaking generators.
 - patricksurry (Patrick Surry) or should return last value, even if falsy.
+- PPakalns (Peteris Pakalns) correctly handle incorrectly given expressions
 
 -------------------------------------
 Basic Usage:
@@ -181,6 +182,25 @@ class NumberTooHigh(InvalidExpression):
 
 class IterableTooLong(InvalidExpression):
     """ That iterable is **way** too long, baby. """
+
+    pass
+
+
+class NotAnExpression(InvalidExpression):
+    """ Given statement is not an expression. e.g. `a += b`, `a = b` """
+
+    pass
+
+
+class MultipleStatementsPassed(InvalidExpression):
+    """ When multiple statements are passed like 'a\nb' simple eval
+        can not decide which statement should be evaluated """
+
+    pass
+
+
+class NoStatementPassed(InvalidExpression):
+    """ Input without any statements are passed can not be evaluated """
 
     pass
 
@@ -329,7 +349,22 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         self.expr = expr
 
         # and evaluate:
-        return self._eval(ast.parse(expr.strip()).body[0].value)
+        statements = ast.parse(expr.strip()).body
+        if len(statements) == 0:
+            raise NoStatementPassed(
+                "Expression doesn't contain evaluable statement."
+            )
+        if len(statements) > 1:
+            raise MultipleStatementsPassed(
+                "Expression contains more than one evaluable statement."
+            )
+        statement = statements[0]
+        if not isinstance(statement, ast.Expr):
+            raise NotAnExpression(
+                "Given input expression is not pure."
+                " It contains assignment, raise or similar statement."
+            )
+        return self._eval(statement.value)
 
     def _eval(self, node):
         """ The internal evaluator used on each node in the parsed tree. """

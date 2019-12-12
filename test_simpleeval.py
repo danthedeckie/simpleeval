@@ -13,8 +13,9 @@ import ast
 import simpleeval
 import os
 from simpleeval import (
-    SimpleEval, EvalWithCompoundTypes, FeatureNotAvailable, FunctionNotDefined, NameNotDefined,
-    InvalidExpression, AttributeDoesNotExist, simple_eval
+    SimpleEval, EvalWithCompoundTypes, FeatureNotAvailable, FunctionNotDefined,
+    NameNotDefined, InvalidExpression, AttributeDoesNotExist, simple_eval,
+    NotAnExpression, MultipleStatementsPassed, NoStatementPassed
 )
 
 
@@ -170,6 +171,27 @@ class TestBasic(DRYTest):
         with self.assertRaises(FeatureNotAvailable):
             self.t('{22}', False)
 
+    def test_multiple_statemets(self):
+        with self.assertRaises(MultipleStatementsPassed):
+            self.t("1\n2", 1)
+
+        self.t("(1 + \n 2)", 3)
+
+        self.t("\n 1 \n ", 1)
+
+        with self.assertRaises(MultipleStatementsPassed):
+            self.t("a = 11; x = 21; x + x", 11)
+
+    def test_no_statement_passed(self):
+        with self.assertRaises(NoStatementPassed):
+            self.t("", None)
+
+        with self.assertRaises(NoStatementPassed):
+            self.t("\n\n\n", None)
+
+        with self.assertRaises(NoStatementPassed):
+            self.t("\n\t\n", None)
+
 
 class TestFunctions(DRYTest):
     """ Functions for expressions to play with """
@@ -299,7 +321,7 @@ class TestTryingToBreakOut(DRYTest):
     def test_import(self):
         """ usual suspect. import """
         # cannot import things:
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(NotAnExpression):
             self.t("import sys", None)
 
     def test_long_running(self):
@@ -373,12 +395,6 @@ class TestTryingToBreakOut(DRYTest):
 
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("('spam spam spam' * 5000).split() * 5000", None)
-
-    def test_python_stuff(self):
-        """ other various pythony things. """
-        # it only evaluates the first statement:
-        self.t("a = 11; x = 21; x + x", 11)
-
 
     def test_function_globals_breakout(self):
         """ by accessing function.__globals__ or func_... """
@@ -662,7 +678,7 @@ class TestNames(DRYTest):
 
         self.s.names["s"] = 21
 
-        with self.assertRaises(NameNotDefined):
+        with self.assertRaises(NotAnExpression):
             self.t("s += a", 21)
 
         self.s.names = None
@@ -687,7 +703,18 @@ class TestNames(DRYTest):
 
         # however, you can't assign to those names:
 
-        self.t("a = 200", 200)
+        with self.assertRaises(NotAnExpression):
+            self.t("a = 200", 200)
+
+        self.assertEqual(self.s.names['a'], 42)
+
+        # however, you can't augmented assign to those names:
+
+        with self.assertRaises(NotAnExpression):
+            self.t("a += 200", 200)
+
+        with self.assertRaises(NotAnExpression):
+            self.t("a -= 200", 200)
 
         self.assertEqual(self.s.names['a'], 42)
 
@@ -695,7 +722,8 @@ class TestNames(DRYTest):
 
         self.s.names['b'] = [0]
 
-        self.t("b[0] = 11", 11)
+        with self.assertRaises(NotAnExpression):
+            self.t("b[0] = 11", 11)
 
         self.assertEqual(self.s.names['b'], [0])
 
@@ -716,7 +744,8 @@ class TestNames(DRYTest):
 
         # you still can't assign though:
 
-        self.t("c['b'] = 99", 99)
+        with self.assertRaises(NotAnExpression):
+            self.t("c['b'] = 99", 99)
 
         self.assertFalse('b' in self.s.names['c'])
 
@@ -724,7 +753,8 @@ class TestNames(DRYTest):
 
         self.s.names['c']['c'] = {'c': 11}
 
-        self.t("c['c']['c'] = 21", 21)
+        with self.assertRaises(NotAnExpression):
+            self.t("c['c']['c'] = 21", 21)
 
         self.assertEqual(self.s.names['c']['c']['c'], 11)
 
@@ -737,12 +767,13 @@ class TestNames(DRYTest):
 
         self.t("a.b.c*2", 84)
 
-        self.t("a.b.c = 11", 11)
+        with self.assertRaises(NotAnExpression):
+            self.t("a.b.c = 11", 11)
 
         self.assertEqual(self.s.names['a']['b']['c'], 42)
 
-        # TODO: Wat?
-        self.t("a.d = 11", 11)
+        with self.assertRaises(NotAnExpression):
+            self.t("a.d = 11", 11)
 
         with self.assertRaises(KeyError):
             self.assertEqual(self.s.names['a']['d'], 11)
