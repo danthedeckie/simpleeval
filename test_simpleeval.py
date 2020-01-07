@@ -13,6 +13,7 @@ import operator
 import ast
 import simpleeval
 import os
+import warnings
 from simpleeval import (
     SimpleEval, EvalWithCompoundTypes, FeatureNotAvailable, FunctionNotDefined, NameNotDefined,
     InvalidExpression, AttributeDoesNotExist, simple_eval
@@ -300,7 +301,7 @@ class TestTryingToBreakOut(DRYTest):
     def test_import(self):
         """ usual suspect. import """
         # cannot import things:
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(FeatureNotAvailable):
             self.t("import sys", None)
 
     def test_long_running(self):
@@ -378,7 +379,7 @@ class TestTryingToBreakOut(DRYTest):
     def test_python_stuff(self):
         """ other various pythony things. """
         # it only evaluates the first statement:
-        self.t("a = 11; x = 21; x + x", 11)
+        self.t("11; x = 21; x + x", 11)
 
 
     def test_function_globals_breakout(self):
@@ -664,7 +665,8 @@ class TestNames(DRYTest):
         self.s.names["s"] = 21
 
         with self.assertRaises(NameNotDefined):
-            self.t("s += a", 21)
+            with warnings.catch_warnings(record=True) as ws:
+                self.t("s += a", 21)
 
         self.s.names = None
 
@@ -687,8 +689,8 @@ class TestNames(DRYTest):
         self.t("a + also - a", 100)
 
         # however, you can't assign to those names:
-
-        self.t("a = 200", 200)
+        with warnings.catch_warnings(record=True) as ws:
+            self.t("a = 200", 200)
 
         self.assertEqual(self.s.names['a'], 42)
 
@@ -696,7 +698,8 @@ class TestNames(DRYTest):
 
         self.s.names['b'] = [0]
 
-        self.t("b[0] = 11", 11)
+        with warnings.catch_warnings(record=True) as ws:
+            self.t("b[0] = 11", 11)
 
         self.assertEqual(self.s.names['b'], [0])
 
@@ -717,7 +720,8 @@ class TestNames(DRYTest):
 
         # you still can't assign though:
 
-        self.t("c['b'] = 99", 99)
+        with warnings.catch_warnings(record=True) as ws:
+            self.t("c['b'] = 99", 99)
 
         self.assertFalse('b' in self.s.names['c'])
 
@@ -725,7 +729,8 @@ class TestNames(DRYTest):
 
         self.s.names['c']['c'] = {'c': 11}
 
-        self.t("c['c']['c'] = 21", 21)
+        with warnings.catch_warnings(record=True) as ws:
+            self.t("c['c']['c'] = 21", 21)
 
         self.assertEqual(self.s.names['c']['c']['c'], 11)
 
@@ -738,12 +743,14 @@ class TestNames(DRYTest):
 
         self.t("a.b.c*2", 84)
 
-        self.t("a.b.c = 11", 11)
+        with warnings.catch_warnings(record=True) as ws:
+            self.t("a.b.c = 11", 11)
 
         self.assertEqual(self.s.names['a']['b']['c'], 42)
 
         # TODO: Wat?
-        self.t("a.d = 11", 11)
+        with warnings.catch_warnings(record=True) as ws:
+            self.t("a.d = 11", 11)
 
         with self.assertRaises(KeyError):
             self.assertEqual(self.s.names['a']['d'], 11)

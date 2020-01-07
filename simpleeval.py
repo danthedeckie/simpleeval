@@ -94,6 +94,7 @@ well:
 import ast
 import operator as op
 import sys
+import warnings
 from random import random
 
 PYTHON3 = sys.version_info[0] == 3
@@ -192,6 +193,8 @@ class IterableTooLong(InvalidExpression):
 
     pass
 
+class AssignmentAttempted(UserWarning):
+    pass
 
 ########################################
 # Default simple functions to include:
@@ -288,6 +291,10 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         self.names = names
 
         self.nodes = {
+            ast.Expr: self._eval_expr,
+            ast.Assign: self._eval_assign,
+            ast.AugAssign: self._eval_aug_assign,
+            ast.Import: self._eval_import,
             ast.Num: self._eval_num,
             ast.Str: self._eval_str,
             ast.Name: self._eval_name,
@@ -320,7 +327,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         # Defaults:
 
         self.ATTR_INDEX_FALLBACK = ATTR_INDEX_FALLBACK
-        
+
         # Check for forbidden functions:
 
         for f in self.functions.values():
@@ -337,7 +344,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         self.expr = expr
 
         # and evaluate:
-        return self._eval(ast.parse(expr.strip()).body[0].value)
+        return self._eval(ast.parse(expr.strip()).body[0])
 
     def _eval(self, node):
         """ The internal evaluator used on each node in the parsed tree. """
@@ -349,6 +356,21 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                                       "evaluator".format(type(node).__name__))
 
         return handler(node)
+
+    def _eval_expr(self, node):
+        return self._eval(node.value)
+
+    def _eval_assign(self, node):
+        warnings.warn("Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted)
+        return self._eval(node.value)
+
+    def _eval_aug_assign(self, node):
+        warnings.warn("Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted)
+        return self._eval(node.value)
+
+    def _eval_import(self, node):
+        raise FeatureNotAvailable("Sorry, 'import' is not allowed.")
+        return self._eval(node.value)
 
     @staticmethod
     def _eval_num(node):
