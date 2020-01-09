@@ -112,8 +112,22 @@ DISALLOW_METHODS = ['format', 'format_map', 'mro']
 # people not be stupid.  Allowing these functions opens up all sorts of holes - if any of
 # their functionality is required, then please wrap them up in a safe container.  And think
 # very hard about it first.  And don't say I didn't warn you.
+# builtins is a dict in python >3.6 but a module before
+if isinstance(__builtins__, dict) and 'help' in __builtins__: 
+    DISALLOW_FUNCTIONS = {
+        type, isinstance, eval, getattr, setattr, help, repr, compile, open
+        }
+elif 'help' in dir(__builtins__):
+    DISALLOW_FUNCTIONS = {
+        type, isinstance, eval, getattr, setattr, help, repr, compile, open
+        }
+else:
+    print('help not in builtins')
 
-DISALLOW_FUNCTIONS = {type, isinstance, eval, getattr, setattr, help, repr, compile, open}
+    DISALLOW_FUNCTIONS = {
+        type, isinstance, eval, getattr, setattr, repr, compile, open
+        }
+
 
 if PYTHON3:
     exec('DISALLOW_FUNCTIONS.add(exec)') # exec is not a function in Python2...
