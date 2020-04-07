@@ -113,20 +113,12 @@ DISALLOW_METHODS = ['format', 'format_map', 'mro']
 # their functionality is required, then please wrap them up in a safe container.  And think
 # very hard about it first.  And don't say I didn't warn you.
 # builtins is a dict in python >3.6 but a module before
-if isinstance(__builtins__, dict) and 'help' in __builtins__: 
-    DISALLOW_FUNCTIONS = {
-        type, isinstance, eval, getattr, setattr, help, repr, compile, open
-        }
-elif 'help' in dir(__builtins__):
-    DISALLOW_FUNCTIONS = {
-        type, isinstance, eval, getattr, setattr, help, repr, compile, open
-        }
-else:
-    print('help not in builtins')
-
-    DISALLOW_FUNCTIONS = {
+DISALLOW_FUNCTIONS = {
         type, isinstance, eval, getattr, setattr, repr, compile, open
         }
+if hasattr(__builtins__, 'help') or 'help' in __builtins__:
+    # PyInstaller environment doesn't include this module.
+    DISALLOW_FUNCTIONS.add(help)
 
 
 if PYTHON3:
