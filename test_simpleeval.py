@@ -1085,6 +1085,13 @@ class TestImport(unittest.TestCase):
     def test_import_ok_without_site(self):
         # PyInstaller doesn't include site (so 'help' builtin)
         # This catches #69
+        try:
+            import runpy
+        except ImportError:
+            # No runpy on travis... so can't do this test here. :-(
+            # If you know of a fix for this, or can wrangle travis into working,
+            # please submit a PR!
+            return
         self.assertEqual(0, subprocess.call([sys.executable, '-S', '-m', 'simpleeval']))
         self.assertNotIn('help', subprocess.check_output([
             sys.executable, '-Sc', 'import simpleeval;print(simpleeval.DISALLOW_FUNCTIONS)']))
