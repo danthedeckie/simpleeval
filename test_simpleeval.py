@@ -7,6 +7,7 @@
 """
 # pylint: disable=too-many-public-methods, missing-docstring
 import sys
+import subprocess
 import unittest
 import operator
 import ast
@@ -1071,6 +1072,16 @@ class TestDisallowedFunctions(DRYTest):
                 s.eval('foo(42)')
 
         simpleeval.DEFAULT_FUNCTIONS = DF.copy()
+
+
+class TestImport(unittest.TestCase):
+    def test_import_ok_without_site(self):
+        # PyInstaller doesn't include site (so 'help' builtin)
+        # This catches #69
+        self.assertEqual(0, subprocess.call([sys.executable, '-S', '-m', 'simpleeval']))
+        self.assertNotIn('help', subprocess.check_output([
+            sys.executable, '-Sc', 'import simpleeval;print(simpleeval.DISALLOW_FUNCTIONS)']))
+
 
 if __name__ == '__main__':  # pragma: no cover
     unittest.main()

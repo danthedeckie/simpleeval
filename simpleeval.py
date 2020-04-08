@@ -116,7 +116,8 @@ DISALLOW_METHODS = ['format', 'format_map', 'mro']
 DISALLOW_FUNCTIONS = {
         type, isinstance, eval, getattr, setattr, repr, compile, open
         }
-if hasattr(__builtins__, 'help') or 'help' in __builtins__:
+if hasattr(__builtins__, 'help') or \
+        (hasattr(__builtins__, '__contains__') and 'help' in __builtins__):
     # PyInstaller environment doesn't include this module.
     DISALLOW_FUNCTIONS.add(help)
 
