@@ -279,11 +279,11 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             Create the evaluator instance.  Set up valid operators (+,-, etc)
             functions (add, random, get_val, whatever) and names. """
 
-        if not operators:
+        if operators is None:
             operators = DEFAULT_OPERATORS.copy()
-        if not functions:
+        if functions is None:
             functions = DEFAULT_FUNCTIONS.copy()
-        if not names:
+        if names is None:
             names = DEFAULT_NAMES.copy()
 
         self.operators = operators

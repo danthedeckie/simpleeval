@@ -1080,5 +1080,14 @@ class TestDisallowedFunctions(DRYTest):
         simpleeval.DEFAULT_FUNCTIONS = DF.copy()
 
 
+class TestNoFunctions(DRYTest):
+    def test_no_functions(self):
+        self.s.eval('int(42)')
+        with self.assertRaises(FunctionNotDefined):
+            s = SimpleEval(functions={})
+            s.eval('int(42)')
+
+
+
 if __name__ == '__main__':  # pragma: no cover
     unittest.main()
