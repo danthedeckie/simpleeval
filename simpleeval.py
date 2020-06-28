@@ -175,6 +175,17 @@ class AttributeDoesNotExist(InvalidExpression):
         self.expression = expression
 
 
+class OperatorNotDefined(InvalidExpression):
+    """operator does not exist"""
+
+    def __init__(self, attr, expression):
+        self.message = \
+            "Operator '{0}' does not exist in expression '{1}'".format(
+                attr, expression)
+        self.attr = attr
+        self.expression = expression
+
+
 class FeatureNotAvailable(InvalidExpression):
     """ What you're trying to do is not allowed. """
 
@@ -392,11 +403,18 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return node.value
 
     def _eval_unaryop(self, node):
-        return self.operators[type(node.op)](self._eval(node.operand))
+        try:
+            op = self.operators[type(node.op)]
+        except KeyError:
+            raise OperatorNotDefined(node.op, self.expr)
+        return op(self._eval(node.operand))
 
     def _eval_binop(self, node):
-        return self.operators[type(node.op)](self._eval(node.left),
-                                             self._eval(node.right))
+        try:
+            op = self.operators[type(node.op)]
+        except KeyError:
+            raise OperatorNotDefined(node.op, self.expr)
+        return op(self._eval(node.left), self._eval(node.right))
 
     def _eval_boolop(self, node):
         if isinstance(node.op, ast.And):

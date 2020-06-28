@@ -15,7 +15,7 @@ import os
 import warnings
 from simpleeval import (
     SimpleEval, EvalWithCompoundTypes, FeatureNotAvailable, FunctionNotDefined, NameNotDefined,
-    InvalidExpression, AttributeDoesNotExist, simple_eval
+    OperatorNotDefined, InvalidExpression, AttributeDoesNotExist, simple_eval
 )
 
 
@@ -981,7 +981,7 @@ class TestUnusualComparisons(DRYTest):
         b = Blah()
         self.s.names = {'b': b}
         # This should not crash:
-        e = eval('b > 2', self.s.names)
+        e = eval('b > 2', self.s.names)  
 
         self.t('b > 2', BinaryExpression('GT'))
         self.t('1 < 5 > b', BinaryExpression('LT'))
@@ -1080,12 +1080,25 @@ class TestDisallowedFunctions(DRYTest):
         simpleeval.DEFAULT_FUNCTIONS = DF.copy()
 
 
-class TestNoFunctions(DRYTest):
+class TestNoEntries(DRYTest):
     def test_no_functions(self):
         self.s.eval('int(42)')
         with self.assertRaises(FunctionNotDefined):
             s = SimpleEval(functions={})
             s.eval('int(42)')
+
+    def test_no_names(self):
+        # does not work, AST interprets built-ins directly
+        self.s.eval('True')
+        # with self.assertRaises(NameNotDefined):
+        s = SimpleEval(names={})
+        s.eval('True')
+
+    def test_no_operators(self):
+        self.s.eval('1+2')
+        with self.assertRaises(OperatorNotDefined):
+            s = SimpleEval(operators={})
+            s.eval('1+2')
 
 
 
