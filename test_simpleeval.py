@@ -1088,11 +1088,15 @@ class TestNoEntries(DRYTest):
             s.eval('int(42)')
 
     def test_no_names(self):
-        # does not work, AST interprets built-ins directly
+        # does not work on current Py3, True et al. are keywords now
         self.s.eval('True')
         # with self.assertRaises(NameNotDefined):
         s = SimpleEval(names={})
-        s.eval('True')
+        if sys.version_info < (3,):
+            with self.assertRaises(NameNotDefined):
+                s.eval('True')
+        else:
+            s.eval('True')
 
     def test_no_operators(self):
         self.s.eval('1+2')
