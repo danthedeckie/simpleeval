@@ -644,9 +644,10 @@ class EvalWithCompoundTypes(SimpleEval):
         return to_return
 
 
-def simple_eval(expr, operators=None, functions=None, names=None):
+def simple_eval(expr, operators=None, functions=None, names=None, enable_cache=False):
     """ Simply evaluate an expresssion """
     s = SimpleEval(operators=operators,
                    functions=functions,
-                   names=names)
+                   names=names,
+                   enable_cache=enable_cache)
     return s.eval(expr)
