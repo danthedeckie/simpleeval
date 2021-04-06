@@ -274,7 +274,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         """
     expr = ""
 
-    def __init__(self, operators=None, functions=None, names=None, enable_cache=True):
+    def __init__(self, operators=None, functions=None, names=None, enable_cache=False):
         """
             Create the evaluator instance.  Set up valid operators (+,-, etc)
             functions (add, random, get_val, whatever) and names. """
