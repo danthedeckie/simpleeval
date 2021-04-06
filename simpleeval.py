@@ -274,7 +274,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         """
     expr = ""
 
-    def __init__(self, operators=None, functions=None, names=None):
+    def __init__(self, operators=None, functions=None, names=None, enable_cache=True):
         """
             Create the evaluator instance.  Set up valid operators (+,-, etc)
             functions (add, random, get_val, whatever) and names. """
@@ -289,6 +289,10 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         self.operators = operators
         self.functions = functions
         self.names = names
+
+        self.enable_cache = enable_cache
+        if enable_cache:
+            self.parsed_expression_cache = {}
 
         self.nodes = {
             ast.Expr: self._eval_expr,
@@ -344,7 +348,16 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         self.expr = expr
 
         # and evaluate:
-        return self._eval(ast.parse(expr.strip()).body[0])
+        if not self.enable_cache:
+            return self._eval(ast.parse(expr.strip()).body[0])
+
+        stripped_expr = expr.strip()
+        parsed_expr = self.parsed_expression_cache.get(stripped_expr)
+        if parsed_expr:
+            return self._eval(parsed_expr)
+        parsed_expr = ast.parse(stripped_expr).body[0]
+        self.parsed_expression_cache[stripped_expr] = parsed_expr
+        return self._eval(parsed_expr)
 
     def _eval(self, node):
         """ The internal evaluator used on each node in the parsed tree. """
