@@ -26,14 +26,25 @@ class DRYTest(unittest.TestCase):
     def setUp(self):
         """ initialize a SimpleEval """
         self.s = SimpleEval()
+        self.s_cached = SimpleEval(enable_cache=True)
 
-    def t(self, expr, shouldbe):  # pylint: disable=invalid-name
+    def t(self, expr, shouldbe, s=None):  # pylint: disable=invalid-name
         """ test an evaluation of an expression against an expected answer """
-        return self.assertEqual(self.s.eval(expr), shouldbe)
+        s = (s or self.s)
+        return self.assertEqual(s.eval(expr), shouldbe)
 
 
 class TestBasic(DRYTest):
     """ Simple expressions. """
+
+    def test_enable_cache(self):
+        """ test enable parsed expression cache. """
+        self.t("21 + 21", 42, s=self.s_cached)
+        self.t("21 + 21", 42, s=self.s_cached)
+        self.t("'a' if 1 == 1 else 'b'", 'a', s=self.s_cached)
+        self.t('110 == 100 + 10 and True', True, s=self.s_cached)
+        self.t('110 == 100 + 10 and True', True, s=self.s_cached)
+        self.t("'a' if 1 == 1 else 'b'", 'a', s=self.s_cached)
 
     def test_maths_with_ints(self):
         """ simple maths expressions """
