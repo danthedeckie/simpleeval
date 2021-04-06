@@ -275,7 +275,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         """
     expr = ""
 
-    def __init__(self, operators=None, functions=None, names=None, enable_cache=False):
+    def __init__(self, operators=None, functions=None, names=None,
+                 enable_cache=False):
         """
             Create the evaluator instance.  Set up valid operators (+,-, etc)
             functions (add, random, get_val, whatever) and names. """
@@ -643,7 +644,8 @@ class EvalWithCompoundTypes(SimpleEval):
         return to_return
 
 
-def simple_eval(expr, operators=None, functions=None, names=None, enable_cache=False):
+def simple_eval(expr, operators=None, functions=None, names=None,
+                enable_cache=False):
     """ Simply evaluate an expresssion """
     s = SimpleEval(operators=operators,
                    functions=functions,
