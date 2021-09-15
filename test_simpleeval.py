@@ -1048,8 +1048,7 @@ class TestShortCircuiting(DRYTest):
 class TestDisallowedFunctions(DRYTest):
     def test_functions_are_disallowed_at_init(self):
         DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open]
-        if simpleeval.PYTHON3:
-            exec('DISALLOWED.append(exec)') # exec is not a function in Python2...
+        exec('DISALLOWED.append(exec)') # exec is not a function in Python2...
 
         for f in simpleeval.DISALLOW_FUNCTIONS:
             assert f in DISALLOWED
@@ -1061,8 +1060,7 @@ class TestDisallowedFunctions(DRYTest):
     def test_functions_are_disallowed_in_expressions(self):
         DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open]
 
-        if simpleeval.PYTHON3:
-            exec('DISALLOWED.append(exec)') # exec is not a function in Python2...
+        exec('DISALLOWED.append(exec)') # exec is not a function in Python2...
 
         for f in simpleeval.DISALLOW_FUNCTIONS:
             assert f in DISALLOWED
