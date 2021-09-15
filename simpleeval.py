@@ -97,8 +97,6 @@ import sys
 import warnings
 from random import random
 
-PYTHON3 = sys.version_info[0] == 3
-
 ########################################
 # Module wide 'globals'
 
@@ -124,8 +122,7 @@ if hasattr(__builtins__, 'help') or \
     DISALLOW_FUNCTIONS.add(help)
 
 
-if PYTHON3:
-    exec('DISALLOW_FUNCTIONS.add(exec)') # exec is not a function in Python2...
+exec('DISALLOW_FUNCTIONS.add(exec)')
 
 
 ########################################
@@ -255,7 +252,7 @@ DEFAULT_OPERATORS = {ast.Add: safe_add, ast.Sub: op.sub, ast.Mult: safe_mult,
 
 DEFAULT_FUNCTIONS = {"rand": random, "randint": random_int,
                      "int": int, "float": float,
-                     "str": str if PYTHON3 else unicode}
+                     "str": str}
 
 DEFAULT_NAMES = {"True": True, "False": False, "None": None}
 
