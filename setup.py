@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-from pathlib import Path
+from os.path import dirname
+from os.path import join as pjoin
 
 from setuptools import setup
 from setuptools.config import read_configuration
@@ -7,8 +8,8 @@ from setuptools.config import read_configuration
 import setuptools_scm
 
 if __name__ == "__main__":
-    p = Path(__file__).parent
-    setup_dict = read_configuration(str(p / "setup.cfg"))
+    p = dirname(__file__)
+    setup_dict = read_configuration(pjoin(p, "setup.cfg"))
     v = setuptools_scm.version_from_scm(str(p))
     __version__ = setuptools_scm.format_version(
         v,
