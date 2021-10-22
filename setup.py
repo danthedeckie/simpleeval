@@ -16,9 +16,7 @@ if __name__ == "__main__":
         version_scheme=setuptools_scm.DEFAULT_VERSION_SCHEME,
         local_scheme=setuptools_scm.DEFAULT_LOCAL_SCHEME,
     )
-    setup_dict = {
-        "version": __version__,
-    }
+    setup_dict["version"] = __version__
     if v.exact:
         setup_dict["download_url"] = setup_dict["url"] + "/tarball/" + str(v.tag)
     setup(**setup_dict)
