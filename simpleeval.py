@@ -52,6 +52,8 @@ Contributors:
 - Birne94 (Daniel Birnstiel) for fixing leaking generators.
 - patricksurry (Patrick Surry) or should return last value, even if falsy.
 - shughes-uk (Samantha Hughes) python w/o 'site' should not fail to import.
+- KOLANICH packaging / deployment / setup help
+- graingert (Thomas Grainger) packaging / deployment / setup help
 
 -------------------------------------
 Basic Usage:
