@@ -6,8 +6,8 @@ autotest:
 
 .PHONY: test
 
-dist/: setup.py simpleeval.py README.rst
-	python setup.py build sdist
+dist/: setup.cfg simpleeval.py README.rst
+	python -m build
 	twine check dist/*
 
 pypi: test dist/
@@ -17,4 +17,3 @@ pypi: test dist/
 clean:
 	rm -rf build
 	rm -rf dist
-	rm file.txt
