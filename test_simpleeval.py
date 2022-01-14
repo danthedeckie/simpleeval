@@ -13,6 +13,7 @@ import ast
 import simpleeval
 import os
 import warnings
+import gc
 from simpleeval import (
     SimpleEval, EvalWithCompoundTypes, FeatureNotAvailable, FunctionNotDefined, NameNotDefined,
     InvalidExpression, AttributeDoesNotExist, simple_eval
@@ -1078,6 +1079,31 @@ class TestDisallowedFunctions(DRYTest):
                 s.eval('foo(42)')
 
         simpleeval.DEFAULT_FUNCTIONS = DF.copy()
+
+
+class TestReferenceCleanup(DRYTest):
+    """Test cleanup without cyclic references"""
+
+    def setUp(self):
+        self._initial_gc_isenabled = gc.isenabled()
+
+        gc.disable()
+        gc.set_debug(gc.DEBUG_SAVEALL)
+
+        gc.collect()
+        self._initial_garbage_len = len(gc.garbage)
+
+    def tearDown(self):
+        gc.collect()
+        self._final_garbage_len = len(gc.garbage)
+
+        if self._initial_gc_isenabled:
+            gc.enable()
+
+        self.assertEqual(self._initial_garbage_len, self._final_garbage_len)
+
+    def test_simpleeval_cleanup(self):
+        simpleeval.SimpleEval()
 
 
 if __name__ == '__main__':  # pragma: no cover
