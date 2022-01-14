@@ -336,6 +336,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             if f in DISALLOW_FUNCTIONS:
                 raise FeatureNotAvailable('This function {} is a really bad idea.'.format(f))
 
+    def __del__(self):
+        self.nodes = None
 
     def eval(self, expr):
         """ evaluate an expresssion, using the operators, functions and
