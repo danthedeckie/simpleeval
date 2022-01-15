@@ -178,6 +178,8 @@ class AttributeDoesNotExist(InvalidExpression):
         self.attr = attr
         self.expression = expression
 
+        super(InvalidExpression, self).__init__(self.message)
+
 
 class FeatureNotAvailable(InvalidExpression):
     """What you're trying to do is not allowed."""
@@ -199,6 +201,8 @@ class IterableTooLong(InvalidExpression):
 
 
 class AssignmentAttempted(UserWarning):
+    """Assignment not allowed in SimpleEval"""
+
     pass
 
 
