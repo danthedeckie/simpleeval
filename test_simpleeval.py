@@ -46,6 +46,10 @@ class TestBasic(DRYTest):
         self.t("12*12", 144)
         self.t("2 ** 10", 1024)
         self.t("100 % 9", 1)
+        self.t("10 << 10", 10 << 10)
+        self.t("10 << 10", 10240)
+        self.t("1000 >> 2", 1000 >> 2)
+        self.t("1000 >> 2", 250)
 
     def test_bools_and_or(self):
         self.t('True and ""', "")
@@ -323,6 +327,31 @@ class TestTryingToBreakOut(DRYTest):
         # good, so set it back:
 
         simpleeval.MAX_POWER = old_max
+
+    def test_large_shifts(self):
+        """ Trying to << or >> large amounts can be too slow. """
+        with self.assertRaises(simpleeval.NumberTooHigh):
+            self.t("1<<25000", 0)
+
+        with self.assertRaises(simpleeval.NumberTooHigh):
+            self.t("1>>25000", 0)
+
+        # and test we can change it:
+
+        old_max = simpleeval.MAX_SHIFT
+        simpleeval.MAX_SHIFT = 100
+
+        with self.assertRaises(simpleeval.NumberTooHigh):
+            self.t("1<<250", 0)
+
+        with self.assertRaises(simpleeval.NumberTooHigh):
+            self.t("1000>>250", 0)
+
+        # good, so set it back.
+
+        simpleeval.MAX_SHIFT = old_max
+
+        self.t("1<<250", 1 << 250)
 
     def test_encode_bignums(self):
         # thanks gk

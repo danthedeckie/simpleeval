@@ -107,6 +107,7 @@ PYTHON3 = sys.version_info[0] == 3
 MAX_STRING_LENGTH = 100000
 MAX_COMPREHENSION_LENGTH = 10000
 MAX_POWER = 4000000  # highest exponent
+MAX_SHIFT = 10000  # highest << or >> (lshift / rshift)
 DISALLOW_PREFIXES = ['_', 'func_']
 DISALLOW_METHODS = ['format', 'format_map', 'mro']
 
@@ -238,11 +239,28 @@ def safe_add(a, b):  # pylint: disable=invalid-name
     return a + b
 
 
+def safe_rshift(a, b):  # pylint: disable=invalid-name
+    """ rshift, but with the maximum """
+    if abs(b) > MAX_SHIFT:
+        raise NumberTooHigh("Sorry! I don't want to evaluate {0} >> {1}"
+                            .format(a, b))
+    return a >> b
+
+
+
+def safe_lshift(a, b):  # pylint: disable=invalid-name
+    """ lshift, but with the maximum """
+    if abs(b) > MAX_SHIFT:
+        raise NumberTooHigh("Sorry! I don't want to evaluate {0} << {1}"
+                            .format(a, b))
+    return a << b
+
 ########################################
 # Defaults for the evaluator:
 
 DEFAULT_OPERATORS = {ast.Add: safe_add, ast.Sub: op.sub, ast.Mult: safe_mult,
                      ast.Div: op.truediv, ast.FloorDiv: op.floordiv,
+                     ast.RShift: safe_rshift, ast.LShift: safe_lshift,
                      ast.Pow: safe_power, ast.Mod: op.mod,
                      ast.Eq: op.eq, ast.NotEq: op.ne,
                      ast.Gt: op.gt, ast.Lt: op.lt,
