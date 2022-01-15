@@ -20,3 +20,11 @@ clean:
 
 coverage:
 	coverage run test_simpleeval.py
+
+lint:
+	black --check --diff simpleeval.py test_simpleeval.py
+	isort --check-only --diff simpleeval.py test_simpleeval.py
+
+format:
+	black simpleeval.py test_simpleeval.py
+	isort simpleeval.py	test_simpleeval.py
