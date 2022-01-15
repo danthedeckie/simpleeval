@@ -1,4 +1,4 @@
-# pylint: disable=too-many-public-methods, missing-docstring
+# pylint: disable=too-many-public-methods, missing-docstring, too-many-lines, use-of-eval, disallowed-variable, no-self-use
 
 """
     Unit tests for simpleeval.

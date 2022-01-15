@@ -152,7 +152,6 @@ class FunctionNotDefined(InvalidExpression):
         setattr(self, "func_name", func_name)  # bypass 2to3 confusion.
         self.expression = expression
 
-        # pylint: disable=bad-super-call
         super(InvalidExpression, self).__init__(self.message)
 
 
@@ -164,7 +163,6 @@ class NameNotDefined(InvalidExpression):
         self.message = "'{0}' is not defined for expression '{1}'".format(name, expression)
         self.expression = expression
 
-        # pylint: disable=bad-super-call
         super(InvalidExpression, self).__init__(self.message)
 
 

@@ -13,3 +13,16 @@ line_length = 99
 include_trailing_comma = true
 force_grid_wrap = 0
 multi_line_output = 3
+
+[tool.pylint.messages_control]
+disable = [
+    "consider-using-f-string",
+    "invalid-name",
+    "too-few-public-methods",
+    "too-many-public-methods",
+    "super-with-arguments",
+    "useless-object-inheritance",
+    "unnecessary-pass",
+    "bad-super-call",
+    ]
+
