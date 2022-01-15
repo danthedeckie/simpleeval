@@ -1,5 +1,5 @@
 """
-SimpleEval - (C) 2013-2019 Daniel Fairhead
+SimpleEval - (C) 2013-2022 Daniel Fairhead
 -------------------------------------
 
 An short, easy to use, safe and reasonably extensible expression evaluator.
@@ -52,8 +52,9 @@ Contributors:
 - Birne94 (Daniel Birnstiel) for fixing leaking generators.
 - patricksurry (Patrick Surry) or should return last value, even if falsy.
 - shughes-uk (Samantha Hughes) python w/o 'site' should not fail to import.
-- KOLANICH packaging / deployment / setup help
+- KOLANICH packaging / deployment / setup help & << + >> ops
 - graingert (Thomas Grainger) packaging / deployment / setup help
+- bozokopic (Bozo Kopic) Memory leak fix
 
 -------------------------------------
 Basic Usage:
