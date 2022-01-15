@@ -17,3 +17,6 @@ pypi: test dist/
 clean:
 	rm -rf build
 	rm -rf dist
+
+coverage:
+	coverage run test_simpleeval.py
