@@ -14,6 +14,7 @@ import simpleeval
 import os
 import warnings
 import gc
+import platform
 from simpleeval import (
     SimpleEval, EvalWithCompoundTypes, FeatureNotAvailable, FunctionNotDefined, NameNotDefined,
     InvalidExpression, AttributeDoesNotExist, simple_eval
@@ -1111,6 +1112,7 @@ class TestDisallowedFunctions(DRYTest):
 
 
 @unittest.skipIf(simpleeval.PYTHON3 != True, "Python2 fails - but it's not supported anyway.")
+@unittest.skipIf(platform.python_implementation() == 'PyPy', "GC set_debug not available in PyPy")
 class TestReferenceCleanup(DRYTest):
     """Test cleanup without cyclic references"""
 
