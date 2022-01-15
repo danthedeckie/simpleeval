@@ -120,6 +120,12 @@ the defaults:
 | ``>=`` | Greater or Equal to ``x >= 21``    |
 |        | ``1 >= 4`` -> ``False``            |
 +--------+------------------------------------+
+| ``>>`` | "Right shift" the number.          |
+|        | ``100 >> 2`` -> ``25``             |
++--------+------------------------------------+
+| ``<<`` | "Left shift" the number.           |
+|        | ``100 << 2`` -> ``400``            |
++--------+------------------------------------+
 | ``in`` | is something contained within      |
 |        | something else.                    |
 |        | ``"spam" in "my breakfast"``       |
