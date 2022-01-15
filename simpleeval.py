@@ -415,7 +415,6 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     def _eval_import(self, node):
         raise FeatureNotAvailable("Sorry, 'import' is not allowed.")
-        return self._eval(node.value)
 
     @staticmethod
     def _eval_num(node):
