@@ -1,13 +1,13 @@
 simpleeval (Simple Eval)
 ========================
 
-.. image:: https://travis-ci.org/danthedeckie/simpleeval.svg?branch=master
-   :target: https://travis-ci.org/danthedeckie/simpleeval
+.. image:: https://github.com/danthedeckie/simpleeval/actions/workflows/ci.yml/badge.svg?branch=gh-actions-build
+   :target: https://github.com/danthedeckie/simpleeval/actions/
    :alt: Build Status
 
-.. image:: https://coveralls.io/repos/github/danthedeckie/simpleeval/badge.svg?branch=master
-   :target: https://coveralls.io/r/danthedeckie/simpleeval?branch=master
-   :alt: Coverage Status
+.. image:: https://codecov.io/gh/danthedeckie/simpleeval/branch/master/graph/badge.svg?token=isRnN1yrca
+   :target: https://codecov.io/gh/danthedeckie/simpleeval
+   :alt: Code Coverage
 
 .. image:: https://badge.fury.io/py/simpleeval.svg
    :target: https://badge.fury.io/py/simpleeval
@@ -119,6 +119,12 @@ the defaults:
 +--------+------------------------------------+
 | ``>=`` | Greater or Equal to ``x >= 21``    |
 |        | ``1 >= 4`` -> ``False``            |
++--------+------------------------------------+
+| ``>>`` | "Right shift" the number.          |
+|        | ``100 >> 2`` -> ``25``             |
++--------+------------------------------------+
+| ``<<`` | "Left shift" the number.           |
+|        | ``100 << 2`` -> ``400``            |
 +--------+------------------------------------+
 | ``in`` | is something contained within      |
 |        | something else.                    |

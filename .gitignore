@@ -4,5 +4,9 @@ dist
 MANIFEST
 .idea
 venv
+.eggs/
+.coverage
+coverage.xml
+simpleeval.egg-info/
 
 testfile.txt
