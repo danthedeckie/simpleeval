@@ -1110,6 +1110,7 @@ class TestDisallowedFunctions(DRYTest):
         simpleeval.DEFAULT_FUNCTIONS = DF.copy()
 
 
+@unittest.skipIf(simpleeval.PYTHON3 != True, "Python2 fails - but it's not supported anyway.")
 class TestReferenceCleanup(DRYTest):
     """Test cleanup without cyclic references"""
 
