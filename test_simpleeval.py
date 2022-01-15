@@ -1016,10 +1016,10 @@ class TestUnusualComparisons(DRYTest):
             def __eq__(self, other):
                 return self.value == getattr(other, "value", other)
 
-            def __repr__(self):
+            def __repr__(self):  # pragma: no cover
                 return "<BinaryExpression:{}>".format(self.value)
 
-            def __bool__(self):
+            def __bool__(self):  # pragma: no cover
                 # This is the only important part, to match SqlAlchemy - the rest
                 # of the methods are just to make testing a bit easier...
                 raise TypeError("Boolean value of this clause is not defined")
