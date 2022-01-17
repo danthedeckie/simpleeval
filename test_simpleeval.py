@@ -189,6 +189,10 @@ class TestBasic(DRYTest):
         with self.assertRaises(FeatureNotAvailable):
             self.t("{22}", False)
 
+    def test_empty_string_not_allowed(self):
+        with self.assertRaises(InvalidExpression):
+            self.t("", False)
+
 
 class TestFunctions(DRYTest):
     """Functions for expressions to play with"""
