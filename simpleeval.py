@@ -451,19 +451,18 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return self.operators[type(node.op)](self._eval(node.left), self._eval(node.right))
 
     def _eval_boolop(self, node):
+        to_return = False
         if isinstance(node.op, ast.And):
-            vout = False
             for value in node.values:
-                vout = self._eval(value)
-                if not vout:
-                    return vout
-            return vout
+                to_return = self._eval(value)
+                if not to_return:
+                    break
         elif isinstance(node.op, ast.Or):
             for value in node.values:
-                vout = self._eval(value)
-                if vout:
-                    return vout
-            return vout
+                to_return = self._eval(value)
+                if to_return:
+                    break
+        return to_return
 
     def _eval_compare(self, node):
         right = self._eval(node.left)
