@@ -389,8 +389,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if len(parsed.body) > 0:
             # evaluate if not empty
             return self._eval(parsed.body[0])
-        else:
-            raise InvalidExpression("Sorry, cannot evaluate empty string")
+        raise InvalidExpression("Sorry, cannot evaluate empty string")
 
     def _eval(self, node):
         """The internal evaluator used on each node in the parsed tree."""
@@ -419,7 +418,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         )
         return self._eval(node.value)
 
-    def _eval_import(self, node):
+    @staticmethod
+    def _eval_import(node):
         raise FeatureNotAvailable("Sorry, 'import' is not allowed.")
 
     @staticmethod
@@ -487,7 +487,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 func = self.functions[node.func.id]
             except KeyError:
                 raise FunctionNotDefined(node.func.id, self.expr)
-            except AttributeError as e:
+            except AttributeError:
                 raise FeatureNotAvailable("Lambda Functions not implemented")
 
             if func in DISALLOW_FUNCTIONS:
