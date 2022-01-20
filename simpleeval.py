@@ -95,9 +95,12 @@ well:
 """
 
 import ast
+import collections.abc
+import inspect
 import operator as op
 import sys
 import warnings
+import weakref
 from random import random
 
 PYTHON3 = sys.version_info[0] == 3
@@ -125,6 +128,9 @@ if hasattr(__builtins__, "help") or (
 ):
     # PyInstaller environment doesn't include this module.
     DISALLOW_FUNCTIONS.add(help)
+
+# Use weak method references (eliminate cyclic references in SimpleEval)
+USE_WEAK_METHOD_REF = True
 
 
 if PYTHON3:
@@ -300,6 +306,34 @@ ATTR_INDEX_FALLBACK = True
 
 
 ########################################
+# Helper dict with weakref methods
+
+class _WeakMethodValueDictionary(collections.abc.MutableMapping):
+
+    def __init__(self, data={}):
+        self._data = {k: self._wrap_value(v) for k, v in data.items()}
+
+    def _wrap_value(self, value):
+        return (weakref.WeakMethod(value) if inspect.ismethod(value)
+                else lambda: value)
+
+    def __getitem__(self, key):
+        return self._data[key]()
+
+    def __setitem__(self, key, value):
+        self._data[key] = self._wrap_value(value)
+
+    def __delitem__(self, key):
+        del self._data[key]
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __len__(self):
+        return len(self._data)
+
+
+########################################
 # And the actual evaluator:
 
 
@@ -348,6 +382,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             ast.Index: self._eval_index,
             ast.Slice: self._eval_slice,
         }
+        if USE_WEAK_METHOD_REF:
+            self.nodes = _WeakMethodValueDictionary(self.nodes)
 
         # py3k stuff:
         if hasattr(ast, "NameConstant"):
@@ -373,9 +409,6 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         for f in self.functions.values():
             if f in DISALLOW_FUNCTIONS:
                 raise FeatureNotAvailable("This function {} is a really bad idea.".format(f))
-
-    def __del__(self):
-        self.nodes = None
 
     def eval(self, expr):
         """evaluate an expresssion, using the operators, functions and

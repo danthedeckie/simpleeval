@@ -11,7 +11,6 @@ import ast
 import gc
 import operator
 import os
-import platform
 import sys
 import unittest
 import warnings
@@ -1139,30 +1138,31 @@ class TestDisallowedFunctions(DRYTest):
 
 
 @unittest.skipIf(simpleeval.PYTHON3 != True, "Python2 fails - but it's not supported anyway.")
-@unittest.skipIf(platform.python_implementation() == "PyPy", "GC set_debug not available in PyPy")
 class TestReferenceCleanup(DRYTest):
     """Test cleanup without cyclic references"""
 
     def setUp(self):
+        self._initial_use_weak_method_ref = simpleeval.USE_WEAK_METHOD_REF
         self._initial_gc_isenabled = gc.isenabled()
-
         gc.disable()
-        gc.set_debug(gc.DEBUG_SAVEALL)
-
         gc.collect()
-        self._initial_garbage_len = len(gc.garbage)
 
     def tearDown(self):
-        gc.collect()
-        self._final_garbage_len = len(gc.garbage)
-
+        simpleeval.USE_WEAK_METHOD_REF = self._initial_use_weak_method_ref
         if self._initial_gc_isenabled:
             gc.enable()
 
-        self.assertEqual(self._initial_garbage_len, self._final_garbage_len)
+    def test_simpleeval_cleanup_with_weakref(self):
+        simpleeval.USE_WEAK_METHOD_REF = True
+        s = simpleeval.SimpleEval()
+        del s
+        self.assertEqual(gc.collect(), 0)
 
-    def test_simpleeval_cleanup(self):
-        simpleeval.SimpleEval()
+    def test_simpleeval_cleanup_without_weakref(self):
+        simpleeval.USE_WEAK_METHOD_REF = False
+        s = simpleeval.SimpleEval()
+        del s
+        self.assertNotEqual(gc.collect(), 0)
 
 
 if __name__ == "__main__":  # pragma: no cover
