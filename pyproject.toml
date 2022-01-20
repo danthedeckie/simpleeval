@@ -16,7 +16,9 @@ multi_line_output = 3
 
 [tool.pylint.messages_control]
 disable = [
+    "fixme",
     "consider-using-f-string",
+    "raise-missing-from",
     "invalid-name",
     "too-few-public-methods",
     "too-many-public-methods",

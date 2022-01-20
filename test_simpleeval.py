@@ -1,4 +1,4 @@
-# pylint: disable=too-many-public-methods, missing-docstring, too-many-lines, use-of-eval, disallowed-variable, no-self-use
+# pylint: disable=too-many-public-methods, missing-docstring, eval-used, too-many-lines, no-self-use, disallowed-name, unspecified-encoding
 
 """
     Unit tests for simpleeval.
@@ -109,6 +109,7 @@ class TestBasic(DRYTest):
         self.t("1 < 2 < 3 < 4", 1 < 2 < 3 < 4)
         self.t("1 < 2 > 3 < 4", 1 < 2 > 3 < 4)
 
+        # pylint: disable=comparison-with-itself
         self.t("1<2<1+1", 1 < 2 < 1 + 1)
         self.t("1 == 1 == 2", 1 == 1 == 2)
         self.t("1 == 1 < 2", 1 == 1 < 2)
@@ -262,29 +263,29 @@ class TestFunctions(DRYTest):
         self.t("foo()", 42)
 
     def test_function_args_required(self):
-        def foo(toret):
-            return toret
+        def foo(to_return):
+            return to_return
 
         self.s.functions["foo"] = foo
         with self.assertRaises(TypeError):
             self.t("foo()", 42)
 
         self.t("foo(12)", 12)
-        self.t("foo(toret=100)", 100)
+        self.t("foo(to_return=100)", 100)
 
     def test_function_args_defaults(self):
-        def foo(toret=9999):
-            return toret
+        def foo(to_return=9999):
+            return to_return
 
         self.s.functions["foo"] = foo
         self.t("foo()", 9999)
 
         self.t("foo(12)", 12)
-        self.t("foo(toret=100)", 100)
+        self.t("foo(to_return=100)", 100)
 
     def test_function_args_bothtypes(self):
-        def foo(mult, toret=100):
-            return toret * mult
+        def foo(mult, to_return=100):
+            return to_return * mult
 
         self.s.functions["foo"] = foo
         with self.assertRaises(TypeError):
@@ -293,10 +294,10 @@ class TestFunctions(DRYTest):
         self.t("foo(2)", 200)
 
         with self.assertRaises(TypeError):
-            self.t("foo(toret=100)", 100)
+            self.t("foo(to_return=100)", 100)
 
-        self.t("foo(4, toret=4)", 16)
-        self.t("foo(mult=2, toret=4)", 8)
+        self.t("foo(4, to_return=4)", 16)
+        self.t("foo(mult=2, to_return=4)", 8)
         self.t("foo(2, 10)", 20)
 
 
@@ -718,9 +719,11 @@ class TestNames(DRYTest):
 
         self.s.names["s"] = 21
 
+        # or if you attempt to assign an unknown name to another
         with self.assertRaises(NameNotDefined):
             with warnings.catch_warnings(record=True) as ws:
                 self.t("s += a", 21)
+        self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
         self.s.names = None
 
@@ -745,6 +748,7 @@ class TestNames(DRYTest):
         # however, you can't assign to those names:
         with warnings.catch_warnings(record=True) as ws:
             self.t("a = 200", 200)
+        self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
         self.assertEqual(self.s.names["a"], 42)
 
@@ -754,6 +758,7 @@ class TestNames(DRYTest):
 
         with warnings.catch_warnings(record=True) as ws:
             self.t("b[0] = 11", 11)
+        self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
         self.assertEqual(self.s.names["b"], [0])
 
@@ -776,6 +781,7 @@ class TestNames(DRYTest):
 
         with warnings.catch_warnings(record=True) as ws:
             self.t("c['b'] = 99", 99)
+        self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
         self.assertFalse("b" in self.s.names["c"])
 
@@ -785,6 +791,7 @@ class TestNames(DRYTest):
 
         with warnings.catch_warnings(record=True) as ws:
             self.t("c['c']['c'] = 21", 21)
+        self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
         self.assertEqual(self.s.names["c"]["c"]["c"], 11)
 
@@ -799,6 +806,7 @@ class TestNames(DRYTest):
 
         with warnings.catch_warnings(record=True) as ws:
             self.t("a.b.c = 11", 11)
+        self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
         self.assertEqual(self.s.names["a"]["b"]["c"], 42)
 
@@ -826,6 +834,7 @@ class TestNames(DRYTest):
 
     def test_object(self):
         """using an object for name lookup"""
+        # pylint: disable=attribute-defined-outside-init
 
         class TestObject(object):
             @staticmethod
@@ -1042,10 +1051,12 @@ class TestUnusualComparisons(DRYTest):
                 return BinaryExpression("LT")
 
         b = Blah()
-        self.s.names = {"b": b}
-        # This should not crash:
-        e = eval("b > 2", self.s.names)
+        # These should not crash:
+        self.assertEqual(b > 2, BinaryExpression("GT"))
+        self.assertEqual(b < 2, BinaryExpression("LT"))
 
+        # And should also work in simpleeval
+        self.s.names = {"b": b}
         self.t("b > 2", BinaryExpression("GT"))
         self.t("1 < 5 > b", BinaryExpression("LT"))
 
@@ -1066,7 +1077,7 @@ class TestGetItemUnhappy(DRYTest):
 
         self.assertEqual(m.anything, 42)
         with self.assertRaises(NotImplementedError):
-            m["nothing"]
+            m["nothing"]  # pylint: disable=pointless-statement
 
         self.s.names = {"m": m}
         self.t("m.anything", 42)
@@ -1118,6 +1129,7 @@ class TestDisallowedFunctions(DRYTest):
     def test_functions_are_disallowed_at_init(self):
         DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open]
         if simpleeval.PYTHON3:
+            # pylint: disable=exec-used
             exec("DISALLOWED.append(exec)")  # exec is not a function in Python2...
 
         for f in simpleeval.DISALLOW_FUNCTIONS:
@@ -1125,12 +1137,13 @@ class TestDisallowedFunctions(DRYTest):
 
         for x in DISALLOWED:
             with self.assertRaises(FeatureNotAvailable):
-                s = SimpleEval(functions={"foo": x})
+                SimpleEval(functions={"foo": x})
 
     def test_functions_are_disallowed_in_expressions(self):
         DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open]
 
         if simpleeval.PYTHON3:
+            # pylint: disable=exec-used
             exec("DISALLOWED.append(exec)")  # exec is not a function in Python2...
 
         for f in simpleeval.DISALLOW_FUNCTIONS:
@@ -1148,10 +1161,12 @@ class TestDisallowedFunctions(DRYTest):
         simpleeval.DEFAULT_FUNCTIONS = DF.copy()
 
 
-@unittest.skipIf(simpleeval.PYTHON3 != True, "Python2 fails - but it's not supported anyway.")
+@unittest.skipIf(simpleeval.PYTHON3 is not True, "Python2 fails - but it's not supported anyway.")
 @unittest.skipIf(platform.python_implementation() == "PyPy", "GC set_debug not available in PyPy")
 class TestReferenceCleanup(DRYTest):
     """Test cleanup without cyclic references"""
+
+    # pylint: disable=attribute-defined-outside-init
 
     def setUp(self):
         self._initial_gc_isenabled = gc.isenabled()

@@ -11,9 +11,8 @@ jobs:
           python-version: '3.10'
       - name: Lint
         run: |
-          pip install black==21.12b0 isort==5.10.1
-          black --check --diff simpleeval.py test_simpleeval.py
-          isort --check-only --diff simpleeval.py test_simpleeval.py
+          pip install -r requirements/dev.txt
+          make lint
   run:
     runs-on: ${{ matrix.os }}
     strategy:

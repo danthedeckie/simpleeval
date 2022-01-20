@@ -122,7 +122,7 @@ DISALLOW_METHODS = ["format", "format_map", "mro"]
 # builtins is a dict in python >3.6 but a module before
 DISALLOW_FUNCTIONS = {type, isinstance, eval, getattr, setattr, repr, compile, open}
 if hasattr(__builtins__, "help") or (
-    hasattr(__builtins__, "__contains__") and "help" in __builtins__
+    hasattr(__builtins__, "__contains__") and "help" in __builtins__  # type: ignore
 ):
     # PyInstaller environment doesn't include this module.
     DISALLOW_FUNCTIONS.add(help)
@@ -292,7 +292,8 @@ DEFAULT_FUNCTIONS = {
     "randint": random_int,
     "int": int,
     "float": float,
-    "str": str if PYTHON3 else unicode,
+    # pylint: disable=undefined-variable
+    "str": str if PYTHON3 else unicode,  # type: ignore
 }
 
 DEFAULT_NAMES = {"True": True, "False": False, "None": None}
@@ -389,8 +390,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if len(parsed.body) > 0:
             # evaluate if not empty
             return self._eval(parsed.body[0])
-        else:
-            raise InvalidExpression("Sorry, cannot evaluate empty string")
+        raise InvalidExpression("Sorry, cannot evaluate empty string")
 
     def _eval(self, node):
         """The internal evaluator used on each node in the parsed tree."""
@@ -419,7 +419,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         )
         return self._eval(node.value)
 
-    def _eval_import(self, node):
+    @staticmethod
+    def _eval_import(node):
         raise FeatureNotAvailable("Sorry, 'import' is not allowed.")
 
     @staticmethod
@@ -451,19 +452,18 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return self.operators[type(node.op)](self._eval(node.left), self._eval(node.right))
 
     def _eval_boolop(self, node):
+        to_return = False
         if isinstance(node.op, ast.And):
-            vout = False
             for value in node.values:
-                vout = self._eval(value)
-                if not vout:
-                    return vout
-            return vout
+                to_return = self._eval(value)
+                if not to_return:
+                    break
         elif isinstance(node.op, ast.Or):
             for value in node.values:
-                vout = self._eval(value)
-                if vout:
-                    return vout
-            return vout
+                to_return = self._eval(value)
+                if to_return:
+                    break
+        return to_return
 
     def _eval_compare(self, node):
         right = self._eval(node.left)
@@ -487,7 +487,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 func = self.functions[node.func.id]
             except KeyError:
                 raise FunctionNotDefined(node.func.id, self.expr)
-            except AttributeError as e:
+            except AttributeError:
                 raise FeatureNotAvailable("Lambda Functions not implemented")
 
             if func in DISALLOW_FUNCTIONS:
@@ -509,14 +509,13 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             # pass that to ast.parse)
             if hasattr(self.names, "__getitem__"):
                 return self.names[node.id]
-            elif callable(self.names):
+            if callable(self.names):
                 return self.names(node)
-            else:
-                raise InvalidExpression(
-                    'Trying to use name (variable) "{0}"'
-                    ' when no "names" defined for'
-                    " evaluator".format(node.id)
-                )
+            raise InvalidExpression(
+                'Trying to use name (variable) "{0}"'
+                ' when no "names" defined for'
+                " evaluator".format(node.id)
+            )
 
         except KeyError:
             if node.id in self.functions:
@@ -527,10 +526,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def _eval_subscript(self, node):
         container = self._eval(node.value)
         key = self._eval(node.slice)
-        try:
-            return container[key]
-        except KeyError:
-            raise
+        # Currently if there's a KeyError, that gets raised straight up.
+        # TODO: Should that be wrapped in an InvalidExpression?
+        return container[key]
 
     def _eval_attribute(self, node):
         for prefix in DISALLOW_PREFIXES:
@@ -599,6 +597,8 @@ class EvalWithCompoundTypes(SimpleEval):
     function editions. (list, tuple, dict, set).
     """
 
+    _max_count = 0
+
     def __init__(self, operators=None, functions=None, names=None):
         super(EvalWithCompoundTypes, self).__init__(operators, functions, names)
 
@@ -616,6 +616,7 @@ class EvalWithCompoundTypes(SimpleEval):
         )
 
     def eval(self, expr):
+        # reset _max_count for each eval run
         self._max_count = 0
         return super(EvalWithCompoundTypes, self).eval(expr)
 
