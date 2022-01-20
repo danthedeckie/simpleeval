@@ -11,9 +11,10 @@ jobs:
           python-version: '3.10'
       - name: Lint
         run: |
-          pip install black==21.12b0 isort==5.10.1
+          pip install black==21.12b0 isort==5.10.1 pylint==2.12.2
           black --check --diff simpleeval.py test_simpleeval.py
           isort --check-only --diff simpleeval.py test_simpleeval.py
+          pylint simpleeval.py test_simpleeval.py
   run:
     runs-on: ${{ matrix.os }}
     strategy:
