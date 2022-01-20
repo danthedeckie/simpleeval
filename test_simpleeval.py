@@ -354,7 +354,13 @@ class TestTryingToBreakOut(DRYTest):
             self.t("1<<25000", 0)
 
         with self.assertRaises(simpleeval.NumberTooHigh):
+            self.t("%s<<25" % (simpleeval.MAX_SHIFT_BASE + 1), 0)
+
+        with self.assertRaises(simpleeval.NumberTooHigh):
             self.t("1>>25000", 0)
+
+        with self.assertRaises(simpleeval.NumberTooHigh):
+            self.t("%s>>25" % (simpleeval.MAX_SHIFT_BASE + 1), 0)
 
         # and test we can change it:
 
