@@ -719,9 +719,11 @@ class TestNames(DRYTest):
 
         self.s.names["s"] = 21
 
+        # or if you attempt to assign an unknown name to another
         with self.assertRaises(NameNotDefined):
             with warnings.catch_warnings(record=True) as ws:
                 self.t("s += a", 21)
+        self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
         self.s.names = None
 
@@ -746,6 +748,7 @@ class TestNames(DRYTest):
         # however, you can't assign to those names:
         with warnings.catch_warnings(record=True) as ws:
             self.t("a = 200", 200)
+        self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
         self.assertEqual(self.s.names["a"], 42)
 
@@ -755,6 +758,7 @@ class TestNames(DRYTest):
 
         with warnings.catch_warnings(record=True) as ws:
             self.t("b[0] = 11", 11)
+        self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
         self.assertEqual(self.s.names["b"], [0])
 
@@ -777,6 +781,7 @@ class TestNames(DRYTest):
 
         with warnings.catch_warnings(record=True) as ws:
             self.t("c['b'] = 99", 99)
+        self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
         self.assertFalse("b" in self.s.names["c"])
 
@@ -786,6 +791,7 @@ class TestNames(DRYTest):
 
         with warnings.catch_warnings(record=True) as ws:
             self.t("c['c']['c'] = 21", 21)
+        self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
         self.assertEqual(self.s.names["c"]["c"]["c"], 11)
 
@@ -800,6 +806,7 @@ class TestNames(DRYTest):
 
         with warnings.catch_warnings(record=True) as ws:
             self.t("a.b.c = 11", 11)
+        self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
         self.assertEqual(self.s.names["a"]["b"]["c"], 42)
 
