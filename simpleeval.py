@@ -292,6 +292,7 @@ DEFAULT_FUNCTIONS = {
     "randint": random_int,
     "int": int,
     "float": float,
+    # pylint: disable=undefined-variable
     "str": str if PYTHON3 else unicode,  # type: ignore
 }
 
@@ -508,14 +509,13 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             # pass that to ast.parse)
             if hasattr(self.names, "__getitem__"):
                 return self.names[node.id]
-            elif callable(self.names):
+            if callable(self.names):
                 return self.names(node)
-            else:
-                raise InvalidExpression(
-                    'Trying to use name (variable) "{0}"'
-                    ' when no "names" defined for'
-                    " evaluator".format(node.id)
-                )
+            raise InvalidExpression(
+                'Trying to use name (variable) "{0}"'
+                ' when no "names" defined for'
+                " evaluator".format(node.id)
+            )
 
         except KeyError:
             if node.id in self.functions:
@@ -526,10 +526,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def _eval_subscript(self, node):
         container = self._eval(node.value)
         key = self._eval(node.slice)
-        try:
-            return container[key]
-        except KeyError:
-            raise
+        # Currently if there's a KeyError, that gets raised straight up.
+        # TODO: Should that be wrapped in an InvalidExpression?
+        return container[key]
 
     def _eval_attribute(self, node):
         for prefix in DISALLOW_PREFIXES:
@@ -598,6 +597,8 @@ class EvalWithCompoundTypes(SimpleEval):
     function editions. (list, tuple, dict, set).
     """
 
+    _max_count = 0
+
     def __init__(self, operators=None, functions=None, names=None):
         super(EvalWithCompoundTypes, self).__init__(operators, functions, names)
 
@@ -615,6 +616,7 @@ class EvalWithCompoundTypes(SimpleEval):
         )
 
     def eval(self, expr):
+        # reset _max_count for each eval run
         self._max_count = 0
         return super(EvalWithCompoundTypes, self).eval(expr)
 
