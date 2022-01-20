@@ -382,11 +382,14 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         names previously set up."""
 
         # set a copy of the expression aside, so we can give nice errors...
-
         self.expr = expr
 
-        # and evaluate:
-        return self._eval(ast.parse(expr.strip()).body[0])
+        parsed = ast.parse(expr.strip())
+        if len(parsed.body) > 0:
+            # evaluate if not empty
+            return self._eval(parsed.body[0])
+        else:
+            raise InvalidExpression("Sorry, cannot evaluate empty string")
 
     def _eval(self, node):
         """The internal evaluator used on each node in the parsed tree."""
