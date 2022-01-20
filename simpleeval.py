@@ -122,7 +122,7 @@ DISALLOW_METHODS = ["format", "format_map", "mro"]
 # builtins is a dict in python >3.6 but a module before
 DISALLOW_FUNCTIONS = {type, isinstance, eval, getattr, setattr, repr, compile, open}
 if hasattr(__builtins__, "help") or (
-    hasattr(__builtins__, "__contains__") and "help" in __builtins__
+    hasattr(__builtins__, "__contains__") and "help" in __builtins__  # type: ignore
 ):
     # PyInstaller environment doesn't include this module.
     DISALLOW_FUNCTIONS.add(help)
@@ -292,7 +292,7 @@ DEFAULT_FUNCTIONS = {
     "randint": random_int,
     "int": int,
     "float": float,
-    "str": str if PYTHON3 else unicode,
+    "str": str if PYTHON3 else unicode,  # type: ignore
 }
 
 DEFAULT_NAMES = {"True": True, "False": False, "None": None}
