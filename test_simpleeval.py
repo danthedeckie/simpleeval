@@ -263,29 +263,29 @@ class TestFunctions(DRYTest):
         self.t("foo()", 42)
 
     def test_function_args_required(self):
-        def foo(toret):
-            return toret
+        def foo(to_return):
+            return to_return
 
         self.s.functions["foo"] = foo
         with self.assertRaises(TypeError):
             self.t("foo()", 42)
 
         self.t("foo(12)", 12)
-        self.t("foo(toret=100)", 100)
+        self.t("foo(to_return=100)", 100)
 
     def test_function_args_defaults(self):
-        def foo(toret=9999):
-            return toret
+        def foo(to_return=9999):
+            return to_return
 
         self.s.functions["foo"] = foo
         self.t("foo()", 9999)
 
         self.t("foo(12)", 12)
-        self.t("foo(toret=100)", 100)
+        self.t("foo(to_return=100)", 100)
 
     def test_function_args_bothtypes(self):
-        def foo(mult, toret=100):
-            return toret * mult
+        def foo(mult, to_return=100):
+            return to_return * mult
 
         self.s.functions["foo"] = foo
         with self.assertRaises(TypeError):
@@ -294,10 +294,10 @@ class TestFunctions(DRYTest):
         self.t("foo(2)", 200)
 
         with self.assertRaises(TypeError):
-            self.t("foo(toret=100)", 100)
+            self.t("foo(to_return=100)", 100)
 
-        self.t("foo(4, toret=4)", 16)
-        self.t("foo(mult=2, toret=4)", 8)
+        self.t("foo(4, to_return=4)", 16)
+        self.t("foo(mult=2, to_return=4)", 8)
         self.t("foo(2, 10)", 20)
 
 
