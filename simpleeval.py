@@ -109,6 +109,7 @@ MAX_STRING_LENGTH = 100000
 MAX_COMPREHENSION_LENGTH = 10000
 MAX_POWER = 4000000  # highest exponent
 MAX_SHIFT = 10000  # highest << or >> (lshift / rshift)
+MAX_SHIFT_BASE = int(sys.float_info.max)  # highest on left side of << or >>
 DISALLOW_PREFIXES = ["_", "func_"]
 DISALLOW_METHODS = ["format", "format_map", "mro"]
 
@@ -245,15 +246,15 @@ def safe_add(a, b):  # pylint: disable=invalid-name
 
 
 def safe_rshift(a, b):  # pylint: disable=invalid-name
-    """rshift, but with the maximum"""
-    if abs(b) > MAX_SHIFT:
+    """rshift, but with input limits"""
+    if abs(b) > MAX_SHIFT or abs(a) > MAX_SHIFT_BASE:
         raise NumberTooHigh("Sorry! I don't want to evaluate {0} >> {1}".format(a, b))
     return a >> b
 
 
 def safe_lshift(a, b):  # pylint: disable=invalid-name
-    """lshift, but with the maximum"""
-    if abs(b) > MAX_SHIFT:
+    """lshift, but with input limits"""
+    if abs(b) > MAX_SHIFT or abs(a) > MAX_SHIFT_BASE:
         raise NumberTooHigh("Sorry! I don't want to evaluate {0} << {1}".format(a, b))
     return a << b
 
