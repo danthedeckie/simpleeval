@@ -195,6 +195,45 @@ class TestBasic(DRYTest):
             self.t("", False)
 
 
+class TestEvaluator(DRYTest):
+    """Tests for how the SimpleEval class does things"""
+
+    def test_only_evalutate_first_statement(self):
+        # it only evaluates the first statement:
+        with warnings.catch_warnings(record=True) as ws:
+            self.t("11; x = 21; x + x", 11)
+        self.assertIsInstance(ws[0].message, simpleeval.MultipleExpressions)
+
+    def test_parse_and_use_previously_parsed(self):
+        expr = "x + x"
+        nodes = self.s.parse(expr)
+        self.s.names = {"x": 21}
+        self.assertEqual(self.s.eval(expr, nodes), 42)
+
+        # This can all be done with unittest.mock.patch in python3.3+ - when we drop
+        # python2 - we can drop this nonsense.
+        class MockedCalled(Exception):
+            pass
+
+        def go_boom(*args, **kwargs):
+            raise MockedCalled("you should never see this.")
+
+        self.s.parse = go_boom
+
+        # Prove the mock is installed in self.s
+        with self.assertRaises(MockedCalled):
+            self.s.eval("10 + 10")
+
+        # Prove it's not installed in the actual SimpleEval
+        SimpleEval().eval("10 + 10")
+
+        # Now running .eval with a previously parsed
+        self.assertEqual(self.s.eval(expr, previously_parsed=nodes), 42)
+
+        self.s.names = {"x": 100}
+        self.assertEqual(self.s.eval(expr, nodes), 200)
+
+
 class TestFunctions(DRYTest):
     """Functions for expressions to play with"""
 
@@ -430,11 +469,6 @@ class TestTryingToBreakOut(DRYTest):
 
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("('spam spam spam' * 5000).split() * 5000", None)
-
-    def test_python_stuff(self):
-        """other various pythony things."""
-        # it only evaluates the first statement:
-        self.t("11; x = 21; x + x", 11)
 
     def test_function_globals_breakout(self):
         """by accessing function.__globals__ or func_..."""
