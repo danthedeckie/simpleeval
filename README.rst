@@ -403,6 +403,6 @@ Or to set the tests running on every file change:
 BEWARE
 ------
 
-I've done the best I can with this library - but there's no warrenty, no guarentee, nada.  A lot of
+I've done the best I can with this library - but there's no warranty, no guarantee, nada.  A lot of
 very clever people think the whole idea of trying to sandbox CPython is impossible.  Read the code
 yourself, and use it at your own risk.
