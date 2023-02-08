@@ -52,7 +52,7 @@ Contributors:
 - Birne94 (Daniel Birnstiel) for fixing leaking generators.
 - patricksurry (Patrick Surry) or should return last value, even if falsy.
 - shughes-uk (Samantha Hughes) python w/o 'site' should not fail to import.
-- KOLANICH packaging / deployment / setup help & << + >> ops
+- KOLANICH packaging / deployment / setup help & << + >> & other bit ops
 - graingert (Thomas Grainger) packaging / deployment / setup help
 - bozokopic (Bozo Kopic) Memory leak fix
 - daxamin (Dax Amin) Better error for attempting to eval empty string
