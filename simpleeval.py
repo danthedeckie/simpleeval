@@ -205,6 +205,12 @@ class AssignmentAttempted(UserWarning):
     pass
 
 
+class MultipleExpressions(UserWarning):
+    """Only the first expression parsed will be used"""
+
+    pass
+
+
 ########################################
 # Default simple functions to include:
 
@@ -220,7 +226,7 @@ def safe_power(a, b):  # pylint: disable=invalid-name
 
     if abs(a) > MAX_POWER or abs(b) > MAX_POWER:
         raise NumberTooHigh("Sorry! I don't want to evaluate {0} ** {1}".format(a, b))
-    return a ** b
+    return a**b
 
 
 def safe_mult(a, b):  # pylint: disable=invalid-name
@@ -379,18 +385,29 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def __del__(self):
         self.nodes = None
 
-    def eval(self, expr):
+    @staticmethod
+    def parse(expr):
+        """parse an expression into a node tree"""
+
+        parsed = ast.parse(expr.strip())
+
+        if not parsed.body:
+            raise InvalidExpression("Sorry, cannot evaluate empty string")
+        if len(parsed.body) > 1:
+            warnings.warn(
+                "'{}' contains multiple expressions. Only the first will be used.".format(expr),
+                MultipleExpressions,
+            )
+        return parsed.body[0]
+
+    def eval(self, expr, previously_parsed=None):
         """evaluate an expresssion, using the operators, functions and
         names previously set up."""
 
         # set a copy of the expression aside, so we can give nice errors...
         self.expr = expr
 
-        parsed = ast.parse(expr.strip())
-        if len(parsed.body) > 0:
-            # evaluate if not empty
-            return self._eval(parsed.body[0])
-        raise InvalidExpression("Sorry, cannot evaluate empty string")
+        return self._eval(previously_parsed or self.parse(expr))
 
     def _eval(self, node):
         """The internal evaluator used on each node in the parsed tree."""
@@ -615,10 +632,10 @@ class EvalWithCompoundTypes(SimpleEval):
             }
         )
 
-    def eval(self, expr):
+    def eval(self, expr, previously_parsed=None):
         # reset _max_count for each eval run
         self._max_count = 0
-        return super(EvalWithCompoundTypes, self).eval(expr)
+        return super(EvalWithCompoundTypes, self).eval(expr, previously_parsed)
 
     def _eval_dict(self, node):
         return {self._eval(k): self._eval(v) for (k, v) in zip(node.keys, node.values)}
