@@ -13,7 +13,7 @@ simpleeval (Simple Eval)
    :target: https://badge.fury.io/py/simpleeval
    :alt: PyPI Version
 
-A quick single file library for easily adding evaluatable expressions into
+A single file library for easily adding evaluatable expressions into
 python projects.  Say you want to allow a user to set an alarm volume, which
 could depend on the time of day, alarm level, how many previous alarms had gone
 off, and if there is music playing at the time.
@@ -21,8 +21,9 @@ off, and if there is music playing at the time.
 Or if you want to allow simple formulae in a web application, but don't want to
 give full eval() access, or don't want to run in javascript on the client side.
 
-It's deliberately very simple, pull it in from PyPI (pip or easy_install), or
-even just a single file you can dump into a project.
+It's deliberately trying to stay simple to use and not have millions of features,
+pull it in from PyPI (pip or easy_install), or even just a single file you can dump
+into a project.
 
 Internally, it's using the amazing python ``ast`` module to parse the
 expression, which allows very fine control of what is and isn't allowed.  It
@@ -37,7 +38,7 @@ Operators_ section below)
 
 You should be aware of this when deploying in a public setting.
 
-The defaults are pretty locked down and basic, and it's very easy to add
+The defaults are pretty locked down and basic, and it's easy to add
 whatever extra specific functionality you need (your own functions,
 variable/name lookup, etc).
 
