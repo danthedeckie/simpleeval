@@ -429,6 +429,15 @@ Or to set the tests running on every file change:
 
 (requires ``entr``) 
 
+I'm trying to keep the codebase relatively clean with Black, isort, pylint & mypy.
+See::
+
+    $ make format
+
+and::
+
+    $ make lint
+
 BEWARE
 ------
 
