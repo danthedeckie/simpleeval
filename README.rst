@@ -132,23 +132,36 @@ the defaults:
 |        | ``"spam" in "my breakfast"``       |
 |        | -> ``False``                       |
 +--------+------------------------------------+
+| ``^``  | "bitwise exclusive OR" (xor)       |
+|        | ``62 ^ 20`` -> ``42``              |
++--------+------------------------------------+
+| ``|``  | "bitwise OR"                       |
+|        | ``8 | 34`` -> ``42``               |
++--------+------------------------------------+
+| ``&``  | "bitwise AND"                      |
+|        | ``100 & 63`` -> ``36``             |
++--------+------------------------------------+
+| ``~``  | "bitwise invert"                   |
+|        | ``~ -43`` -> ``42``                |
++--------+------------------------------------+
 
 
-The ``^`` operator is notably missing - not because it's hard, but because it
-is often mistaken for a exponent operator, not the bitwise operation that it is
-in python.  It's trivial to add back in again if you wish (using the class
-based evaluator explained below):
+The ``^`` operator is often mistaken for a exponent operator, not the bitwise 
+operation that it is in python, so if you want ``3 ^ 2`` to equal ``9``, you can
+replace the operator like this:
 
 .. code-block:: python
 
     >>> import ast
-    >>> import operator
+    >>> from simpleeval import safe_power
 
     >>> s = SimpleEval()
-    >>> s.operators[ast.BitXor] = operator.xor
+    >>> s.operators[ast.BitXor] = safe_power
 
-    >>> s.eval("2 ^ 10")
-    8
+    >>> s.eval("3 ^ 2")
+    9
+
+for example.
 
 Limited Power
 ~~~~~~~~~~~~~
