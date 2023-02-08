@@ -287,6 +287,21 @@ cases):
 
     # and so on...
 
+One useful feature of using the ``SimpleEval`` object is that you can parse an expression
+once, and then evaluate it mulitple times using different ``names``:
+
+.. code-block:: python
+    # Set up & Cache the parse tree:
+    expression = "foo + bar"
+    parsed = s.parse(expression)
+
+    # evaluate the expression multiple times:
+    for names in [{"foo": 1, "bar": 10}, {"foo": 100, "bar": 42}]:
+        s.names = names
+        print(s.eval(expression, previously_parsed=parsed))
+
+for instance.  This may help with performance.
+
 You can assign / edit the various options of the ``SimpleEval`` object if you
 want to.  Either assign them during creation (like the ``simple_eval``
 function)
