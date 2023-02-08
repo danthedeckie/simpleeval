@@ -226,7 +226,7 @@ def safe_power(a, b):  # pylint: disable=invalid-name
 
     if abs(a) > MAX_POWER or abs(b) > MAX_POWER:
         raise NumberTooHigh("Sorry! I don't want to evaluate {0} ** {1}".format(a, b))
-    return a ** b
+    return a**b
 
 
 def safe_mult(a, b):  # pylint: disable=invalid-name

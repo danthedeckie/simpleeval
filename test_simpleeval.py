@@ -372,7 +372,7 @@ class TestTryingToBreakOut(DRYTest):
         """exponent operations can take a long time."""
         old_max = simpleeval.MAX_POWER
 
-        self.t("9**9**5", 9 ** 9 ** 5)
+        self.t("9**9**5", 9**9**5)
 
         with self.assertRaises(simpleeval.NumberTooHigh):
             self.t("9**9**8", 0)
