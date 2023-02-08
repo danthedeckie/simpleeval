@@ -391,17 +391,14 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
         parsed = ast.parse(expr.strip())
 
-        body_len = len(parsed.body)
-        if body_len > 0:
-            if body_len > 1:
-                warnings.warn(
-                    "'{}' contains multiple expressions. Only the first will be used.".format(
-                        expr
-                    ),
-                    MultipleExpressions,
-                )
-            return parsed.body[0]
-        raise InvalidExpression("Sorry, cannot evaluate empty string")
+        if not parsed.body:
+            raise InvalidExpression("Sorry, cannot evaluate empty string")
+        if len(parsed.body) > 1:
+            warnings.warn(
+                "'{}' contains multiple expressions. Only the first will be used.".format(expr),
+                MultipleExpressions,
+            )
+        return parsed.body[0]
 
     def eval(self, expr, previously_parsed=None):
         """evaluate an expresssion, using the operators, functions and
