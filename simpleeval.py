@@ -554,24 +554,30 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         try:
             # This happens at least for slicing
             # This is a safe thing to do because it is impossible
-            # that there is a true exression assigning to none
+            # that there is a true expression assigning to none
             # (the compiler rejects it, so you can't even
             # pass that to ast.parse)
-            if hasattr(self.names, "__getitem__"):
-                return self.names[node.id]
-            if callable(self.names):
+            return self.names[node.id]
+
+        except (TypeError, KeyError):
+            pass
+
+        if callable(self.names):
+            try:
                 return self.names(node)
+            except NameNotDefined:
+                pass
+        elif not hasattr(self.names, "__getitem__"):
             raise InvalidExpression(
                 'Trying to use name (variable) "{0}"'
                 ' when no "names" defined for'
                 " evaluator".format(node.id)
             )
 
-        except KeyError:
-            if node.id in self.functions:
-                return self.functions[node.id]
+        if node.id in self.functions:
+            return self.functions[node.id]
 
-            raise NameNotDefined(node.id, self.expr)
+        raise NameNotDefined(node.id, self.expr)
 
     def _eval_subscript(self, node):
         container = self._eval(node.value)

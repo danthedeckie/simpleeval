@@ -987,6 +987,36 @@ class TestNames(DRYTest):
         self.t("a", 1)
         self.t("a + b", 3)
 
+    def test_name_handler_name_not_found(self):
+        def name_handler(node):
+            if node.id[0] == "a":
+                return 21
+            raise NameNotDefined(node.id[0], "not found")
+
+        self.s.names = name_handler
+        self.s.functions = {"b": lambda: 100}
+        self.t("a + a", 42)
+
+        self.t("b()", 100)
+
+        with self.assertRaises(NameNotDefined):
+            self.t("c", None)
+
+    def test_name_handler_raises_error(self):
+        # What happens if our name-handler raises a different kind of error?
+        # we want it to ripple up all the way...
+
+        def name_handler(_node):
+            return {}["test"]
+
+        self.s.names = name_handler
+
+        # This should never be accessed:
+        self.s.functions = {"c": 42}
+
+        with self.assertRaises(KeyError):
+            self.t("c", None)
+
 
 class TestWhitespace(DRYTest):
     """test that incorrect whitespace (preceding/trailing) doesn't matter."""
