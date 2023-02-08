@@ -55,6 +55,7 @@ Contributors:
 - KOLANICH packaging / deployment / setup help & << + >> ops
 - graingert (Thomas Grainger) packaging / deployment / setup help
 - bozokopic (Bozo Kopic) Memory leak fix
+- daxamin (Dax Amin) Better error for attempting to eval empty string
 
 -------------------------------------
 Basic Usage:
