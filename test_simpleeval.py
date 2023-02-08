@@ -82,6 +82,13 @@ class TestBasic(DRYTest):
             -10,
         )
 
+    def test_bit_ops(self):
+        self.t("62 ^ 20", 42)
+        self.t("62 ^ 100", 90)
+        self.t("8 | 34", 42)
+        self.t("100 & 63", 36)
+        self.t("~ -43", 42)
+
     def test_not(self):
         self.t("not False", True)
         self.t("not True", False)
