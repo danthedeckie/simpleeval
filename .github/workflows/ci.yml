@@ -8,7 +8,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@master
         with:
-          python-version: '3.10'
+          python-version: '3.11'
       - name: Lint
         run: |
           pip install -r requirements/dev.txt
@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python: ['2.7', '3.7', '3.8', '3.9', '3.10', 'pypy-3.8']
+        python: ['2.7', '3.7', '3.8', '3.9', '3.10', '3.11', '3.12-dev', 'pypy-3.8']
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python }}
