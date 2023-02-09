@@ -24,6 +24,7 @@ from simpleeval import (
     FunctionNotDefined,
     InvalidExpression,
     NameNotDefined,
+    OperatorNotDefined,
     SimpleEval,
     simple_eval,
 )
@@ -1229,6 +1230,36 @@ class TestReferenceCleanup(DRYTest):
 
     def test_simpleeval_cleanup(self):
         simpleeval.SimpleEval()
+
+
+class TestNoEntries(DRYTest):
+    def test_no_functions(self):
+        self.s.eval("int(42)")
+        with self.assertRaises(FunctionNotDefined):
+            s = SimpleEval(functions={})
+            s.eval("int(42)")
+
+    def test_no_names(self):
+        # does not work on current Py3, True et al. are keywords now
+        self.s.eval("True")
+        # with self.assertRaises(NameNotDefined):
+        s = SimpleEval(names={})
+        if sys.version_info < (3,):
+            with self.assertRaises(NameNotDefined):
+                s.eval("True")
+        else:
+            s.eval("True")
+
+    def test_no_operators(self):
+        self.s.eval("1+2")
+        self.s.eval("~2")
+        s = SimpleEval(operators={})
+
+        with self.assertRaises(OperatorNotDefined):
+            s.eval("1+2")
+
+        with self.assertRaises(OperatorNotDefined):
+            s.eval("~ 2")
 
 
 if __name__ == "__main__":  # pragma: no cover

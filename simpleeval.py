@@ -1,5 +1,5 @@
 """
-SimpleEval - (C) 2013-2022 Daniel Fairhead
+SimpleEval - (C) 2013-2023 Daniel Fairhead
 -------------------------------------
 
 An short, easy to use, safe and reasonably extensible expression evaluator.
@@ -56,6 +56,7 @@ Contributors:
 - graingert (Thomas Grainger) packaging / deployment / setup help
 - bozokopic (Bozo Kopic) Memory leak fix
 - daxamin (Dax Amin) Better error for attempting to eval empty string
+- smurfix (Matthias Urlichs) Allow clearing functions / operators / etc completely
 
 -------------------------------------
 Basic Usage:
@@ -175,6 +176,17 @@ class AttributeDoesNotExist(InvalidExpression):
         self.message = "Attribute '{0}' does not exist in expression '{1}'".format(
             attr, expression
         )
+        self.attr = attr
+        self.expression = expression
+
+        super(InvalidExpression, self).__init__(self.message)
+
+
+class OperatorNotDefined(InvalidExpression):
+    """operator does not exist"""
+
+    def __init__(self, attr, expression):
+        self.message = "Operator '{0}' does not exist in expression '{1}'".format(attr, expression)
         self.attr = attr
         self.expression = expression
 
@@ -330,11 +342,11 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         Create the evaluator instance.  Set up valid operators (+,-, etc)
         functions (add, random, get_val, whatever) and names."""
 
-        if not operators:
+        if operators is None:
             operators = DEFAULT_OPERATORS.copy()
-        if not functions:
+        if functions is None:
             functions = DEFAULT_FUNCTIONS.copy()
-        if not names:
+        if names is None:
             names = DEFAULT_NAMES.copy()
 
         self.operators = operators
@@ -468,10 +480,18 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return node.value
 
     def _eval_unaryop(self, node):
-        return self.operators[type(node.op)](self._eval(node.operand))
+        try:
+            operator = self.operators[type(node.op)]
+        except KeyError:
+            raise OperatorNotDefined(node.op, self.expr)
+        return operator(self._eval(node.operand))
 
     def _eval_binop(self, node):
-        return self.operators[type(node.op)](self._eval(node.left), self._eval(node.right))
+        try:
+            operator = self.operators[type(node.op)]
+        except KeyError:
+            raise OperatorNotDefined(node.op, self.expr)
+        return operator(self._eval(node.left), self._eval(node.right))
 
     def _eval_boolop(self, node):
         to_return = False
