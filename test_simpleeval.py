@@ -1262,7 +1262,5 @@ class TestNoEntries(DRYTest):
             s.eval("~ 2")
 
 
-
-
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
