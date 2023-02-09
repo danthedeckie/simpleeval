@@ -1,5 +1,5 @@
 """
-SimpleEval - (C) 2013-2022 Daniel Fairhead
+SimpleEval - (C) 2013-2023 Daniel Fairhead
 -------------------------------------
 
 An short, easy to use, safe and reasonably extensible expression evaluator.
@@ -56,6 +56,7 @@ Contributors:
 - graingert (Thomas Grainger) packaging / deployment / setup help
 - bozokopic (Bozo Kopic) Memory leak fix
 - daxamin (Dax Amin) Better error for attempting to eval empty string
+- smurfix (Matthias Urlichs) Allow clearing functions / operators / etc completely
 
 -------------------------------------
 Basic Usage:
