@@ -1252,9 +1252,16 @@ class TestNoEntries(DRYTest):
 
     def test_no_operators(self):
         self.s.eval("1+2")
+        self.s.eval("~2")
+        s = SimpleEval(operators={})
+
         with self.assertRaises(OperatorNotDefined):
-            s = SimpleEval(operators={})
             s.eval("1+2")
+
+        with self.assertRaises(OperatorNotDefined):
+            s.eval("~ 2")
+
+
 
 
 if __name__ == "__main__":  # pragma: no cover
