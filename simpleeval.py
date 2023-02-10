@@ -49,7 +49,7 @@ Contributors:
 - mommothazaz123 (Andrew Zhu) f"string" support, Python 3.8 support
 - lubieowoce (Uryga) various potential vulnerabilities
 - JCavallo (Jean Cavallo) names dict shouldn't be modified
-- Birne94 (Daniel Birnstiel) for fixing leaking generators.
+- Birne94 (Daniel Birnstiel) for fixing leaking generators, star expressions
 - patricksurry (Patrick Surry) or should return last value, even if falsy.
 - shughes-uk (Samantha Hughes) python w/o 'site' should not fail to import.
 - KOLANICH packaging / deployment / setup help & << + >> & other bit ops
