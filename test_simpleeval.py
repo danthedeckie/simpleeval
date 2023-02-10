@@ -617,6 +617,19 @@ class TestCompoundTypes(DRYTest):
         self.s.names["x"] = {"a": 1, "b": 2}
         self.t('{"a": 0, **x, "c": 3}', {"a": 1, "b": 2, "c": 3})
 
+        # and multiple star expressions should be fine too...
+        self.s.names["y"] = {"x": 1, "y": 2}
+        self.t('{"a": 0, **x, **y, "c": 3}', {"a": 1, "b": 2, "c": 3, "x": 1, "y": 2})
+
+    @unittest.skipIf(not simpleeval.PYTHON35, "feature not supported")
+    def test_dict_invalid_star_expression(self):
+        self.s.names["x"] = {"a": 1, "b": 2}
+        self.s.names["y"] = {"x": 1, "y": 2}
+        self.s.names["z"] = 42
+
+        with self.assertRaises(TypeError):
+            self.t('{"a": 0, **x, **y, **z, "c": 3}', {"a": 1, "b": 2, "c": 3})
+
     def test_tuple(self):
         self.t("()", ())
         self.t("(1,)", (1,))
@@ -651,6 +664,14 @@ class TestCompoundTypes(DRYTest):
     def test_list_star_expression(self):
         self.s.names["x"] = [1, 2, 3]
         self.t('["a", *x, "b"]', ["a", 1, 2, 3, "b"])
+
+    @unittest.skipIf(not simpleeval.PYTHON3, "feature not supported")
+    def test_list_invalid_star_expression(self):
+        self.s.names["x"] = [1, 2, 3]
+        self.s.names["y"] = 42
+
+        with self.assertRaises(TypeError):
+            self.t('["a", *x, *y, "b"]', ["a", 1, 2, 3, "b"])
 
     def test_set(self):
         self.t("{1}", {1})
