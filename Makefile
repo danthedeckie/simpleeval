@@ -6,8 +6,8 @@ autotest:
 
 .PHONY: test
 
-dist/: setup.py simpleeval.py README.rst
-	python setup.py build sdist
+dist/: setup.cfg simpleeval.py README.rst
+	python -m build
 	twine check dist/*
 
 pypi: test dist/
@@ -17,4 +17,16 @@ pypi: test dist/
 clean:
 	rm -rf build
 	rm -rf dist
-	rm file.txt
+
+coverage:
+	coverage run test_simpleeval.py
+
+lint:
+	black --check --diff simpleeval.py test_simpleeval.py
+	isort --check-only --diff simpleeval.py test_simpleeval.py
+	pylint simpleeval.py test_simpleeval.py
+	mypy simpleeval.py test_simpleeval.py
+
+format:
+	black simpleeval.py test_simpleeval.py
+	isort simpleeval.py	test_simpleeval.py

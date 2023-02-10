@@ -1,19 +1,19 @@
 simpleeval (Simple Eval)
 ========================
 
-.. image:: https://travis-ci.org/danthedeckie/simpleeval.svg?branch=master
-   :target: https://travis-ci.org/danthedeckie/simpleeval
+.. image:: https://github.com/danthedeckie/simpleeval/actions/workflows/ci.yml/badge.svg?branch=gh-actions-build
+   :target: https://github.com/danthedeckie/simpleeval/actions/
    :alt: Build Status
 
-.. image:: https://coveralls.io/repos/github/danthedeckie/simpleeval/badge.svg?branch=master
-   :target: https://coveralls.io/r/danthedeckie/simpleeval?branch=master
-   :alt: Coverage Status
+.. image:: https://codecov.io/gh/danthedeckie/simpleeval/branch/master/graph/badge.svg?token=isRnN1yrca
+   :target: https://codecov.io/gh/danthedeckie/simpleeval
+   :alt: Code Coverage
 
 .. image:: https://badge.fury.io/py/simpleeval.svg
    :target: https://badge.fury.io/py/simpleeval
    :alt: PyPI Version
 
-A quick single file library for easily adding evaluatable expressions into
+A single file library for easily adding evaluatable expressions into
 python projects.  Say you want to allow a user to set an alarm volume, which
 could depend on the time of day, alarm level, how many previous alarms had gone
 off, and if there is music playing at the time.
@@ -21,8 +21,9 @@ off, and if there is music playing at the time.
 Or if you want to allow simple formulae in a web application, but don't want to
 give full eval() access, or don't want to run in javascript on the client side.
 
-It's deliberately very simple, pull it in from PyPI (pip or easy_install), or
-even just a single file you can dump into a project.
+It's deliberately trying to stay simple to use and not have millions of features,
+pull it in from PyPI (pip or easy_install), or even just a single file you can dump
+into a project.
 
 Internally, it's using the amazing python ``ast`` module to parse the
 expression, which allows very fine control of what is and isn't allowed.  It
@@ -37,7 +38,7 @@ Operators_ section below)
 
 You should be aware of this when deploying in a public setting.
 
-The defaults are pretty locked down and basic, and it's very easy to add
+The defaults are pretty locked down and basic, and it's easy to add
 whatever extra specific functionality you need (your own functions,
 variable/name lookup, etc).
 
@@ -120,28 +121,47 @@ the defaults:
 | ``>=`` | Greater or Equal to ``x >= 21``    |
 |        | ``1 >= 4`` -> ``False``            |
 +--------+------------------------------------+
+| ``>>`` | "Right shift" the number.          |
+|        | ``100 >> 2`` -> ``25``             |
++--------+------------------------------------+
+| ``<<`` | "Left shift" the number.           |
+|        | ``100 << 2`` -> ``400``            |
++--------+------------------------------------+
 | ``in`` | is something contained within      |
 |        | something else.                    |
 |        | ``"spam" in "my breakfast"``       |
 |        | -> ``False``                       |
 +--------+------------------------------------+
+| ``^``  | "bitwise exclusive OR" (xor)       |
+|        | ``62 ^ 20`` -> ``42``              |
++--------+------------------------------------+
+| ``|``  | "bitwise OR"                       |
+|        | ``8 | 34`` -> ``42``               |
++--------+------------------------------------+
+| ``&``  | "bitwise AND"                      |
+|        | ``100 & 63`` -> ``36``             |
++--------+------------------------------------+
+| ``~``  | "bitwise invert"                   |
+|        | ``~ -43`` -> ``42``                |
++--------+------------------------------------+
 
 
-The ``^`` operator is notably missing - not because it's hard, but because it
-is often mistaken for a exponent operator, not the bitwise operation that it is
-in python.  It's trivial to add back in again if you wish (using the class
-based evaluator explained below):
+The ``^`` operator is often mistaken for a exponent operator, not the bitwise 
+operation that it is in python, so if you want ``3 ^ 2`` to equal ``9``, you can
+replace the operator like this:
 
 .. code-block:: python
 
     >>> import ast
-    >>> import operator
+    >>> from simpleeval import safe_power
 
     >>> s = SimpleEval()
-    >>> s.operators[ast.BitXor] = operator.xor
+    >>> s.operators[ast.BitXor] = safe_power
 
-    >>> s.eval("2 ^ 10")
-    8
+    >>> s.eval("3 ^ 2")
+    9
+
+for example.
 
 Limited Power
 ~~~~~~~~~~~~~
@@ -281,6 +301,21 @@ cases):
 
     # and so on...
 
+One useful feature of using the ``SimpleEval`` object is that you can parse an expression
+once, and then evaluate it mulitple times using different ``names``:
+
+.. code-block:: python
+    # Set up & Cache the parse tree:
+    expression = "foo + bar"
+    parsed = s.parse(expression)
+
+    # evaluate the expression multiple times:
+    for names in [{"foo": 1, "bar": 10}, {"foo": 100, "bar": 42}]:
+        s.names = names
+        print(s.eval(expression, previously_parsed=parsed))
+
+for instance.  This may help with performance.
+
 You can assign / edit the various options of the ``SimpleEval`` object if you
 want to.  Either assign them during creation (like the ``simple_eval``
 function)
@@ -362,7 +397,8 @@ and then use ``EvalNoMethods`` instead of the ``SimpleEval`` class.
 Other...
 --------
 
-The library supports both python 2 and 3.
+The library supports python 3 - but should be mostly compatible (and tested before 0.9.11)
+with python 2.7 as well.
 
 Object attributes that start with ``_`` or ``func_`` are disallowed by default.
 If you really need that (BE CAREFUL!), then modify the module global
@@ -392,6 +428,15 @@ Or to set the tests running on every file change:
     $ make autotest
 
 (requires ``entr``) 
+
+I'm trying to keep the codebase relatively clean with Black, isort, pylint & mypy.
+See::
+
+    $ make format
+
+and::
+
+    $ make lint
 
 BEWARE
 ------
