@@ -49,7 +49,7 @@ Contributors:
 - mommothazaz123 (Andrew Zhu) f"string" support, Python 3.8 support
 - lubieowoce (Uryga) various potential vulnerabilities
 - JCavallo (Jean Cavallo) names dict shouldn't be modified
-- Birne94 (Daniel Birnstiel) for fixing leaking generators.
+- Birne94 (Daniel Birnstiel) for fixing leaking generators, star expressions
 - patricksurry (Patrick Surry) or should return last value, even if falsy.
 - shughes-uk (Samantha Hughes) python w/o 'site' should not fail to import.
 - KOLANICH packaging / deployment / setup help & << + >> & other bit ops
@@ -103,6 +103,7 @@ import warnings
 from random import random
 
 PYTHON3 = sys.version_info[0] == 3
+PYTHON35 = PYTHON3 and sys.version_info > (3, 5)
 
 ########################################
 # Module wide 'globals'
@@ -663,13 +664,30 @@ class EvalWithCompoundTypes(SimpleEval):
         return super(EvalWithCompoundTypes, self).eval(expr, previously_parsed)
 
     def _eval_dict(self, node):
-        return {self._eval(k): self._eval(v) for (k, v) in zip(node.keys, node.values)}
+        result = {}
+
+        for key, value in zip(node.keys, node.values):
+            if PYTHON35 and key is None:
+                # "{**x}" gets parsed as a key-value pair of (None, Name(x))
+                result.update(self._eval(value))
+            else:
+                result[self._eval(key)] = self._eval(value)
+
+        return result
+
+    def _eval_list(self, node):
+        result = []
+
+        for item in node.elts:
+            if PYTHON3 and isinstance(item, ast.Starred):
+                result.extend(self._eval(item.value))
+            else:
+                result.append(self._eval(item))
+
+        return result
 
     def _eval_tuple(self, node):
         return tuple(self._eval(x) for x in node.elts)
-
-    def _eval_list(self, node):
-        return list(self._eval(x) for x in node.elts)
 
     def _eval_set(self, node):
         return set(self._eval(x) for x in node.elts)
