@@ -666,7 +666,7 @@ class EvalWithCompoundTypes(SimpleEval):
     def _eval_dict(self, node):
         result = {}
 
-        for (key, value) in zip(node.keys, node.values):
+        for key, value in zip(node.keys, node.values):
             if PYTHON35 and key is None:
                 # "{**x}" gets parsed as a key-value pair of (None, Name(x))
                 result.update(self._eval(value))
