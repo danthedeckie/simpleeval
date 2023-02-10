@@ -13,6 +13,13 @@ simpleeval (Simple Eval)
    :target: https://badge.fury.io/py/simpleeval
    :alt: PyPI Version
 
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/psf/black
+
+.. image:: https://img.shields.io/badge/linting-pylint-yellowgreen
+   :target: https://github.com/PyCQA/pylint
+
+
 A single file library for easily adding evaluatable expressions into
 python projects.  Say you want to allow a user to set an alarm volume, which
 could depend on the time of day, alarm level, how many previous alarms had gone
