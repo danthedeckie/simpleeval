@@ -312,6 +312,7 @@ One useful feature of using the ``SimpleEval`` object is that you can parse an e
 once, and then evaluate it mulitple times using different ``names``:
 
 .. code-block:: python
+
     # Set up & Cache the parse tree:
     expression = "foo + bar"
     parsed = s.parse(expression)
