@@ -11,15 +11,14 @@ jobs:
           python-version: '3.10'
       - name: Lint
         run: |
-          pip install black==21.12b0 isort==5.10.1
-          black --check --diff simpleeval.py test_simpleeval.py
-          isort --check-only --diff simpleeval.py test_simpleeval.py
+          pip install -r requirements/dev.txt
+          make lint
   run:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python: ['2.7', '3.6', '3.7', '3.8', '3.9', '3.10', 'pypy-3.8']
+        python: ['2.7', '3.7', '3.8', '3.9', '3.10', '3.11', '3.12-dev', 'pypy-3.8']
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python }}
