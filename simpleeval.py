@@ -57,6 +57,7 @@ Contributors:
 - bozokopic (Bozo Kopic) Memory leak fix
 - daxamin (Dax Amin) Better error for attempting to eval empty string
 - smurfix (Matthias Urlichs) Allow clearing functions / operators / etc completely
+- lkruitwagen (Lucas Kruitwagen) Adding support for dict comprehensions
 
 -------------------------------------
 Basic Usage:
@@ -694,7 +695,6 @@ class EvalWithCompoundTypes(SimpleEval):
         return set(self._eval(x) for x in node.elts)
 
     def _eval_comprehension(self, node):
-
         if isinstance(node, ast.DictComp):
             to_return = {}
         else:
