@@ -62,6 +62,7 @@ Contributors:
 - edgarrmondragon (Edgar Ramírez-Mondragón) Address Python 3.12+ deprecation warnings
 - cedk (Cédric Krier) <ced@b2ck.com> Allow running tests with Werror
 - decorator-factory <decorator-factory@protonmail.com> More security fixes
+- lkruitwagen (Lucas Kruitwagen) Adding support for dict comprehensions
 
 -------------------------------------
 Basic Usage:
@@ -700,7 +701,6 @@ class EvalWithCompoundTypes(SimpleEval):
         return set(self._eval(x) for x in node.elts)
 
     def _eval_comprehension(self, node):
-
         if isinstance(node, ast.DictComp):
             to_return = {}
         else:
