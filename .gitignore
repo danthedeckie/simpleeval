@@ -3,6 +3,7 @@ build
 dist
 MANIFEST
 .idea
+.vscode
 venv
 .eggs/
 .coverage
