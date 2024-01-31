@@ -57,6 +57,7 @@ Contributors:
 - bozokopic (Bozo Kopic) Memory leak fix
 - daxamin (Dax Amin) Better error for attempting to eval empty string
 - smurfix (Matthias Urlichs) Allow clearing functions / operators / etc completely
+- edgarrmondragon (Edgar Ramírez-Mondragón) Address Python 3.12+ deprecation warnings
 
 -------------------------------------
 Basic Usage:
@@ -359,8 +360,6 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             ast.Assign: self._eval_assign,
             ast.AugAssign: self._eval_aug_assign,
             ast.Import: self._eval_import,
-            ast.Num: self._eval_num,
-            ast.Str: self._eval_str,
             ast.Name: self._eval_name,
             ast.UnaryOp: self._eval_unaryop,
             ast.BinOp: self._eval_binop,
@@ -389,6 +388,14 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         # py3.8 uses ast.Constant instead of ast.Num, ast.Str, ast.NameConstant
         if hasattr(ast, "Constant"):
             self.nodes[ast.Constant] = self._eval_constant
+
+        # py3.12 deprecated ast.Num, ast.Str, ast.NameConstant
+        # https://docs.python.org/3.12/whatsnew/3.12.html#deprecated
+        if hasattr(ast, "Num"):
+            self.nodes[ast.Num] = self._eval_num
+
+        if hasattr(ast, "Str"):
+            self.nodes[ast.Str] = self._eval_str
 
         # Defaults:
 
