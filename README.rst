@@ -284,9 +284,34 @@ You can also hand the handling of names over to a function, if you prefer:
     3
 
 That was a bit of a silly example, but you could use this for pulling values
-from a database or file, say, or doing some kind of caching system.
+from a database or file, looking up spreadsheet cells, say, or doing some kind of caching system.
 
-The two default names that are provided are ``True`` and ``False``.  So if you want to provide your own names, but want ``True`` and ``False`` to keep working, either provide them yourself, or ``.copy()`` and ``.update`` the ``DEFAULT_NAMES``. (See functions example above).
+In general, when it attempts to find a variable by name, if it cannot find one,
+then it will look in the ``functions`` for a function of that name.  If you want your name handler
+function to return a "I can't find that name!", then it should raise a ``simpleeval.NameNotDefined`` 
+exception. Eg:
+
+.. code-block:: python
+
+   >>> def name_handler(node):
+   ...     if node.id[0] == 'a':
+   ...         return 21
+   ...     raise NameNotDefined(node.id[0], "Not found")
+   ...
+   ... simple_eval('a + a', names=name_handler, functions={"b": 100})
+   
+   42
+
+   >>> simple_eval('a + b', names=name_handler, functions={'b': 100})
+   121
+
+(Note: in that example, putting a number directly into the functions dict was done just to
+show the fall-back to functions.  Normally only put actual callables in there.)
+
+
+The two default names that are provided are ``True`` and ``False``.  So if you want to provide
+your own names, but want ``True`` and ``False`` to keep working, either provide them yourself,
+or ``.copy()`` and ``.update`` the ``DEFAULT_NAMES``. (See functions example above).
 
 Creating an Evaluator Class
 ---------------------------
