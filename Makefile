@@ -1,5 +1,5 @@
 test:
-	python test_simpleeval.py
+	python -Werror test_simpleeval.py
 
 autotest:
 	find . -name \*.py -not -path .\/.v\* | entr make test
