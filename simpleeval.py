@@ -58,6 +58,7 @@ Contributors:
 - daxamin (Dax Amin) Better error for attempting to eval empty string
 - smurfix (Matthias Urlichs) Allow clearing functions / operators / etc completely
 - koenigsley (Mikhail Yeremeyev) documentation typos correction.
+- kurtmckee (Kurt McKee) Infrastructure updates
 
 -------------------------------------
 Basic Usage:

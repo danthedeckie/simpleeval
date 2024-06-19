@@ -405,8 +405,7 @@ and then use ``EvalNoMethods`` instead of the ``SimpleEval`` class.
 Other...
 --------
 
-The library supports python 3 - but should be mostly compatible (and tested before 0.9.11)
-with python 2.7 as well.
+The library supports Python 3.9 and higher.
 
 Object attributes that start with ``_`` or ``func_`` are disallowed by default.
 If you really need that (BE CAREFUL!), then modify the module global
