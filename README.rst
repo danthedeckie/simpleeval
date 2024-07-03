@@ -176,13 +176,13 @@ Limited Power
 Also note, the ``**`` operator has been locked down by default to have a
 maximum input value of ``4000000``, which makes it somewhat harder to make
 expressions which go on for ever.  You can change this limit by changing the
-``simpleeval.POWER_MAX`` module level value to whatever is an appropriate value
+``simpleeval.MAX_POWER`` module level value to whatever is an appropriate value
 for you (and the hardware that you're running on) or if you want to completely
 remove all limitations, you can set the ``s.operators[ast.Pow] = operator.pow``
 or make your own function.
 
 On my computer, ``9**9**5`` evaluates almost instantly, but ``9**9**6`` takes
-over 30 seconds.  Since ``9**7`` is ``4782969``, and so over the ``POWER_MAX``
+over 30 seconds.  Since ``9**7`` is ``4782969``, and so over the ``MAX_POWER``
 limit, it throws a ``NumberTooHigh`` exception for you. (Otherwise it would go
 on for hours, or until the computer runs out of memory)
 
