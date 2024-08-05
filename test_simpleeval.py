@@ -429,9 +429,8 @@ class TestTryingToBreakOut(DRYTest):
 
     def test_encode_bignums(self):
         # thanks gk
-        if hasattr(1, "from_bytes"):  # python3 only
-            with self.assertRaises(simpleeval.IterableTooLong):
-                self.t('(1).from_bytes(("123123123123123123123123").encode()*999999, "big")', 0)
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.t('(1).from_bytes(("123123123123123123123123").encode()*999999, "big")', 0)
 
     def test_string_length(self):
         with self.assertRaises(simpleeval.IterableTooLong):
@@ -612,7 +611,6 @@ class TestCompoundTypes(DRYTest):
         self.t('{"a": 24}.get("b", 11)', 11)
         self.t('"a" in {"a": 24}', True)
 
-    @unittest.skipIf(not simpleeval.PYTHON35, "feature not supported")
     def test_dict_star_expression(self):
         self.s.names["x"] = {"a": 1, "b": 2}
         self.t('{"a": 0, **x, "c": 3}', {"a": 1, "b": 2, "c": 3})
@@ -621,7 +619,6 @@ class TestCompoundTypes(DRYTest):
         self.s.names["y"] = {"x": 1, "y": 2}
         self.t('{"a": 0, **x, **y, "c": 3}', {"a": 1, "b": 2, "c": 3, "x": 1, "y": 2})
 
-    @unittest.skipIf(not simpleeval.PYTHON35, "feature not supported")
     def test_dict_invalid_star_expression(self):
         self.s.names["x"] = {"a": 1, "b": 2}
         self.s.names["y"] = {"x": 1, "y": 2}
@@ -660,12 +657,10 @@ class TestCompoundTypes(DRYTest):
 
         self.t('"b" in ["a","b"]', True)
 
-    @unittest.skipIf(not simpleeval.PYTHON3, "feature not supported")
     def test_list_star_expression(self):
         self.s.names["x"] = [1, 2, 3]
         self.t('["a", *x, "b"]', ["a", 1, 2, 3, "b"])
 
-    @unittest.skipIf(not simpleeval.PYTHON3, "feature not supported")
     def test_list_invalid_star_expression(self):
         self.s.names["x"] = [1, 2, 3]
         self.s.names["y"] = 42
@@ -1200,10 +1195,7 @@ class TestShortCircuiting(DRYTest):
 
 class TestDisallowedFunctions(DRYTest):
     def test_functions_are_disallowed_at_init(self):
-        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open]
-        if simpleeval.PYTHON3:
-            # pylint: disable=exec-used
-            exec("DISALLOWED.append(exec)")  # exec is not a function in Python2...
+        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open, exec]
 
         for f in simpleeval.DISALLOW_FUNCTIONS:
             assert f in DISALLOWED
@@ -1213,11 +1205,7 @@ class TestDisallowedFunctions(DRYTest):
                 SimpleEval(functions={"foo": x})
 
     def test_functions_are_disallowed_in_expressions(self):
-        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open]
-
-        if simpleeval.PYTHON3:
-            # pylint: disable=exec-used
-            exec("DISALLOWED.append(exec)")  # exec is not a function in Python2...
+        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open, exec]
 
         for f in simpleeval.DISALLOW_FUNCTIONS:
             assert f in DISALLOWED
@@ -1234,7 +1222,6 @@ class TestDisallowedFunctions(DRYTest):
         simpleeval.DEFAULT_FUNCTIONS = DF.copy()
 
 
-@unittest.skipIf(simpleeval.PYTHON3 is not True, "Python2 fails - but it's not supported anyway.")
 @unittest.skipIf(platform.python_implementation() == "PyPy", "GC set_debug not available in PyPy")
 class TestReferenceCleanup(DRYTest):
     """Test cleanup without cyclic references"""

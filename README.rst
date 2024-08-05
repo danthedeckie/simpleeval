@@ -246,7 +246,7 @@ are provided in the ``DEFAULT_FUNCTIONS`` dict:
 +----------------+--------------------------------------------------+
 | ``float(x)``   | Convert ``x`` to a ``float``.                    |
 +----------------+--------------------------------------------------+
-| ``str(x)``     | Convert ``x`` to a ``str`` (``unicode`` in py2)  |
+| ``str(x)``     | Convert ``x`` to a ``str``                       |
 +----------------+--------------------------------------------------+
 
 If you want to provide a list of functions, but want to keep these as well,
