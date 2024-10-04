@@ -60,6 +60,7 @@ Contributors:
 - koenigsley (Mikhail Yeremeyev) documentation typos correction.
 - kurtmckee (Kurt McKee) Infrastructure updates
 - edgarrmondragon (Edgar Ramírez-Mondragón) Address Python 3.12+ deprecation warnings
+- cedk (Cédric Krier) <ced@b2ck.com> Allow running tests with Werror
 
 -------------------------------------
 Basic Usage:
