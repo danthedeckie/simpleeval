@@ -59,6 +59,7 @@ Contributors:
 - smurfix (Matthias Urlichs) Allow clearing functions / operators / etc completely
 - koenigsley (Mikhail Yeremeyev) documentation typos correction.
 - kurtmckee (Kurt McKee) Infrastructure updates
+- edgarrmondragon (Edgar Ramírez-Mondragón) Address Python 3.12+ deprecation warnings
 
 -------------------------------------
 Basic Usage:
@@ -352,8 +353,6 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             ast.Assign: self._eval_assign,
             ast.AugAssign: self._eval_aug_assign,
             ast.Import: self._eval_import,
-            ast.Num: self._eval_num,
-            ast.Str: self._eval_str,
             ast.Name: self._eval_name,
             ast.UnaryOp: self._eval_unaryop,
             ast.BinOp: self._eval_binop,
@@ -366,11 +365,21 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             ast.Attribute: self._eval_attribute,
             ast.Index: self._eval_index,
             ast.Slice: self._eval_slice,
-            ast.NameConstant: self._eval_constant,
             ast.JoinedStr: self._eval_joinedstr,
             ast.FormattedValue: self._eval_formattedvalue,
             ast.Constant: self._eval_constant,
         }
+
+        # py3.12 deprecated ast.Num, ast.Str, ast.NameConstant
+        # https://docs.python.org/3.12/whatsnew/3.12.html#deprecated
+        if Num := getattr(ast, "Num"):
+            self.nodes[Num] = self._eval_num
+
+        if Str := getattr(ast, "Str"):
+            self.nodes[Str] = self._eval_str
+
+        if NameConstant := getattr(ast, "NameConstant"):
+            self.nodes[NameConstant] = self._eval_constant
 
         # Defaults:
 
