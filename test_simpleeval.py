@@ -1284,6 +1284,9 @@ class TestDisallowedFunctions(DRYTest):
             def bar(self):
                 yield "Hello, world!"
 
+        # Test the genertor does work - also adds the `yield` to codecov...
+        assert list(Foo().bar()) == ["Hello, world!"]
+
         evil = "foo.bar().gi_frame.f_globals['__builtins__'].exec('raise RuntimeError(\"Oh no\")')"
 
         with self.assertRaises(FeatureNotAvailable):
