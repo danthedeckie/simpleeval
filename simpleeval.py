@@ -61,6 +61,7 @@ Contributors:
 - kurtmckee (Kurt McKee) Infrastructure updates
 - edgarrmondragon (Edgar Ramírez-Mondragón) Address Python 3.12+ deprecation warnings
 - cedk (Cédric Krier) <ced@b2ck.com> Allow running tests with Werror
+- decorator-factory <decorator-factory@protonmail.com> More security fixes
 
 -------------------------------------
 Basic Usage:
@@ -115,7 +116,16 @@ MAX_POWER = 4000000  # highest exponent
 MAX_SHIFT = 10000  # highest << or >> (lshift / rshift)
 MAX_SHIFT_BASE = int(sys.float_info.max)  # highest on left side of << or >>
 DISALLOW_PREFIXES = ["_", "func_"]
-DISALLOW_METHODS = ["format", "format_map", "mro"]
+DISALLOW_METHODS = [
+    "format",
+    "format_map",
+    "mro",
+    "tb_frame",
+    "gi_frame",
+    "ag_frame",
+    "cr_frame",
+    "exec",
+]
 
 # Disallow functions:
 # This, strictly speaking, is not necessary.  These /should/ never be accessable anyway,
