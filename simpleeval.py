@@ -62,6 +62,7 @@ Contributors:
 - edgarrmondragon (Edgar Ramírez-Mondragón) Address Python 3.12+ deprecation warnings
 - cedk (Cédric Krier) <ced@b2ck.com> Allow running tests with Werror
 - decorator-factory <decorator-factory@protonmail.com> More security fixes
+- lkruitwagen (Lucas Kruitwagen) Adding support for dict comprehensions
 
 -------------------------------------
 Basic Usage:
@@ -661,6 +662,7 @@ class EvalWithCompoundTypes(SimpleEval):
                 ast.Set: self._eval_set,
                 ast.ListComp: self._eval_comprehension,
                 ast.GeneratorExp: self._eval_comprehension,
+                ast.DictComp: self._eval_comprehension,
             }
         )
 
@@ -699,7 +701,10 @@ class EvalWithCompoundTypes(SimpleEval):
         return set(self._eval(x) for x in node.elts)
 
     def _eval_comprehension(self, node):
-        to_return = []
+        if isinstance(node, ast.DictComp):
+            to_return = {}
+        else:
+            to_return = []
 
         extra_names = {}
 
@@ -738,7 +743,10 @@ class EvalWithCompoundTypes(SimpleEval):
                     if len(node.generators) > gi + 1:
                         do_generator(gi + 1)
                     else:
-                        to_return.append(self._eval(node.elt))
+                        if isinstance(to_return, dict):
+                            to_return[self._eval(node.key)] = self._eval(node.value)
+                        elif isinstance(to_return, list):
+                            to_return.append(self._eval(node.elt))
 
         try:
             do_generator()

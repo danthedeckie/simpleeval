@@ -729,6 +729,24 @@ class TestComprehensions(DRYTest):
     def test_nested_unpack(self):
         self.t("[a+b+c for a, (b, c) in ((1,(1,1)),(3,(2,2)))]", [3, 7])
 
+    def test_dictcomp_basic(self):
+        self.t("{a:a + 1 for a in [1,2,3]}", {1: 2, 2: 3, 3: 4})
+
+    def test_dictcomp_with_self_reference(self):
+        self.t("{a:a + a for a in [1,2,3]}", {1: 2, 2: 4, 3: 6})
+
+    def test_dictcomp_with_if(self):
+        self.t("{a:a for a in [1,2,3,4,5] if a <= 3}", {1: 1, 2: 2, 3: 3})
+
+    def test_dictcomp_with_multiple_if(self):
+        self.t("{a:a for a in [1,2,3,4,5] if a <= 3 and a > 1 }", {2: 2, 3: 3})
+
+    def test_dictcomp_unpack(self):
+        self.t("{a:a+b for a,b in ((1,2),(3,4))}", {1: 3, 3: 7})
+
+    def test_dictcomp_nested_unpack(self):
+        self.t("{a:a+b+c for a, (b, c) in ((1,(1,1)),(3,(2,2)))}", {1: 3, 3: 7})
+
     def test_other_places(self):
         self.s.functions = {"sum": sum}
         self.t("sum([a+1 for a in [1,2,3,4,5]])", 20)
