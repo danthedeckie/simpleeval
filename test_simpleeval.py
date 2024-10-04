@@ -1230,6 +1230,17 @@ class TestDisallowedFunctions(DRYTest):
 
         simpleeval.DEFAULT_FUNCTIONS = DF.copy()
 
+    def test_breakout_via_generator(self):
+        # Thanks decorator-factory
+        class Foo:
+            def bar(self):
+                yield "Hello, world!"
+
+        evil = "foo.bar().gi_frame.f_globals['__builtins__'].exec('raise RuntimeError(\"Oh no\")')"
+
+        with self.assertRaises(FeatureNotAvailable):
+            simple_eval(evil, names={"foo": Foo()})
+
 
 @unittest.skipIf(platform.python_implementation() == "PyPy", "GC set_debug not available in PyPy")
 class TestReferenceCleanup(DRYTest):
