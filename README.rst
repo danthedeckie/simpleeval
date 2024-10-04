@@ -157,7 +157,7 @@ The ``^`` operator is often mistaken for a exponent operator, not the bitwise
 operation that it is in python, so if you want ``3 ^ 2`` to equal ``9``, you can
 replace the operator like this:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> import ast
     >>> from simpleeval import safe_power
@@ -200,7 +200,7 @@ If Expressions
 
 You can use python style ``if x then y else z`` type expressions:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> simple_eval("'equal' if x == y else 'not equal'",
                     names={"x": 1, "y": 2})
@@ -208,7 +208,7 @@ You can use python style ``if x then y else z`` type expressions:
 
 which, of course, can be nested:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> simple_eval("'a' if 1 == 2 else 'b' if 2 == 3 else 'c'")
     'c'
@@ -219,7 +219,7 @@ Functions
 
 You can define functions which you'd like the expresssions to have access to:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> simple_eval("double(21)", functions={"double": lambda x:x*2})
     42
@@ -227,7 +227,7 @@ You can define functions which you'd like the expresssions to have access to:
 You can define "real" functions to pass in rather than lambdas, of course too,
 and even re-name them so that expressions can be shorter
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> def double(x):
             return x * 2
@@ -252,7 +252,7 @@ are provided in the ``DEFAULT_FUNCTIONS`` dict:
 If you want to provide a list of functions, but want to keep these as well,
 then you can do a normal python ``.copy()`` & ``.update``:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> my_functions = simpleeval.DEFAULT_FUNCTIONS.copy()
     >>> my_functions.update(
@@ -267,7 +267,7 @@ Names
 Sometimes it's useful to have variables available, which in python terminology
 are called 'names'.
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> simple_eval("a + b", names={"a": 11, "b": 100})
     111
@@ -275,7 +275,7 @@ are called 'names'.
 You can also hand the handling of names over to a function, if you prefer:
 
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> def name_handler(node):
             return ord(node.id[0].lower(a))-96
@@ -288,10 +288,10 @@ from a database or file, looking up spreadsheet cells, say, or doing some kind o
 
 In general, when it attempts to find a variable by name, if it cannot find one,
 then it will look in the ``functions`` for a function of that name.  If you want your name handler
-function to return a "I can't find that name!", then it should raise a ``simpleeval.NameNotDefined`` 
+function to return an "I can't find that name!", then it should raise a ``simpleeval.NameNotDefined`` 
 exception. Eg:
 
-.. code-block:: python
+.. code-block:: pycon
 
    >>> def name_handler(node):
    ...     if node.id[0] == 'a':
@@ -299,13 +299,13 @@ exception. Eg:
    ...     raise NameNotDefined(node.id[0], "Not found")
    ...
    ... simple_eval('a + a', names=name_handler, functions={"b": 100})
-   
+
    42
 
    >>> simple_eval('a + b', names=name_handler, functions={'b': 100})
    121
 
-(Note: in that example, putting a number directly into the functions dict was done just to
+(Note: in that example, putting a number directly into the ``functions`` dict was done just to
 show the fall-back to functions.  Normally only put actual callables in there.)
 
 
@@ -321,7 +321,7 @@ evaluations, you can create a SimpleEval object, and pass it expressions each
 time (which should be a bit quicker, and certainly more convenient for some use
 cases):
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>> s = SimpleEval()
 
@@ -400,7 +400,7 @@ comprehensions.
 Since the primary intention of this library is short expressions - an extra 'sweetener' is
 enabled by default.  You can access a dict (or similar's) keys using the .attr syntax:
 
-.. code-block:: python
+.. code-block:: pycon
 
     >>>  simple_eval("foo.bar", names={"foo": {"bar": 42}})
     42
