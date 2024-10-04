@@ -1,4 +1,4 @@
-name: Codecov
+name: CI
 on: [push]
 jobs:
   lint:
@@ -44,7 +44,8 @@ jobs:
           coverage run -m test_simpleeval
           coverage xml
       - name: Upload to codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4.0.1
         with:
           files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
