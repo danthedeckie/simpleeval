@@ -371,16 +371,18 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             ast.Constant: self._eval_constant,
         }
 
-        # py3.12 deprecated ast.Num, ast.Str, ast.NameConstant
-        # https://docs.python.org/3.12/whatsnew/3.12.html#deprecated
-        if Num := getattr(ast, "Num"):
-            self.nodes[Num] = self._eval_num
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            # py3.12 deprecated ast.Num, ast.Str, ast.NameConstant
+            # https://docs.python.org/3.12/whatsnew/3.12.html#deprecated
+            if Num := getattr(ast, "Num"):
+                self.nodes[Num] = self._eval_num
 
-        if Str := getattr(ast, "Str"):
-            self.nodes[Str] = self._eval_str
+            if Str := getattr(ast, "Str"):
+                self.nodes[Str] = self._eval_str
 
-        if NameConstant := getattr(ast, "NameConstant"):
-            self.nodes[NameConstant] = self._eval_constant
+            if NameConstant := getattr(ast, "NameConstant"):
+                self.nodes[NameConstant] = self._eval_constant
 
         # Defaults:
 
