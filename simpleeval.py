@@ -58,6 +58,7 @@ Contributors:
 - daxamin (Dax Amin) Better error for attempting to eval empty string
 - smurfix (Matthias Urlichs) Allow clearing functions / operators / etc completely
 - koenigsley (Mikhail Yeremeyev) documentation typos correction.
+- kurtmckee (Kurt McKee) Infrastructure updates
 
 -------------------------------------
 Basic Usage:
@@ -103,9 +104,6 @@ import sys
 import warnings
 from random import random
 
-PYTHON3 = sys.version_info[0] == 3
-PYTHON35 = PYTHON3 and sys.version_info > (3, 5)
-
 ########################################
 # Module wide 'globals'
 
@@ -124,17 +122,12 @@ DISALLOW_METHODS = ["format", "format_map", "mro"]
 # their functionality is required, then please wrap them up in a safe container.  And think
 # very hard about it first.  And don't say I didn't warn you.
 # builtins is a dict in python >3.6 but a module before
-DISALLOW_FUNCTIONS = {type, isinstance, eval, getattr, setattr, repr, compile, open}
+DISALLOW_FUNCTIONS = {type, isinstance, eval, getattr, setattr, repr, compile, open, exec}
 if hasattr(__builtins__, "help") or (
     hasattr(__builtins__, "__contains__") and "help" in __builtins__  # type: ignore
 ):
     # PyInstaller environment doesn't include this module.
     DISALLOW_FUNCTIONS.add(help)
-
-
-if PYTHON3:
-    # exec is not a function in Python2...
-    exec("DISALLOW_FUNCTIONS.add(exec)")  # pylint: disable=exec-used
 
 
 ########################################
@@ -317,8 +310,7 @@ DEFAULT_FUNCTIONS = {
     "randint": random_int,
     "int": int,
     "float": float,
-    # pylint: disable=undefined-variable
-    "str": str if PYTHON3 else unicode,  # type: ignore
+    "str": str,
 }
 
 DEFAULT_NAMES = {"True": True, "False": False, "None": None}
@@ -374,22 +366,11 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             ast.Attribute: self._eval_attribute,
             ast.Index: self._eval_index,
             ast.Slice: self._eval_slice,
+            ast.NameConstant: self._eval_constant,
+            ast.JoinedStr: self._eval_joinedstr,
+            ast.FormattedValue: self._eval_formattedvalue,
+            ast.Constant: self._eval_constant,
         }
-
-        # py3k stuff:
-        if hasattr(ast, "NameConstant"):
-            self.nodes[ast.NameConstant] = self._eval_constant
-
-        # py3.6, f-strings
-        if hasattr(ast, "JoinedStr"):
-            self.nodes[ast.JoinedStr] = self._eval_joinedstr  # f-string
-            self.nodes[
-                ast.FormattedValue
-            ] = self._eval_formattedvalue  # formatted value in f-string
-
-        # py3.8 uses ast.Constant instead of ast.Num, ast.Str, ast.NameConstant
-        if hasattr(ast, "Constant"):
-            self.nodes[ast.Constant] = self._eval_constant
 
         # Defaults:
 
@@ -668,7 +649,7 @@ class EvalWithCompoundTypes(SimpleEval):
         result = {}
 
         for key, value in zip(node.keys, node.values):
-            if PYTHON35 and key is None:
+            if key is None:
                 # "{**x}" gets parsed as a key-value pair of (None, Name(x))
                 result.update(self._eval(value))
             else:
@@ -680,7 +661,7 @@ class EvalWithCompoundTypes(SimpleEval):
         result = []
 
         for item in node.elts:
-            if PYTHON3 and isinstance(item, ast.Starred):
+            if isinstance(item, ast.Starred):
                 result.extend(self._eval(item.value))
             else:
                 result.append(self._eval(item))
