@@ -210,7 +210,7 @@ class TestEvaluator(DRYTest):
     def test_only_evalutate_first_statement(self):
         # it only evaluates the first statement:
         with warnings.catch_warnings(record=True) as ws:
-            warnings.simplefilter('always')
+            warnings.simplefilter("always")
             self.t("11; x = 21; x + x", 11)
         self.assertIsInstance(ws[0].message, simpleeval.MultipleExpressions)
 
@@ -792,7 +792,7 @@ class TestNames(DRYTest):
         # or if you attempt to assign an unknown name to another
         with self.assertRaises(NameNotDefined):
             with warnings.catch_warnings(record=True) as ws:
-                warnings.simplefilter('always')
+                warnings.simplefilter("always")
                 self.t("s += a", 21)
         self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
@@ -818,7 +818,7 @@ class TestNames(DRYTest):
 
         # however, you can't assign to those names:
         with warnings.catch_warnings(record=True) as ws:
-            warnings.simplefilter('always')
+            warnings.simplefilter("always")
             self.t("a = 200", 200)
         self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
@@ -829,7 +829,7 @@ class TestNames(DRYTest):
         self.s.names["b"] = [0]
 
         with warnings.catch_warnings(record=True) as ws:
-            warnings.simplefilter('always')
+            warnings.simplefilter("always")
             self.t("b[0] = 11", 11)
         self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
@@ -853,7 +853,7 @@ class TestNames(DRYTest):
         # you still can't assign though:
 
         with warnings.catch_warnings(record=True) as ws:
-            warnings.simplefilter('always')
+            warnings.simplefilter("always")
             self.t("c['b'] = 99", 99)
         self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
@@ -864,7 +864,7 @@ class TestNames(DRYTest):
         self.s.names["c"]["c"] = {"c": 11}
 
         with warnings.catch_warnings(record=True) as ws:
-            warnings.simplefilter('always')
+            warnings.simplefilter("always")
             self.t("c['c']['c'] = 21", 21)
         self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
@@ -880,7 +880,7 @@ class TestNames(DRYTest):
         self.t("a.b.c*2", 84)
 
         with warnings.catch_warnings(record=True) as ws:
-            warnings.simplefilter('always')
+            warnings.simplefilter("always")
             self.t("a.b.c = 11", 11)
         self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
@@ -888,7 +888,7 @@ class TestNames(DRYTest):
 
         # TODO: Wat?
         with warnings.catch_warnings(record=True) as ws:
-            warnings.simplefilter('always')
+            warnings.simplefilter("always")
             self.t("a.d = 11", 11)
 
         with self.assertRaises(KeyError):
