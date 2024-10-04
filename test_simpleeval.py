@@ -1,12 +1,13 @@
 # pylint: disable=too-many-public-methods, missing-docstring, eval-used, too-many-lines, no-self-use, disallowed-name, unspecified-encoding
 
 """
-    Unit tests for simpleeval.
-    --------------------------
+Unit tests for simpleeval.
+--------------------------
 
-    Most of this stuff is pretty basic.
+Most of this stuff is pretty basic.
 
 """
+
 import ast
 import gc
 import operator

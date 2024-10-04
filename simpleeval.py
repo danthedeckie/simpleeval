@@ -448,8 +448,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def _eval_str(node):
         if len(node.s) > MAX_STRING_LENGTH:
             raise IterableTooLong(
-                "String Literal in statement is too long!"
-                " ({0}, when {1} is max)".format(len(node.s), MAX_STRING_LENGTH)
+                "String Literal in statement is too long! ({0}, when {1} is max)".format(
+                    len(node.s), MAX_STRING_LENGTH
+                )
             )
         return node.s
 
@@ -457,8 +458,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def _eval_constant(node):
         if hasattr(node.value, "__len__") and len(node.value) > MAX_STRING_LENGTH:
             raise IterableTooLong(
-                "Literal in statement is too long!"
-                " ({0}, when {1} is max)".format(len(node.value), MAX_STRING_LENGTH)
+                "Literal in statement is too long! ({0}, when {1} is max)".format(
+                    len(node.value), MAX_STRING_LENGTH
+                )
             )
         return node.value
 

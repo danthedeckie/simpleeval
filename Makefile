@@ -22,11 +22,10 @@ coverage:
 	coverage run test_simpleeval.py
 
 lint:
-	black --check --diff simpleeval.py test_simpleeval.py
-	isort --check-only --diff simpleeval.py test_simpleeval.py
-	pylint simpleeval.py test_simpleeval.py
+	ruff check simpleeval.py test_simpleeval.py
+	ruff format --check simpleeval.py test_simpleeval.py
 	mypy simpleeval.py test_simpleeval.py
 
 format:
-	black simpleeval.py test_simpleeval.py
-	isort simpleeval.py	test_simpleeval.py
+	ruff check --fix-only simpleeval.py test_simpleeval.py
+	ruff format simpleeval.py test_simpleeval.py
