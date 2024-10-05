@@ -1,11 +1,11 @@
 simpleeval (Simple Eval)
 ========================
 
-.. |build-status| image:: https://github.com/danthedeckie/simpleeval/actions/workflows/ci.yml/badge.svg?branch=gh-actions-build
+.. |build-status| image:: https://github.com/danthedeckie/simpleeval/actions/workflows/ci.yml/badge.svg?branch=main
    :target: https://github.com/danthedeckie/simpleeval/actions/
    :alt: Build Status
 
-.. |code-coverage| image:: https://codecov.io/gh/danthedeckie/simpleeval/branch/master/graph/badge.svg?token=isRnN1yrca
+.. |code-coverage| image:: https://codecov.io/gh/danthedeckie/simpleeval/branch/main/graph/badge.svg?token=isRnN1yrca
    :target: https://codecov.io/gh/danthedeckie/simpleeval
    :alt: Code Coverage Status
 
