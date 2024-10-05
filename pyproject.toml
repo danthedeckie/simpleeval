@@ -1,9 +1,10 @@
 [project]
 name = "simpleeval"
 readme = "README.rst"
+dynamic = [ "version" ]
 
 [build-system]
-requires = ["setuptools>=30.3.0", "wheel"]
+requires = ["setuptools>=30.3.0", "wheel", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [tool.black]
