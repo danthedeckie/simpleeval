@@ -1,23 +1,28 @@
 simpleeval (Simple Eval)
 ========================
 
-.. image:: https://github.com/danthedeckie/simpleeval/actions/workflows/ci.yml/badge.svg?branch=gh-actions-build
+.. |build-status| image:: https://github.com/danthedeckie/simpleeval/actions/workflows/ci.yml/badge.svg?branch=gh-actions-build
    :target: https://github.com/danthedeckie/simpleeval/actions/
    :alt: Build Status
 
-.. image:: https://codecov.io/gh/danthedeckie/simpleeval/branch/master/graph/badge.svg?token=isRnN1yrca
+.. |code-coverage| image:: https://codecov.io/gh/danthedeckie/simpleeval/branch/master/graph/badge.svg?token=isRnN1yrca
    :target: https://codecov.io/gh/danthedeckie/simpleeval
-   :alt: Code Coverage
+   :alt: Code Coverage Status
 
-.. image:: https://badge.fury.io/py/simpleeval.svg
+.. |pypi-version| image:: https://badge.fury.io/py/simpleeval.svg
    :target: https://badge.fury.io/py/simpleeval
    :alt: PyPI Version
 
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-   :target: https://github.com/psf/black
+.. |python-versions| image:: https://img.shields.io/badge/python-3.9_%7C_3.10_%7C_3.11_%7C_3.12_%7C_3.13_%7C_PyPy3.9_%7C_PyPy3.10-blue
+   :alt: Static Badge
 
-.. image:: https://img.shields.io/badge/linting-pylint-yellowgreen
-   :target: https://github.com/PyCQA/pylint
+.. |pypi-monthly-downloads| image:: https://img.shields.io/pypi/dm/SimpleEval
+   :alt: PyPI - Downloads
+
+.. |formatting-with-ruff| image:: https://img.shields.io/badge/-ruff-black?logo=lightning&logoColor=%2300ff00&link=https%3A%2F%2Fdocs.astral.sh%2Fruff%2F
+   :alt: Static Badge
+
+|build-status| |code-coverage| |pypi-version| |python-versions| |pypi-monthly-downloads| |formatting-with-ruff|
 
 
 A single file library for easily adding evaluatable expressions into
