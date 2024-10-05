@@ -9,9 +9,9 @@ simpleeval (Simple Eval)
    :target: https://codecov.io/gh/danthedeckie/simpleeval
    :alt: Code Coverage Status
 
-.. |pypi-version| image:: https://badge.fury.io/py/simpleeval.svg
+.. |pypi-version| image:: https://img.shields.io/pypi/v/simpleeval
    :target: https://badge.fury.io/py/simpleeval
-   :alt: PyPI Version
+   :alt: PyPI - Version
 
 .. |python-versions| image:: https://img.shields.io/badge/python-3.9_%7C_3.10_%7C_3.11_%7C_3.12_%7C_3.13_%7C_PyPy3.9_%7C_PyPy3.10-blue
    :alt: Static Badge
