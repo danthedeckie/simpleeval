@@ -1,12 +1,13 @@
 # pylint: disable=too-many-public-methods, missing-docstring, eval-used, too-many-lines, no-self-use, disallowed-name, unspecified-encoding
 
 """
-    Unit tests for simpleeval.
-    --------------------------
+Unit tests for simpleeval.
+--------------------------
 
-    Most of this stuff is pretty basic.
+Most of this stuff is pretty basic.
 
 """
+
 import ast
 import gc
 import operator
@@ -209,6 +210,7 @@ class TestEvaluator(DRYTest):
     def test_only_evalutate_first_statement(self):
         # it only evaluates the first statement:
         with warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter("always")
             self.t("11; x = 21; x + x", 11)
         self.assertIsInstance(ws[0].message, simpleeval.MultipleExpressions)
 
@@ -429,9 +431,8 @@ class TestTryingToBreakOut(DRYTest):
 
     def test_encode_bignums(self):
         # thanks gk
-        if hasattr(1, "from_bytes"):  # python3 only
-            with self.assertRaises(simpleeval.IterableTooLong):
-                self.t('(1).from_bytes(("123123123123123123123123").encode()*999999, "big")', 0)
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.t('(1).from_bytes(("123123123123123123123123").encode()*999999, "big")', 0)
 
     def test_string_length(self):
         with self.assertRaises(simpleeval.IterableTooLong):
@@ -612,7 +613,6 @@ class TestCompoundTypes(DRYTest):
         self.t('{"a": 24}.get("b", 11)', 11)
         self.t('"a" in {"a": 24}', True)
 
-    @unittest.skipIf(not simpleeval.PYTHON35, "feature not supported")
     def test_dict_star_expression(self):
         self.s.names["x"] = {"a": 1, "b": 2}
         self.t('{"a": 0, **x, "c": 3}', {"a": 1, "b": 2, "c": 3})
@@ -621,7 +621,6 @@ class TestCompoundTypes(DRYTest):
         self.s.names["y"] = {"x": 1, "y": 2}
         self.t('{"a": 0, **x, **y, "c": 3}', {"a": 1, "b": 2, "c": 3, "x": 1, "y": 2})
 
-    @unittest.skipIf(not simpleeval.PYTHON35, "feature not supported")
     def test_dict_invalid_star_expression(self):
         self.s.names["x"] = {"a": 1, "b": 2}
         self.s.names["y"] = {"x": 1, "y": 2}
@@ -660,12 +659,10 @@ class TestCompoundTypes(DRYTest):
 
         self.t('"b" in ["a","b"]', True)
 
-    @unittest.skipIf(not simpleeval.PYTHON3, "feature not supported")
     def test_list_star_expression(self):
         self.s.names["x"] = [1, 2, 3]
         self.t('["a", *x, "b"]', ["a", 1, 2, 3, "b"])
 
-    @unittest.skipIf(not simpleeval.PYTHON3, "feature not supported")
     def test_list_invalid_star_expression(self):
         self.s.names["x"] = [1, 2, 3]
         self.s.names["y"] = 42
@@ -732,6 +729,24 @@ class TestComprehensions(DRYTest):
     def test_nested_unpack(self):
         self.t("[a+b+c for a, (b, c) in ((1,(1,1)),(3,(2,2)))]", [3, 7])
 
+    def test_dictcomp_basic(self):
+        self.t("{a:a + 1 for a in [1,2,3]}", {1: 2, 2: 3, 3: 4})
+
+    def test_dictcomp_with_self_reference(self):
+        self.t("{a:a + a for a in [1,2,3]}", {1: 2, 2: 4, 3: 6})
+
+    def test_dictcomp_with_if(self):
+        self.t("{a:a for a in [1,2,3,4,5] if a <= 3}", {1: 1, 2: 2, 3: 3})
+
+    def test_dictcomp_with_multiple_if(self):
+        self.t("{a:a for a in [1,2,3,4,5] if a <= 3 and a > 1 }", {2: 2, 3: 3})
+
+    def test_dictcomp_unpack(self):
+        self.t("{a:a+b for a,b in ((1,2),(3,4))}", {1: 3, 3: 7})
+
+    def test_dictcomp_nested_unpack(self):
+        self.t("{a:a+b+c for a, (b, c) in ((1,(1,1)),(3,(2,2)))}", {1: 3, 3: 7})
+
     def test_other_places(self):
         self.s.functions = {"sum": sum}
         self.t("sum([a+1 for a in [1,2,3,4,5]])", 20)
@@ -795,6 +810,7 @@ class TestNames(DRYTest):
         # or if you attempt to assign an unknown name to another
         with self.assertRaises(NameNotDefined):
             with warnings.catch_warnings(record=True) as ws:
+                warnings.simplefilter("always")
                 self.t("s += a", 21)
         self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
@@ -820,6 +836,7 @@ class TestNames(DRYTest):
 
         # however, you can't assign to those names:
         with warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter("always")
             self.t("a = 200", 200)
         self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
@@ -830,6 +847,7 @@ class TestNames(DRYTest):
         self.s.names["b"] = [0]
 
         with warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter("always")
             self.t("b[0] = 11", 11)
         self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
@@ -853,6 +871,7 @@ class TestNames(DRYTest):
         # you still can't assign though:
 
         with warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter("always")
             self.t("c['b'] = 99", 99)
         self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
@@ -863,6 +882,7 @@ class TestNames(DRYTest):
         self.s.names["c"]["c"] = {"c": 11}
 
         with warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter("always")
             self.t("c['c']['c'] = 21", 21)
         self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
@@ -878,6 +898,7 @@ class TestNames(DRYTest):
         self.t("a.b.c*2", 84)
 
         with warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter("always")
             self.t("a.b.c = 11", 11)
         self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
@@ -885,6 +906,7 @@ class TestNames(DRYTest):
 
         # TODO: Wat?
         with warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter("always")
             self.t("a.d = 11", 11)
 
         with self.assertRaises(KeyError):
@@ -964,6 +986,36 @@ class TestNames(DRYTest):
         self.s.names = name_handler
         self.t("a", 1)
         self.t("a + b", 3)
+
+    def test_name_handler_name_not_found(self):
+        def name_handler(node):
+            if node.id[0] == "a":
+                return 21
+            raise NameNotDefined(node.id[0], "not found")
+
+        self.s.names = name_handler
+        self.s.functions = {"b": lambda: 100}
+        self.t("a + a", 42)
+
+        self.t("b()", 100)
+
+        with self.assertRaises(NameNotDefined):
+            self.t("c", None)
+
+    def test_name_handler_raises_error(self):
+        # What happens if our name-handler raises a different kind of error?
+        # we want it to ripple up all the way...
+
+        def name_handler(_node):
+            return {}["test"]
+
+        self.s.names = name_handler
+
+        # This should never be accessed:
+        self.s.functions = {"c": 42}
+
+        with self.assertRaises(KeyError):
+            self.t("c", None)
 
 
 class TestWhitespace(DRYTest):
@@ -1200,10 +1252,7 @@ class TestShortCircuiting(DRYTest):
 
 class TestDisallowedFunctions(DRYTest):
     def test_functions_are_disallowed_at_init(self):
-        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open]
-        if simpleeval.PYTHON3:
-            # pylint: disable=exec-used
-            exec("DISALLOWED.append(exec)")  # exec is not a function in Python2...
+        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open, exec]
 
         for f in simpleeval.DISALLOW_FUNCTIONS:
             assert f in DISALLOWED
@@ -1213,11 +1262,7 @@ class TestDisallowedFunctions(DRYTest):
                 SimpleEval(functions={"foo": x})
 
     def test_functions_are_disallowed_in_expressions(self):
-        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open]
-
-        if simpleeval.PYTHON3:
-            # pylint: disable=exec-used
-            exec("DISALLOWED.append(exec)")  # exec is not a function in Python2...
+        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open, exec]
 
         for f in simpleeval.DISALLOW_FUNCTIONS:
             assert f in DISALLOWED
@@ -1233,8 +1278,21 @@ class TestDisallowedFunctions(DRYTest):
 
         simpleeval.DEFAULT_FUNCTIONS = DF.copy()
 
+    def test_breakout_via_generator(self):
+        # Thanks decorator-factory
+        class Foo:
+            def bar(self):
+                yield "Hello, world!"
 
-@unittest.skipIf(simpleeval.PYTHON3 is not True, "Python2 fails - but it's not supported anyway.")
+        # Test the genertor does work - also adds the `yield` to codecov...
+        assert list(Foo().bar()) == ["Hello, world!"]
+
+        evil = "foo.bar().gi_frame.f_globals['__builtins__'].exec('raise RuntimeError(\"Oh no\")')"
+
+        with self.assertRaises(FeatureNotAvailable):
+            simple_eval(evil, names={"foo": Foo()})
+
+
 @unittest.skipIf(platform.python_implementation() == "PyPy", "GC set_debug not available in PyPy")
 class TestReferenceCleanup(DRYTest):
     """Test cleanup without cyclic references"""

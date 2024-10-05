@@ -1,4 +1,4 @@
-name: Codecov
+name: CI
 on: [push]
 jobs:
   lint:
@@ -18,7 +18,14 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python: ['2.7', '3.7', '3.8', '3.9', '3.10', '3.11', '3.12-dev', 'pypy-3.8']
+        python:
+          - '3.9'
+          - '3.10'
+          - '3.11'
+          - '3.12'
+          - '3.13'
+          - 'pypy-3.9'
+          - 'pypy-3.10'
     env:
       OS: ${{ matrix.os }}
       PYTHON: ${{ matrix.python }}
@@ -29,13 +36,16 @@ jobs:
         uses: actions/setup-python@master
         with:
           python-version: ${{ matrix.python }}
+          allow-prereleases: true
+
       - name: Generate Report
         run: |
           pip install coverage
           coverage run -m test_simpleeval
           coverage xml
       - name: Upload to codecov
-        uses: codecov/codecov-action@v2
+        uses: codecov/codecov-action@v4.0.1
         with:
           files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true

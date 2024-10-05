@@ -1,5 +1,5 @@
 """
-SimpleEval - (C) 2013-2023 Daniel Fairhead
+SimpleEval - (C) 2013-2024 Daniel Fairhead
 -------------------------------------
 
 An short, easy to use, safe and reasonably extensible expression evaluator.
@@ -58,6 +58,11 @@ Contributors:
 - daxamin (Dax Amin) Better error for attempting to eval empty string
 - smurfix (Matthias Urlichs) Allow clearing functions / operators / etc completely
 - koenigsley (Mikhail Yeremeyev) documentation typos correction.
+- kurtmckee (Kurt McKee) Infrastructure updates
+- edgarrmondragon (Edgar Ramírez-Mondragón) Address Python 3.12+ deprecation warnings
+- cedk (Cédric Krier) <ced@b2ck.com> Allow running tests with Werror
+- decorator-factory <decorator-factory@protonmail.com> More security fixes
+- lkruitwagen (Lucas Kruitwagen) Adding support for dict comprehensions
 
 -------------------------------------
 Basic Usage:
@@ -103,9 +108,6 @@ import sys
 import warnings
 from random import random
 
-PYTHON3 = sys.version_info[0] == 3
-PYTHON35 = PYTHON3 and sys.version_info > (3, 5)
-
 ########################################
 # Module wide 'globals'
 
@@ -115,7 +117,16 @@ MAX_POWER = 4000000  # highest exponent
 MAX_SHIFT = 10000  # highest << or >> (lshift / rshift)
 MAX_SHIFT_BASE = int(sys.float_info.max)  # highest on left side of << or >>
 DISALLOW_PREFIXES = ["_", "func_"]
-DISALLOW_METHODS = ["format", "format_map", "mro"]
+DISALLOW_METHODS = [
+    "format",
+    "format_map",
+    "mro",
+    "tb_frame",
+    "gi_frame",
+    "ag_frame",
+    "cr_frame",
+    "exec",
+]
 
 # Disallow functions:
 # This, strictly speaking, is not necessary.  These /should/ never be accessable anyway,
@@ -124,17 +135,12 @@ DISALLOW_METHODS = ["format", "format_map", "mro"]
 # their functionality is required, then please wrap them up in a safe container.  And think
 # very hard about it first.  And don't say I didn't warn you.
 # builtins is a dict in python >3.6 but a module before
-DISALLOW_FUNCTIONS = {type, isinstance, eval, getattr, setattr, repr, compile, open}
+DISALLOW_FUNCTIONS = {type, isinstance, eval, getattr, setattr, repr, compile, open, exec}
 if hasattr(__builtins__, "help") or (
     hasattr(__builtins__, "__contains__") and "help" in __builtins__  # type: ignore
 ):
     # PyInstaller environment doesn't include this module.
     DISALLOW_FUNCTIONS.add(help)
-
-
-if PYTHON3:
-    # exec is not a function in Python2...
-    exec("DISALLOW_FUNCTIONS.add(exec)")  # pylint: disable=exec-used
 
 
 ########################################
@@ -317,8 +323,7 @@ DEFAULT_FUNCTIONS = {
     "randint": random_int,
     "int": int,
     "float": float,
-    # pylint: disable=undefined-variable
-    "str": str if PYTHON3 else unicode,  # type: ignore
+    "str": str,
 }
 
 DEFAULT_NAMES = {"True": True, "False": False, "None": None}
@@ -360,8 +365,6 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             ast.Assign: self._eval_assign,
             ast.AugAssign: self._eval_aug_assign,
             ast.Import: self._eval_import,
-            ast.Num: self._eval_num,
-            ast.Str: self._eval_str,
             ast.Name: self._eval_name,
             ast.UnaryOp: self._eval_unaryop,
             ast.BinOp: self._eval_binop,
@@ -374,22 +377,23 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             ast.Attribute: self._eval_attribute,
             ast.Index: self._eval_index,
             ast.Slice: self._eval_slice,
+            ast.JoinedStr: self._eval_joinedstr,
+            ast.FormattedValue: self._eval_formattedvalue,
+            ast.Constant: self._eval_constant,
         }
 
-        # py3k stuff:
-        if hasattr(ast, "NameConstant"):
-            self.nodes[ast.NameConstant] = self._eval_constant
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            # py3.12 deprecated ast.Num, ast.Str, ast.NameConstant
+            # https://docs.python.org/3.12/whatsnew/3.12.html#deprecated
+            if Num := getattr(ast, "Num"):
+                self.nodes[Num] = self._eval_num
 
-        # py3.6, f-strings
-        if hasattr(ast, "JoinedStr"):
-            self.nodes[ast.JoinedStr] = self._eval_joinedstr  # f-string
-            self.nodes[
-                ast.FormattedValue
-            ] = self._eval_formattedvalue  # formatted value in f-string
+            if Str := getattr(ast, "Str"):
+                self.nodes[Str] = self._eval_str
 
-        # py3.8 uses ast.Constant instead of ast.Num, ast.Str, ast.NameConstant
-        if hasattr(ast, "Constant"):
-            self.nodes[ast.Constant] = self._eval_constant
+            if NameConstant := getattr(ast, "NameConstant"):
+                self.nodes[NameConstant] = self._eval_constant
 
         # Defaults:
 
@@ -467,8 +471,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def _eval_str(node):
         if len(node.s) > MAX_STRING_LENGTH:
             raise IterableTooLong(
-                "String Literal in statement is too long!"
-                " ({0}, when {1} is max)".format(len(node.s), MAX_STRING_LENGTH)
+                "String Literal in statement is too long! ({0}, when {1} is max)".format(
+                    len(node.s), MAX_STRING_LENGTH
+                )
             )
         return node.s
 
@@ -476,8 +481,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def _eval_constant(node):
         if hasattr(node.value, "__len__") and len(node.value) > MAX_STRING_LENGTH:
             raise IterableTooLong(
-                "Literal in statement is too long!"
-                " ({0}, when {1} is max)".format(len(node.value), MAX_STRING_LENGTH)
+                "Literal in statement is too long! ({0}, when {1} is max)".format(
+                    len(node.value), MAX_STRING_LENGTH
+                )
             )
         return node.value
 
@@ -548,24 +554,30 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         try:
             # This happens at least for slicing
             # This is a safe thing to do because it is impossible
-            # that there is a true exression assigning to none
+            # that there is a true expression assigning to none
             # (the compiler rejects it, so you can't even
             # pass that to ast.parse)
-            if hasattr(self.names, "__getitem__"):
-                return self.names[node.id]
-            if callable(self.names):
+            return self.names[node.id]
+
+        except (TypeError, KeyError):
+            pass
+
+        if callable(self.names):
+            try:
                 return self.names(node)
+            except NameNotDefined:
+                pass
+        elif not hasattr(self.names, "__getitem__"):
             raise InvalidExpression(
                 'Trying to use name (variable) "{0}"'
                 ' when no "names" defined for'
                 " evaluator".format(node.id)
             )
 
-        except KeyError:
-            if node.id in self.functions:
-                return self.functions[node.id]
+        if node.id in self.functions:
+            return self.functions[node.id]
 
-            raise NameNotDefined(node.id, self.expr)
+        raise NameNotDefined(node.id, self.expr)
 
     def _eval_subscript(self, node):
         container = self._eval(node.value)
@@ -656,6 +668,7 @@ class EvalWithCompoundTypes(SimpleEval):
                 ast.Set: self._eval_set,
                 ast.ListComp: self._eval_comprehension,
                 ast.GeneratorExp: self._eval_comprehension,
+                ast.DictComp: self._eval_comprehension,
             }
         )
 
@@ -668,7 +681,7 @@ class EvalWithCompoundTypes(SimpleEval):
         result = {}
 
         for key, value in zip(node.keys, node.values):
-            if PYTHON35 and key is None:
+            if key is None:
                 # "{**x}" gets parsed as a key-value pair of (None, Name(x))
                 result.update(self._eval(value))
             else:
@@ -680,7 +693,7 @@ class EvalWithCompoundTypes(SimpleEval):
         result = []
 
         for item in node.elts:
-            if PYTHON3 and isinstance(item, ast.Starred):
+            if isinstance(item, ast.Starred):
                 result.extend(self._eval(item.value))
             else:
                 result.append(self._eval(item))
@@ -694,7 +707,10 @@ class EvalWithCompoundTypes(SimpleEval):
         return set(self._eval(x) for x in node.elts)
 
     def _eval_comprehension(self, node):
-        to_return = []
+        if isinstance(node, ast.DictComp):
+            to_return = {}
+        else:
+            to_return = []
 
         extra_names = {}
 
@@ -733,7 +749,10 @@ class EvalWithCompoundTypes(SimpleEval):
                     if len(node.generators) > gi + 1:
                         do_generator(gi + 1)
                     else:
-                        to_return.append(self._eval(node.elt))
+                        if isinstance(to_return, dict):
+                            to_return[self._eval(node.key)] = self._eval(node.value)
+                        elif isinstance(to_return, list):
+                            to_return.append(self._eval(node.elt))
 
         try:
             do_generator()
