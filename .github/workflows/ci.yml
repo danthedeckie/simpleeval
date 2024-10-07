@@ -9,11 +9,16 @@ jobs:
         uses: actions/setup-python@master
         with:
           python-version: '3.10'
+      - name: Install dev dependencies
+        run : |
+          pip install -r requirements/dev.txt
       - name: Lint
         run: |
-          pip install -r requirements/dev.txt
           make lint
-  run:
+      - name: Build & check sdist & wheel
+        run: |
+          make dist/
+  tests:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
