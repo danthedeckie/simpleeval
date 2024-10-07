@@ -19,6 +19,7 @@ import warnings
 
 import simpleeval
 from simpleeval import (
+    BASIC_ALLOWED_ATTRS,
     AttributeDoesNotExist,
     EvalWithCompoundTypes,
     FeatureNotAvailable,
@@ -1349,6 +1350,30 @@ class TestNoEntries(DRYTest):
 
         with self.assertRaises(OperatorNotDefined):
             s.eval("~ 2")
+
+
+class TestAllowedAttributes(DRYTest):
+    def test_allowed_attrs_(self):
+        self.s.allowed_attrs = BASIC_ALLOWED_ATTRS
+        self.t("5 + 5", 10)
+        self.t('"   hello  ".strip()', "hello")
+
+    def test_breakout_via_generator(self):
+        # Thanks decorator-factory
+        class Foo:
+            def bar(self):
+                yield "Hello, world!"
+
+        # Test the genertor does work - also adds the `yield` to codecov...
+        assert list(Foo().bar()) == ["Hello, world!"]
+
+        evil = "foo.bar().gi_frame.f_globals['__builtins__'].exec('raise RuntimeError(\"Oh no\")')"
+
+        x = simpleeval.DISALLOW_METHODS
+        simpleeval.DISALLOW_METHODS = []
+        with self.assertRaises(FeatureNotAvailable):
+            simple_eval(evil, names={"foo": Foo()}, allowed_attrs=BASIC_ALLOWED_ATTRS)
+        simpleeval.DISALLOW_METHODS = x
 
 
 if __name__ == "__main__":  # pragma: no cover
