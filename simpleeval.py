@@ -144,9 +144,145 @@ if hasattr(__builtins__, "help") or (
     # PyInstaller environment doesn't include this module.
     DISALLOW_FUNCTIONS.add(help)
 
+# Opt-in type safety experiment. Will be opt-out in 2.x
+
+BASIC_ALLOWED_ATTRS = {
+    int: {
+        "as_integer_ratio",
+        "bit_length",
+        "conjugate",
+        "denominator",
+        "from_bytes",
+        "imag",
+        "numerator",
+        "real",
+        "to_bytes",
+    },
+    float: {
+        "as_integer_ratio",
+        "conjugate",
+        "fromhex",
+        "hex",
+        "imag",
+        "is_integer",
+        "real",
+    },
+    str: {
+        "capitalize",
+        "casefold",
+        "center",
+        "count",
+        "encode",
+        "endswith",
+        "expandtabs",
+        "find",
+        "format",
+        "format_map",
+        "index",
+        "isalnum",
+        "isalpha",
+        "isascii",
+        "isdecimal",
+        "isdigit",
+        "isidentifier",
+        "islower",
+        "isnumeric",
+        "isprintable",
+        "isspace",
+        "istitle",
+        "isupper",
+        "join",
+        "ljust",
+        "lower",
+        "lstrip",
+        "maketrans",
+        "partition",
+        "removeprefix",
+        "removesuffix",
+        "replace",
+        "rfind",
+        "rindex",
+        "rjust",
+        "rpartition",
+        "rsplit",
+        "rstrip",
+        "split",
+        "splitlines",
+        "startswith",
+        "strip",
+        "swapcase",
+        "title",
+        "translate",
+        "upper",
+        "zfill",
+    },
+    bool: {
+        "as_integer_ratio",
+        "bit_length",
+        "conjugate",
+        "denominator",
+        "from_bytes",
+        "imag",
+        "numerator",
+        "real",
+        "to_bytes",
+    },
+    None: {},
+    dict: {
+        "clear",
+        "copy",
+        "fromkeys",
+        "get",
+        "items",
+        "keys",
+        "pop",
+        "popitem",
+        "setdefault",
+        "update",
+        "values",
+    },
+    list: {
+        "pop",
+        "append",
+        "index",
+        "reverse",
+        "count",
+        "sort",
+        "copy",
+        "extend",
+        "clear",
+        "insert",
+        "remove",
+    },
+    set: {
+        "pop",
+        "intersection_update",
+        "intersection",
+        "issubset",
+        "symmetric_difference_update",
+        "discard",
+        "isdisjoint",
+        "difference_update",
+        "issuperset",
+        "add",
+        "copy",
+        "union",
+        "clear",
+        "update",
+        "symmetric_difference",
+        "difference",
+        "remove",
+    },
+    tuple: {"index", "count"},
+}
+
 
 ########################################
 # Exceptions:
+
+
+class TypeNotSpecified(Exception):
+    pass
 
 
 class InvalidExpression(Exception):
@@ -346,7 +482,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     expr = ""
 
-    def __init__(self, operators=None, functions=None, names=None):
+    def __init__(self, operators=None, functions=None, names=None, allowed_attrs=None):
         """
         Create the evaluator instance.  Set up valid operators (+,-, etc)
         functions (add, random, get_val, whatever) and names."""
@@ -361,6 +497,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         self.operators = operators
         self.functions = functions
         self.names = names
+        self.allowed_attrs = allowed_attrs
 
         self.nodes = {
             ast.Expr: self._eval_expr,
@@ -589,6 +726,17 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return container[key]
 
     def _eval_attribute(self, node):
+        if self.allowed_attrs is not None:
+            allowed_attrs = self.allowed_attrs.get(type(node.value.value), TypeNotSpecified)
+            if allowed_attrs == TypeNotSpecified:
+                raise FeatureNotAvailable(
+                    f"Sorry, attribute access not allowed on '{type(node.value.value)}'"
+                )
+            if node.attr not in allowed_attrs:
+                raise FeatureNotAvailable(
+                    f"Sorry, '{node.attr}' access not allowed on '{type(node.value.value)}'"
+                )
+
         for prefix in DISALLOW_PREFIXES:
             if node.attr.startswith(prefix):
                 raise FeatureNotAvailable(
@@ -764,7 +912,12 @@ class EvalWithCompoundTypes(SimpleEval):
         return to_return
 
 
-def simple_eval(expr, operators=None, functions=None, names=None):
+def simple_eval(expr, operators=None, functions=None, names=None, allowed_attrs=None):
     """Simply evaluate an expresssion"""
-    s = SimpleEval(operators=operators, functions=functions, names=names)
+    s = SimpleEval(
+        operators=operators,
+        functions=functions,
+        names=names,
+        allowed_attrs=allowed_attrs,
+    )
     return s.eval(expr)
