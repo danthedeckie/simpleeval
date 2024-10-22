@@ -102,8 +102,6 @@ well:
 
 """
 
-__version__ = "1.0.1"
-
 import ast
 import operator as op
 import sys

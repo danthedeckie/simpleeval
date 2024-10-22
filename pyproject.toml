@@ -1,5 +1,6 @@
 [project]
 name = "simpleeval"
+version = "1.0.1"
 requires-python = ">=3.9"
 readme = "README.rst"
 description = "A simple, safe single expression evaluator library."
@@ -21,7 +22,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Programming Language :: Python",
 ]
-dynamic = ["version"]
 dependencies = [
     "pip>=24.2",
 ]
