@@ -6,8 +6,8 @@ autotest:
 
 .PHONY: test
 
-dist/: setup.cfg simpleeval.py README.rst
-	python -m build
+dist/: pyproject.toml simpleeval.py README.rst
+	hatch build
 	twine check dist/*
 
 pypi: test dist/

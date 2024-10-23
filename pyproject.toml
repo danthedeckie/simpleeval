@@ -1,6 +1,54 @@
+[project]
+name = "simpleeval"
+version = "1.0.1"
+requires-python = ">=3.9"
+readme = "README.rst"
+description = "A simple, safe single expression evaluator library."
+licence = "MIT"
+authors = [
+    { name = "Daniel Fairhead", email = "danthedeckie@gmail.com" }
+]
+maintainers = [
+    { name = "Daniel Fairhead", email = "danthedeckie@gmail.com" }
+]
+keywords = [
+    "eval", "simple", "expression", "parse", "ast"
+]
+
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Programming Language :: Python",
+]
+dependencies = [
+    "pip>=24.2",
+]
+
+[project.urls]
+"Source code" = "https://github.com/danthedeckie/simpleeval"
+
+[pycodestyle]
+max_line_length = 99
+
 [build-system]
-requires = ["setuptools>=30.3.0", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "simpleeval.py",
+    "test_simpleeval.py",
+    "README.rst",
+    "LICENCE",
+]
+
+[tool.hatch.version]
+path = "simpleeval.py"
+
+[tool.hatch.envs.hatch-test]
+default-args = ["test_simpleeval.py"]
 
 [tool.black]
 line-length = 99
@@ -29,5 +77,4 @@ disable = [
     "useless-object-inheritance",
     "unnecessary-pass",
     "bad-super-call",
-    ]
-
+]

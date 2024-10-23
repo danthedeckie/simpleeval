@@ -1,3 +1,0 @@
-include README.rst
-include LICENCE
-include test_simpleeval.py
