@@ -22,9 +22,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Programming Language :: Python",
 ]
-dependencies = [
-    "pip>=24.2",
-]
+dependencies = []
 
 [project.urls]
 "Source code" = "https://github.com/danthedeckie/simpleeval"
