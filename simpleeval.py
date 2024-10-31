@@ -107,6 +107,7 @@ import operator as op
 import sys
 import warnings
 from random import random
+from typing import Type, Dict, Set, Union
 
 ########################################
 # Module wide 'globals'
@@ -144,7 +145,7 @@ if hasattr(__builtins__, "help") or (
 
 # Opt-in type safety experiment. Will be opt-out in 2.x
 
-BASIC_ALLOWED_ATTRS = {
+BASIC_ALLOWED_ATTRS: Dict[Union[Type, None], Set] = {
     int: {
         "as_integer_ratio",
         "bit_length",
