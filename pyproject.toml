@@ -78,3 +78,17 @@ disable = [
     "unnecessary-pass",
     "bad-super-call",
 ]
+
+[tool.mypy]
+# strict = true
+# Start off with these
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+# Getting these passing should be easy
+strict_equality = true
+strict_concatenate = true
+
+# Strongly recommend enabling this one as soon as you can
+check_untyped_defs = true
