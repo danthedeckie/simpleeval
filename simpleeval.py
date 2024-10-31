@@ -225,7 +225,7 @@ BASIC_ALLOWED_ATTRS = {
         "real",
         "to_bytes",
     },
-    None: {},
+    None: set(),
     dict: {
         "clear",
         "copy",
