@@ -813,8 +813,8 @@ class EvalWithCompoundTypes(SimpleEval):
 
     _max_count = 0
 
-    def __init__(self, operators=None, functions=None, names=None):
-        super(EvalWithCompoundTypes, self).__init__(operators, functions, names)
+    def __init__(self, operators=None, functions=None, names=None, allowed_attrs=None):
+        super(EvalWithCompoundTypes, self).__init__(operators, functions, names, allowed_attrs)
 
         self.functions.update(list=list, tuple=tuple, dict=dict, set=set)
 
