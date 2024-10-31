@@ -129,7 +129,7 @@ DISALLOW_METHODS = [
 ]
 
 # Disallow functions:
-# This, strictly speaking, is not necessary.  These /should/ never be accessable anyway,
+# This, strictly speaking, is not necessary.  These /should/ never be accessible anyway,
 # if DISALLOW_PREFIXES and DISALLOW_METHODS are all right.  This is here to try and help
 # people not be stupid.  Allowing these functions opens up all sorts of holes - if any of
 # their functionality is required, then please wrap them up in a safe container.  And think
@@ -254,9 +254,9 @@ def safe_mult(a, b):  # pylint: disable=invalid-name
     """limit the number of times an iterable can be repeated..."""
 
     if hasattr(a, "__len__") and b * len(a) > MAX_STRING_LENGTH:
-        raise IterableTooLong("Sorry, I will not evalute something that long.")
+        raise IterableTooLong("Sorry, I will not evaluate something that long.")
     if hasattr(b, "__len__") and a * len(b) > MAX_STRING_LENGTH:
-        raise IterableTooLong("Sorry, I will not evalute something that long.")
+        raise IterableTooLong("Sorry, I will not evaluate something that long.")
 
     return a * b
 
@@ -424,7 +424,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return parsed.body[0]
 
     def eval(self, expr, previously_parsed=None):
-        """evaluate an expresssion, using the operators, functions and
+        """evaluate an expression, using the operators, functions and
         names previously set up."""
 
         # set a copy of the expression aside, so we can give nice errors...
@@ -763,6 +763,6 @@ class EvalWithCompoundTypes(SimpleEval):
 
 
 def simple_eval(expr, operators=None, functions=None, names=None):
-    """Simply evaluate an expresssion"""
+    """Simply evaluate an expression"""
     s = SimpleEval(operators=operators, functions=functions, names=names)
     return s.eval(expr)

@@ -222,7 +222,7 @@ which, of course, can be nested:
 Functions
 ---------
 
-You can define functions which you'd like the expresssions to have access to:
+You can define functions which you'd like the expressions to have access to:
 
 .. code-block:: pycon
 
@@ -339,7 +339,7 @@ cases):
     # and so on...
 
 One useful feature of using the ``SimpleEval`` object is that you can parse an expression
-once, and then evaluate it mulitple times using different ``names``:
+once, and then evaluate it multiple times using different ``names``:
 
 .. code-block:: python
 
