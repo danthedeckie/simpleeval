@@ -39,9 +39,9 @@ class DRYTest(unittest.TestCase):
         """initialize a SimpleEval"""
         self.s = SimpleEval()
 
-    def t(self, expr, shouldbe):  # pylint: disable=invalid-name
+    def t(self, expr, should_be):  # pylint: disable=invalid-name
         """test an evaluation of an expression against an expected answer"""
-        return self.assertEqual(self.s.eval(expr), shouldbe)
+        return self.assertEqual(self.s.eval(expr), should_be)
 
 
 class TestBasic(DRYTest):
@@ -207,7 +207,7 @@ class TestBasic(DRYTest):
 class TestEvaluator(DRYTest):
     """Tests for how the SimpleEval class does things"""
 
-    def test_only_evalutate_first_statement(self):
+    def test_only_evaluate_first_statement(self):
         # it only evaluates the first statement:
         with warnings.catch_warnings(record=True) as ws:
             warnings.simplefilter("always")
@@ -1027,7 +1027,7 @@ class TestWhitespace(DRYTest):
     def test_trailing(self):
         self.t("200 + 200       ", 400)
 
-    def test_preciding_whitespace(self):
+    def test_preceding_whitespace(self):
         self.t("    200 + 200", 400)
 
     def test_preceding_tab_whitespace(self):
@@ -1284,7 +1284,7 @@ class TestDisallowedFunctions(DRYTest):
             def bar(self):
                 yield "Hello, world!"
 
-        # Test the genertor does work - also adds the `yield` to codecov...
+        # Test the generator does work - also adds the `yield` to codecov...
         assert list(Foo().bar()) == ["Hello, world!"]
 
         evil = "foo.bar().gi_frame.f_globals['__builtins__'].exec('raise RuntimeError(\"Oh no\")')"
