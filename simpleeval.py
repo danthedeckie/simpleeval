@@ -107,6 +107,7 @@ import operator as op
 import sys
 import warnings
 from random import random
+from typing import Type, Dict, Set, Union
 
 ########################################
 # Module wide 'globals'
@@ -142,9 +143,145 @@ if hasattr(__builtins__, "help") or (
     # PyInstaller environment doesn't include this module.
     DISALLOW_FUNCTIONS.add(help)
 
+# Opt-in type safety experiment. Will be opt-out in 2.x
+
+BASIC_ALLOWED_ATTRS: Dict[Union[Type, None], Set] = {
+    int: {
+        "as_integer_ratio",
+        "bit_length",
+        "conjugate",
+        "denominator",
+        "from_bytes",
+        "imag",
+        "numerator",
+        "real",
+        "to_bytes",
+    },
+    float: {
+        "as_integer_ratio",
+        "conjugate",
+        "fromhex",
+        "hex",
+        "imag",
+        "is_integer",
+        "real",
+    },
+    str: {
+        "capitalize",
+        "casefold",
+        "center",
+        "count",
+        "encode",
+        "endswith",
+        "expandtabs",
+        "find",
+        "format",
+        "format_map",
+        "index",
+        "isalnum",
+        "isalpha",
+        "isascii",
+        "isdecimal",
+        "isdigit",
+        "isidentifier",
+        "islower",
+        "isnumeric",
+        "isprintable",
+        "isspace",
+        "istitle",
+        "isupper",
+        "join",
+        "ljust",
+        "lower",
+        "lstrip",
+        "maketrans",
+        "partition",
+        "removeprefix",
+        "removesuffix",
+        "replace",
+        "rfind",
+        "rindex",
+        "rjust",
+        "rpartition",
+        "rsplit",
+        "rstrip",
+        "split",
+        "splitlines",
+        "startswith",
+        "strip",
+        "swapcase",
+        "title",
+        "translate",
+        "upper",
+        "zfill",
+    },
+    bool: {
+        "as_integer_ratio",
+        "bit_length",
+        "conjugate",
+        "denominator",
+        "from_bytes",
+        "imag",
+        "numerator",
+        "real",
+        "to_bytes",
+    },
+    None: set(),
+    dict: {
+        "clear",
+        "copy",
+        "fromkeys",
+        "get",
+        "items",
+        "keys",
+        "pop",
+        "popitem",
+        "setdefault",
+        "update",
+        "values",
+    },
+    list: {
+        "pop",
+        "append",
+        "index",
+        "reverse",
+        "count",
+        "sort",
+        "copy",
+        "extend",
+        "clear",
+        "insert",
+        "remove",
+    },
+    set: {
+        "pop",
+        "intersection_update",
+        "intersection",
+        "issubset",
+        "symmetric_difference_update",
+        "discard",
+        "isdisjoint",
+        "difference_update",
+        "issuperset",
+        "add",
+        "copy",
+        "union",
+        "clear",
+        "update",
+        "symmetric_difference",
+        "difference",
+        "remove",
+    },
+    tuple: {"index", "count"},
+}
+
 
 ########################################
 # Exceptions:
+
+
+class TypeNotSpecified(Exception):
+    pass
 
 
 class InvalidExpression(Exception):
@@ -344,7 +481,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     expr = ""
 
-    def __init__(self, operators=None, functions=None, names=None):
+    def __init__(self, operators=None, functions=None, names=None, allowed_attrs=None):
         """
         Create the evaluator instance.  Set up valid operators (+,-, etc)
         functions (add, random, get_val, whatever) and names."""
@@ -359,6 +496,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         self.operators = operators
         self.functions = functions
         self.names = names
+        self.allowed_attrs = allowed_attrs
 
         self.nodes = {
             ast.Expr: self._eval_expr,
@@ -587,6 +725,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return container[key]
 
     def _eval_attribute(self, node):
+        # DISALLOW_PREFIXES & DISALLOW_METHODS are global, there's never any access to
+        # attrs with these names, so we can bail early:
         for prefix in DISALLOW_PREFIXES:
             if node.attr.startswith(prefix):
                 raise FeatureNotAvailable(
@@ -598,8 +738,26 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             raise FeatureNotAvailable(
                 "Sorry, this method is not available. " "({0})".format(node.attr)
             )
-        # eval node
+
+        # Evaluate "node" - the thing that we're trying to access an attr of first:
         node_evaluated = self._eval(node.value)
+
+        # If we've opted in to the 'allowed_attrs' checking per type, then since we now
+        # know what kind of node we've got, we can check if we're permitted to access this
+        # attr name on this node:
+        if self.allowed_attrs is not None:
+            type_to_check = type(node_evaluated)
+
+            allowed_attrs = self.allowed_attrs.get(type_to_check, TypeNotSpecified)
+            if allowed_attrs == TypeNotSpecified:
+                raise FeatureNotAvailable(
+                    f"Sorry, attribute access not allowed on '{type_to_check}'"
+                    f" (attempted to access `.{node.attr}`)"
+                )
+            if node.attr not in allowed_attrs:
+                raise FeatureNotAvailable(
+                    f"Sorry, '.{node.attr}' access not allowed on '{type_to_check}'"
+                )
 
         # Maybe the base object is an actual object, not just a dict
         try:
@@ -655,8 +813,8 @@ class EvalWithCompoundTypes(SimpleEval):
 
     _max_count = 0
 
-    def __init__(self, operators=None, functions=None, names=None):
-        super(EvalWithCompoundTypes, self).__init__(operators, functions, names)
+    def __init__(self, operators=None, functions=None, names=None, allowed_attrs=None):
+        super(EvalWithCompoundTypes, self).__init__(operators, functions, names, allowed_attrs)
 
         self.functions.update(list=list, tuple=tuple, dict=dict, set=set)
 
@@ -762,7 +920,12 @@ class EvalWithCompoundTypes(SimpleEval):
         return to_return
 
 
-def simple_eval(expr, operators=None, functions=None, names=None):
+def simple_eval(expr, operators=None, functions=None, names=None, allowed_attrs=None):
     """Simply evaluate an expression"""
-    s = SimpleEval(operators=operators, functions=functions, names=names)
+    s = SimpleEval(
+        operators=operators,
+        functions=functions,
+        names=names,
+        allowed_attrs=allowed_attrs,
+    )
     return s.eval(expr)

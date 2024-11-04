@@ -432,10 +432,8 @@ version that disallows method invocation on objects:
 
 and then use ``EvalNoMethods`` instead of the ``SimpleEval`` class.
 
-Other...
---------
-
-The library supports Python 3.9 and higher.
+Limiting Attribute Access
+-------------------------
 
 Object attributes that start with ``_`` or ``func_`` are disallowed by default.
 If you really need that (BE CAREFUL!), then modify the module global
@@ -444,6 +442,51 @@ If you really need that (BE CAREFUL!), then modify the module global
 A few builtin functions are listed in ``simpleeval.DISALLOW_FUNCTIONS``.  ``type``, ``open``, etc.
 If you need to give access to this kind of functionality to your expressions, then be very
 careful.  You'd be better wrapping the functions in your own safe wrappers.
+
+There is an additional layer of protection you can add in by passing in ``allowed_attrs``, which
+makes all attribute access based opt-in rather than opt-out - which is a lot safer design:
+
+.. code-block:: pycon
+
+    >>> simpleeval("' hello   '.strip()", allowed_attrs={})
+
+will throw FeatureNotAvailable - as we've now disabled all attribute access.  You can enable some
+reasonably sensible defaults with BASIC_ALLOWED_ATTRS:
+
+.. code-block:: pycon
+
+    >>> from simpleeval import simpleeval, BASIC_ALLOWED_ATTRS
+    >>> simpleeval("'  hello   '.strip()", allowed_attrs=BASIC_ALLOWED_ATTRS)
+
+is fine - ``strip()`` should be safe on strings.
+
+It is recommended to add ``allowed_attrs=BASIC_ALLOWED_ATTRS``  whenever possible, and it will
+be the default for 2.x.
+
+You can add your own classes & limit access to attrs:
+
+.. code-block:: pycon
+
+    >>> from simpleeval import simpleeval, BASIC_ALLOWED_ATTRS
+    >>> class Foo:
+    >>>     bar = 42
+    >>>     hidden = "secret"
+    >>>
+    >>> our_attributes = BASIC_ALLOWED_ATTRS.copy()
+    >>> our_attributes[Foo] = {'bar'}
+    >>> simpleeval("foo.bar", names={"foo": Foo()}, allowed_attrs=our_attributes)
+    42
+
+    >>> simpleeval("foo.hidden", names={"foo": Foo()}, allowed_attrs=our_attributes)
+    simpleeval.FeatureNotAvailable: Sorry, 'hidden' access not allowed on 'Foo'
+
+will now allow access to `foo.bar` but not allow anything else.
+
+
+Other...
+--------
+
+The library supports Python 3.9 and higher.
 
 The initial idea came from J.F. Sebastian on Stack Overflow
 ( http://stackoverflow.com/a/9558001/1973500 ) with modifications and many improvements,
