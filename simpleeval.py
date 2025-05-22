@@ -467,7 +467,7 @@ DEFAULT_NAMES = {"True": True, "False": False, "None": None}
 
 ATTR_INDEX_FALLBACK = True
 ATTR_CHAIN_FLATTENING = False
-ASSIGN_REWRITE = False
+ASSIGN_MODIFY_NAMES = False
 
 
 ########################################
@@ -494,6 +494,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             functions = DEFAULT_FUNCTIONS.copy()
         if names is None:
             names = DEFAULT_NAMES.copy()
+        self.results = dict()  # updated or set names
 
         self.operators = operators
         self.functions = functions
@@ -539,7 +540,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
         self.ATTR_INDEX_FALLBACK = ATTR_INDEX_FALLBACK
         self.ATTR_CHAIN_FLATTENING = ATTR_CHAIN_FLATTENING
-        self.ASSIGN_REWRITE = ASSIGN_REWRITE
+        self.ASSIGN_MODIFY_NAMES = ASSIGN_MODIFY_NAMES
 
         # Check for forbidden functions:
 
@@ -568,6 +569,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def eval(self, expr, previously_parsed=None):
         """evaluate an expression, using the operators, functions and
         names previously set up."""
+        # clear results
+        self.results.clear()
 
         # set a copy of the expression aside, so we can give nice errors...
         self.expr = expr
@@ -593,10 +596,15 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return self._eval(node.value)
 
     def _eval_assign(self, node):
-        warnings.warn(
-            "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
-        )
-        return self._eval(node.value)
+        ret = self._eval(node.value)
+        if self.ASSIGN_MODIFY_NAMES:
+            for target in node.targets:
+                self._assign_value(target, ret)
+        else:
+            warnings.warn(
+                "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
+            )
+        return ret
 
     def _eval_aug_assign(self, node):
         warnings.warn(
@@ -848,6 +856,23 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                         base = ast.Attribute(value=base, attr=attr, ctx=ctx)
                     return base
         return None  # No flattening
+
+    def _assign_value(self, target, value):
+        if isinstance(target, ast.Name):
+            self._assign_update(target.id, value)
+            return
+
+        if isinstance(target, ast.Attribute) and self.ATTR_CHAIN_FLATTENING:
+            chain = self._get_attr_chain(target)
+            if chain:
+                self._assign_update('.'.join(chain), value)
+                return
+
+        raise FeatureNotAvailable(f"Sorry, {type(target)} Assign is not available.")
+
+    def _assign_update(self, name, value):
+        self.names[name] = value
+        self.results[name] = value
 
 
 class EvalWithCompoundTypes(SimpleEval):

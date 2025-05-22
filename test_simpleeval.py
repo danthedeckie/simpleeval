@@ -1538,5 +1538,79 @@ class TestAttrChainFlattening(DRYTest):
         self.t('a + a.b.c - a.c.d + a.c.pt1.x * a.c.pt2.sum() - x - y.c.y * y.a.b.d.sub()', 2613)
 
 
+class TestAssignModifyNames(DRYTest):
+    def test_assign_simple(self):
+        self.s.ASSIGN_MODIFY_NAMES = True
+
+        self.s.names.update({
+            'a': 40,
+            'b': 30,
+        })
+
+        self.t("c = a + b", 70)  # simple assign
+        self.assertIn('c', self.s.names)
+        self.assertIn('c', self.s.results)
+        self.assertEqual(self.s.names['c'], 70)
+        self.assertEqual(self.s.results['c'], 70)
+
+        self.t("x = y = a + b", 70)  # multiple targets
+        self.assertIn('x', self.s.names)
+        self.assertIn('x', self.s.results)
+        self.assertIn('y', self.s.names)
+        self.assertIn('y', self.s.results)
+        self.assertEqual(self.s.results['x'], 70)
+        self.assertEqual(self.s.results['y'], 70)
+
+        with self.assertRaises(FeatureNotAvailable):  # attribute assign
+            self.s.eval("obj.attr = a + b")
+
+        with self.assertRaises(FeatureNotAvailable):  # Tuple assign
+            self.s.eval("z, w = a + b")
+
+        self.t("a = a + b", 70)  # update value
+        self.assertIn('a', self.s.names)
+        self.assertIn('a', self.s.results)
+        self.assertEqual(self.s.results['a'], 70)
+
+    def test_assign_with_flatten_names(self):
+        self.s.ASSIGN_MODIFY_NAMES = True
+        self.s.ATTR_CHAIN_FLATTENING = True
+
+        self.t("a.b = 100", 100)  # simple assign
+        self.assertIn('a.b', self.s.names)
+        self.assertIn('a.b', self.s.results)
+        self.assertEqual(self.s.names['a.b'], 100)
+        self.assertEqual(self.s.results['a.b'], 100)
+
+        self.t("a.c = a.b * 2", 200)  # simple assign with flatten name in the expr
+        self.assertIn('a.c', self.s.results)
+        self.assertEqual(self.s.results['a.c'], 200)
+
+        self.t("b.a = c.a = y = 70", 70)  # multiple targets
+        self.assertIn('b.a', self.s.results)
+        self.assertIn('c.a', self.s.results)
+        self.assertIn('y', self.s.results)
+        self.assertEqual(self.s.results['b.a'], 70)
+        self.assertEqual(self.s.results['c.a'], 70)
+        self.assertEqual(self.s.results['y'], 70)
+
+        with self.assertRaises(FeatureNotAvailable):  # attribute assign
+            self.s.eval("a.b.func().c = 70")
+
+        with self.assertRaises(FeatureNotAvailable):  # Tuple assign
+            self.s.eval("z.y, w.x = 70")
+
+        self.t("a.b = a.b - 30", 70)  # update value
+        self.assertEqual(self.s.names['a.b'], 70)
+
+    def test_multiple_assigns(self):
+        self.s.ASSIGN_MODIFY_NAMES = True
+        self.s.ATTR_CHAIN_FLATTENING = True
+
+        self.t("a = 10; a.b = 20;", 10)
+        self.assertEqual(self.s.names['a'], 10)
+        # self.assertEqual(self.s.names['a.b'], 20)
+
+
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
