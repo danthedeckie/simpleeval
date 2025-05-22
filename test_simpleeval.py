@@ -1611,6 +1611,59 @@ class TestAssignModifyNames(DRYTest):
         self.assertEqual(self.s.names['a'], 10)
         # self.assertEqual(self.s.names['a.b'], 20)
 
+    def test_aug_assign_simple(self):
+        self.s.ASSIGN_MODIFY_NAMES = True
+
+        self.s.names.update({
+            'a': 40,
+            'b': 30,
+        })
+
+        self.t("a += b", 70)  # simple  aug assign
+        self.assertIn('a', self.s.results)
+        self.assertEqual(self.s.names['a'], 70)
+        self.assertEqual(self.s.results['a'], 70)
+
+        with self.assertRaises(FeatureNotAvailable):  # attribute assign
+            self.s.eval("obj.attr += a + b")
+
+        self.t("a += 30", 100)  # update value
+        self.assertIn('a', self.s.results)
+        self.assertEqual(self.s.results['a'], 100)
+
+    def test_aug_assign_with_flatten_names(self):
+        self.s.ASSIGN_MODIFY_NAMES = True
+        self.s.ATTR_CHAIN_FLATTENING = True
+
+        self.s.names.update({
+            'a.b': 40,
+            'a.c': 30,
+        })
+
+        self.t("a.b += 100", 140)  # simple aug assign
+        self.assertIn('a.b', self.s.results)
+        self.assertEqual(self.s.results['a.b'], 140)
+
+        self.t("a.c += a.b * 2", 270)  # simple assign with flatten name in the expr
+        self.assertIn('a.c', self.s.results)
+        self.assertEqual(self.s.results['a.c'], 270)
+
+        with self.assertRaises(FeatureNotAvailable):  # attribute assign
+            self.s.eval("a.b.func().c += 70")
+
+    def test_multiple_aug_assigns(self):
+        self.s.ASSIGN_MODIFY_NAMES = True
+        self.s.ATTR_CHAIN_FLATTENING = True
+
+        self.s.names.update({
+            'a': 40,
+            'a.c': 30,
+        })
+
+        self.t("a += a.c + 10; a.c += 20;", 80)
+        self.assertEqual(self.s.names['a'], 80)
+        # self.assertEqual(self.s.names['a.b'], 20)
+
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()

@@ -596,21 +596,26 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return self._eval(node.value)
 
     def _eval_assign(self, node):
-        ret = self._eval(node.value)
+        evaluated_value = self._eval(node.value)
         if self.ASSIGN_MODIFY_NAMES:
             for target in node.targets:
-                self._assign_value(target, ret)
+                self._assign_value(target, evaluated_value)
         else:
             warnings.warn(
                 "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
             )
-        return ret
+        return evaluated_value
 
     def _eval_aug_assign(self, node):
-        warnings.warn(
-            "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
-        )
-        return self._eval(node.value)
+        print(ast.dump(node, indent=3))
+        evaluated_value = self._eval(node.value)
+        if self.ASSIGN_MODIFY_NAMES:
+            evaluated_value = self._aug_assign_value(node.target, node.op, evaluated_value)
+        else:
+            warnings.warn(
+                "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
+            )
+        return evaluated_value
 
     @staticmethod
     def _eval_import(node):
@@ -869,6 +874,29 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 return
 
         raise FeatureNotAvailable(f"Sorry, {type(target)} Assign is not available.")
+
+    def _aug_assign_value(self, target, operation, value):
+        def calculate_new_value(_target_value):
+            try:
+                operator = self.operators[type(operation)]
+            except KeyError:
+                raise OperatorNotDefined(operation, self.expr)
+            return operator(_target_value, value)
+
+        if isinstance(target, ast.Name):
+            value = calculate_new_value(self.names[target.id])
+            self._assign_update(target.id, value)
+            return value
+
+        if isinstance(target, ast.Attribute) and self.ATTR_CHAIN_FLATTENING:
+            chain = self._get_attr_chain(target)
+            if chain:
+                key = '.'.join(chain)
+                value = calculate_new_value(self.names[key])
+                self._assign_update(key, value)
+                return
+
+        raise FeatureNotAvailable(f"Sorry, {type(target)} Aug Assign is not available.")
 
     def _assign_update(self, name, value):
         self.names[name] = value
