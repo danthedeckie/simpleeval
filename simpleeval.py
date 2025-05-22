@@ -466,6 +466,8 @@ DEFAULT_FUNCTIONS = {
 DEFAULT_NAMES = {"True": True, "False": False, "None": None}
 
 ATTR_INDEX_FALLBACK = True
+ATTR_CHAIN_FLATTENING = False
+ASSIGN_REWRITE = False
 
 
 ########################################
@@ -536,6 +538,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         # Defaults:
 
         self.ATTR_INDEX_FALLBACK = ATTR_INDEX_FALLBACK
+        self.ATTR_CHAIN_FLATTENING = ATTR_CHAIN_FLATTENING
+        self.ASSIGN_REWRITE = ASSIGN_REWRITE
 
         # Check for forbidden functions:
 
