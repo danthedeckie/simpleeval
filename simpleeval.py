@@ -138,7 +138,7 @@ DISALLOW_METHODS = [
 # builtins is a dict in python >3.6 but a module before
 DISALLOW_FUNCTIONS = {type, isinstance, eval, getattr, setattr, repr, compile, open, exec}
 if hasattr(__builtins__, "help") or (
-    hasattr(__builtins__, "__contains__") and "help" in __builtins__  # type: ignore
+        hasattr(__builtins__, "__contains__") and "help" in __builtins__  # type: ignore
 ):
     # PyInstaller environment doesn't include this module.
     DISALLOW_FUNCTIONS.add(help)
@@ -384,7 +384,7 @@ def safe_power(a, b):  # pylint: disable=invalid-name
 
     if abs(a) > MAX_POWER or abs(b) > MAX_POWER:
         raise NumberTooHigh("Sorry! I don't want to evaluate {0} ** {1}".format(a, b))
-    return a**b
+    return a ** b
 
 
 def safe_mult(a, b):  # pylint: disable=invalid-name
@@ -807,6 +807,44 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             fmt = "{:" + self._eval(node.format_spec) + "}"
             return fmt.format(self._eval(node.value))
         return self._eval(node.value)
+
+    def _flatten_expr(self, expr_node):
+        chain = self._get_attr_chain(expr_node)
+
+        if chain:
+            flattened = self._flatten_chain(chain, ctx=expr_node.ctx)
+            if flattened:
+                return flattened
+        return expr_node
+
+    @staticmethod
+    def _get_attr_chain(node):
+        """Recursively collect attribute chain from the AST node."""
+        chain = []
+        while isinstance(node, ast.Attribute):
+            chain.append(node.attr)
+            node = node.value
+        if isinstance(node, ast.Name):
+            chain.append(node.id)
+            chain.reverse()
+            return chain
+        return None
+
+    def _flatten_chain(self, chain, ctx=None):
+        """Try to find the longest prefix of the chain that exists in names"""
+        for i in range(len(chain), 0, -1):
+            prefix = ".".join(chain[:i])
+            if prefix in self.names:
+                if i == len(chain):
+                    # Fully matched
+                    return ast.Name(id=prefix, ctx=ctx)
+                else:
+                    # Partially matched
+                    base = ast.Name(id=prefix, ctx=ctx)
+                    for attr in chain[i:]:
+                        base = ast.Attribute(value=base, attr=attr, ctx=ctx)
+                    return base
+        return None  # No flattening
 
 
 class EvalWithCompoundTypes(SimpleEval):

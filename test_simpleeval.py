@@ -383,7 +383,7 @@ class TestTryingToBreakOut(DRYTest):
         """exponent operations can take a long time."""
         old_max = simpleeval.MAX_POWER
 
-        self.t("9**9**5", 9**9**5)
+        self.t("9**9**5", 9 ** 9 ** 5)
 
         with self.assertRaises(simpleeval.NumberTooHigh):
             self.t("9**9**8", 0)
@@ -930,6 +930,7 @@ class TestNames(DRYTest):
 
     def test_object(self):
         """using an object for name lookup"""
+
         # pylint: disable=attribute-defined-outside-init
 
         class TestObject(object):
@@ -1422,6 +1423,56 @@ class TestAllowedAttributes(DRYTest):
 
         with self.assertRaisesRegex(FeatureNotAvailable, r".*attempted to access `\.gi_frame`.*"):
             simple_eval(evil, names={"foo": Foo()}, allowed_attrs=extended_attrs)
+
+
+class TestAttrChainFlattening(DRYTest):
+    def _parse_flatten_expr(self, code):
+        tree = ast.parse(code)
+        return self.s._flatten_expr(tree.body[0].value)
+
+    def assertIsAttributeNode(self, r, attr=None):
+        self.assertIsInstance(r, ast.Attribute)
+        if attr is not None:
+            self.assertEqual(r.attr, attr)
+
+    def assertIsNameNode(self, r, name=None):
+        self.assertIsInstance(r, ast.Name)
+        if name is not None:
+            self.assertEqual(r.id, name)
+
+    def test_flatten_expr_func(self):
+        self.s.names.update({
+            'a': 40,
+            'a.b': 43,
+            'a.b.c': 44,
+        })
+        # 1 parts chain in self.names
+        result = self._parse_flatten_expr('a')
+        self.assertIsNameNode(result, 'a')
+
+        # 2 parts chain in self.names
+        result = self._parse_flatten_expr('a.b')
+        self.assertIsNameNode(result, 'a.b')
+
+        # 3 parts chain in self.names
+        result = self._parse_flatten_expr('a.b.c')
+        self.assertIsNameNode(result, 'a.b.c')
+
+        # 3 parts chain, only 2 in self.names
+        result = self._parse_flatten_expr('a.b.d')
+        self.assertIsAttributeNode(result, 'd')
+        self.assertIsNameNode(result.value, "a.b")
+
+        # Name that does not exist in self.names
+        result = self._parse_flatten_expr('x')
+        self.assertIsNameNode(result, "x")
+
+        # Ends with a chain that exist n self.names, should not be processed
+        result = self._parse_flatten_expr('x.a.b.c')
+        self.assertIsAttributeNode(result, 'c')
+        self.assertIsAttributeNode(result.value, 'b')
+        self.assertIsAttributeNode(result.value.value, 'a')
+        self.assertIsNameNode(result.value.value.value, 'x')
 
 
 if __name__ == "__main__":  # pragma: no cover
