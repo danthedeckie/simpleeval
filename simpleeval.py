@@ -577,6 +577,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def _eval(self, node):
         """The internal evaluator used on each node in the parsed tree."""
 
+        if self.ATTR_CHAIN_FLATTENING and isinstance(node, ast.Attribute):
+            node = self._flatten_expr(node)
+
         try:
             handler = self.nodes[type(node)]
         except KeyError:

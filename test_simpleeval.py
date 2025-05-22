@@ -1426,6 +1426,25 @@ class TestAllowedAttributes(DRYTest):
 
 
 class TestAttrChainFlattening(DRYTest):
+    class Namespace:
+        def __init__(self, **kwargs):
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+
+    class Point:
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+        def sum(self):
+            return self.x + self.y
+
+        def product(self):
+            return self.x * self.y
+
+        def sub(self):
+            return self.y - self.x
+
     def _parse_flatten_expr(self, code):
         tree = ast.parse(code)
         return self.s._flatten_expr(tree.body[0].value)
@@ -1473,6 +1492,50 @@ class TestAttrChainFlattening(DRYTest):
         self.assertIsAttributeNode(result.value, 'b')
         self.assertIsAttributeNode(result.value.value, 'a')
         self.assertIsNameNode(result.value.value.value, 'x')
+
+    def test_attribute_flattening_simple(self):
+        self.s.ATTR_CHAIN_FLATTENING = True
+        ns = self.Namespace
+
+        self.s.names.update({
+            'a': 40,
+            'a.b': 43,
+            'a.b.c': 44,
+            'a.c': ns(d=46),
+            'x': 45,
+            'y': ns(a=ns(b=ns(c=47)))
+        })
+
+        self.t('a', 40)
+        self.t('a.b', 43)
+        self.t('a.b.c', 44)
+        self.t('a.c.d', 46)
+        self.t('x', 45)
+        self.t('y.a.b.c', 47)
+
+    def test_attribute_flattening_complex(self):
+        self.s.ATTR_CHAIN_FLATTENING = True
+        ns = self.Namespace
+        pt = self.Point
+
+        self.s.names.update({
+            'a': 40,
+            'a.b': 43,
+            'a.b.c': 44,
+            'a.c': ns(d=46, pt1=pt(45, 46), pt2=pt(11, 13)),
+            'p': pt(14, 45),
+            'q': pt(78, 91),
+            'x': 45,
+            'y': ns(a=ns(b=ns(c=47, d=pt(47, 12))), b=pt(11, 12), c=pt(15, 44))
+        })
+
+        self.t('a + a.b', 83)
+        self.t('a * a.b.c', 1760)
+        self.t('q.sum()', 169)
+        self.t('p.product()', 630)
+        self.t('a.c.pt1.product()', 2070)
+        self.t('y.a.b.d.sub()', -35)
+        self.t('a + a.b.c - a.c.d + a.c.pt1.x * a.c.pt2.sum() - x - y.c.y * y.a.b.d.sub()', 2613)
 
 
 if __name__ == "__main__":  # pragma: no cover
