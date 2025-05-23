@@ -610,24 +610,30 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return self._eval(node.value)
 
     def _eval_assign(self, node):
+        # Raise assignment attempt warnings before node evaluation to align with test case expectations
+        if not self.assign_modify_names:
+            warnings.warn(
+                "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
+            )
+
         evaluated_value = self._eval(node.value)
         if self.assign_modify_names:
             for target in node.targets:
                 self._assign_value(target, evaluated_value)
-        else:
-            warnings.warn(
-                "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
-            )
+
         return evaluated_value
 
     def _eval_aug_assign(self, node):
-        evaluated_value = self._eval(node.value)
-        if self.assign_modify_names:
-            evaluated_value = self._aug_assign_value(node.target, node.op, evaluated_value)
-        else:
+        # Raise assignment attempt warnings before node evaluation to align with test case expectations
+        if not self.assign_modify_names:
             warnings.warn(
                 "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
             )
+
+        evaluated_value = self._eval(node.value)
+        if self.assign_modify_names:
+            evaluated_value = self._aug_assign_value(node.target, node.op, evaluated_value)
+
         return evaluated_value
 
     @staticmethod
