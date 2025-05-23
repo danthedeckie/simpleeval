@@ -1606,10 +1606,11 @@ class TestAssignModifyNames(DRYTest):
     def test_multiple_assigns(self):
         self.s.ASSIGN_MODIFY_NAMES = True
         self.s.ATTR_CHAIN_FLATTENING = True
+        self.s.MULTIPLE_EXPRESSION_SUPPORT = True
 
-        self.t("a = 10; a.b = 20;", 10)
+        self.t("a = 10; a.b = 20;", 20)
         self.assertEqual(self.s.names['a'], 10)
-        # self.assertEqual(self.s.names['a.b'], 20)
+        self.assertEqual(self.s.names['a.b'], 20)
 
     def test_aug_assign_simple(self):
         self.s.ASSIGN_MODIFY_NAMES = True
@@ -1654,15 +1655,23 @@ class TestAssignModifyNames(DRYTest):
     def test_multiple_aug_assigns(self):
         self.s.ASSIGN_MODIFY_NAMES = True
         self.s.ATTR_CHAIN_FLATTENING = True
+        self.s.MULTIPLE_EXPRESSION_SUPPORT = True
 
         self.s.names.update({
             'a': 40,
             'a.c': 30,
         })
 
-        self.t("a += a.c + 10; a.c += 20;", 80)
+        self.t("a += a.c + 10; a.c += 20;", 50)
         self.assertEqual(self.s.names['a'], 80)
-        # self.assertEqual(self.s.names['a.b'], 20)
+        self.assertEqual(self.s.names['a.c'], 50)
+
+    def test_multiple_expression(self):
+        self.s.MULTIPLE_EXPRESSION_SUPPORT = True
+        self.s.ASSIGN_MODIFY_NAMES = True
+
+        self.t("a = 5\nb = 10\na + b", 15)  # with \n
+        self.t("a = 5;b = 10;a + b", 15)  # with ;
 
 
 if __name__ == "__main__":  # pragma: no cover

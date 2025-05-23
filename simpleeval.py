@@ -468,6 +468,7 @@ DEFAULT_NAMES = {"True": True, "False": False, "None": None}
 ATTR_INDEX_FALLBACK = True
 ATTR_CHAIN_FLATTENING = False
 ASSIGN_MODIFY_NAMES = False
+MULTIPLE_EXPRESSION_SUPPORT = False
 
 
 ########################################
@@ -541,6 +542,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         self.ATTR_INDEX_FALLBACK = ATTR_INDEX_FALLBACK
         self.ATTR_CHAIN_FLATTENING = ATTR_CHAIN_FLATTENING
         self.ASSIGN_MODIFY_NAMES = ASSIGN_MODIFY_NAMES
+        self.MULTIPLE_EXPRESSION_SUPPORT = MULTIPLE_EXPRESSION_SUPPORT
 
         # Check for forbidden functions:
 
@@ -551,20 +553,23 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def __del__(self):
         self.nodes = None
 
-    @staticmethod
-    def parse(expr):
+    def parse(self, expr):
         """parse an expression into a node tree"""
 
         parsed = ast.parse(expr.strip())
 
         if not parsed.body:
             raise InvalidExpression("Sorry, cannot evaluate empty string")
-        if len(parsed.body) > 1:
-            warnings.warn(
-                "'{}' contains multiple expressions. Only the first will be used.".format(expr),
-                MultipleExpressions,
-            )
-        return parsed.body[0]
+
+        if self.MULTIPLE_EXPRESSION_SUPPORT:
+            return parsed.body
+        else:
+            if len(parsed.body) > 1:
+                warnings.warn(
+                    "'{}' contains multiple expressions. Only the first will be used.".format(expr),
+                    MultipleExpressions,
+                )
+            return parsed.body[0]
 
     def eval(self, expr, previously_parsed=None):
         """evaluate an expression, using the operators, functions and
@@ -575,7 +580,16 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         # set a copy of the expression aside, so we can give nice errors...
         self.expr = expr
 
-        return self._eval(previously_parsed or self.parse(expr))
+        # parse
+        parsed_expressions = previously_parsed or self.parse(expr)
+        if not isinstance(parsed_expressions, list):
+            parsed_expressions = [parsed_expressions]
+
+        ret = None
+        for parsed_expression in parsed_expressions:
+            ret = self._eval(parsed_expression)
+
+        return ret
 
     def _eval(self, node):
         """The internal evaluator used on each node in the parsed tree."""
