@@ -1494,7 +1494,7 @@ class TestAttrChainFlattening(DRYTest):
         self.assertIsNameNode(result.value.value.value, 'x')
 
     def test_attribute_flattening_simple(self):
-        self.s.ATTR_CHAIN_FLATTENING = True
+        self.s.attr_chain_flattening = True
         ns = self.Namespace
 
         self.s.names.update({
@@ -1514,7 +1514,7 @@ class TestAttrChainFlattening(DRYTest):
         self.t('y.a.b.c', 47)
 
     def test_attribute_flattening_complex(self):
-        self.s.ATTR_CHAIN_FLATTENING = True
+        self.s.attr_chain_flattening = True
         ns = self.Namespace
         pt = self.Point
 
@@ -1540,7 +1540,7 @@ class TestAttrChainFlattening(DRYTest):
 
 class TestAssignModifyNames(DRYTest):
     def test_assign_simple(self):
-        self.s.ASSIGN_MODIFY_NAMES = True
+        self.s.assign_modify_names = True
 
         self.s.names.update({
             'a': 40,
@@ -1573,8 +1573,8 @@ class TestAssignModifyNames(DRYTest):
         self.assertEqual(self.s.results['a'], 70)
 
     def test_assign_with_flatten_names(self):
-        self.s.ASSIGN_MODIFY_NAMES = True
-        self.s.ATTR_CHAIN_FLATTENING = True
+        self.s.assign_modify_names = True
+        self.s.attr_chain_flattening = True
 
         self.t("a.b = 100", 100)  # simple assign
         self.assertIn('a.b', self.s.names)
@@ -1604,16 +1604,16 @@ class TestAssignModifyNames(DRYTest):
         self.assertEqual(self.s.names['a.b'], 70)
 
     def test_multiple_assigns(self):
-        self.s.ASSIGN_MODIFY_NAMES = True
-        self.s.ATTR_CHAIN_FLATTENING = True
-        self.s.MULTIPLE_EXPRESSION_SUPPORT = True
+        self.s.assign_modify_names = True
+        self.s.attr_chain_flattening = True
+        self.s.multiple_expression_support = True
 
         self.t("a = 10; a.b = 20;", 20)
         self.assertEqual(self.s.names['a'], 10)
         self.assertEqual(self.s.names['a.b'], 20)
 
     def test_aug_assign_simple(self):
-        self.s.ASSIGN_MODIFY_NAMES = True
+        self.s.assign_modify_names = True
 
         self.s.names.update({
             'a': 40,
@@ -1633,8 +1633,8 @@ class TestAssignModifyNames(DRYTest):
         self.assertEqual(self.s.results['a'], 100)
 
     def test_aug_assign_with_flatten_names(self):
-        self.s.ASSIGN_MODIFY_NAMES = True
-        self.s.ATTR_CHAIN_FLATTENING = True
+        self.s.assign_modify_names = True
+        self.s.attr_chain_flattening = True
 
         self.s.names.update({
             'a.b': 40,
@@ -1653,9 +1653,9 @@ class TestAssignModifyNames(DRYTest):
             self.s.eval("a.b.func().c += 70")
 
     def test_multiple_aug_assigns(self):
-        self.s.ASSIGN_MODIFY_NAMES = True
-        self.s.ATTR_CHAIN_FLATTENING = True
-        self.s.MULTIPLE_EXPRESSION_SUPPORT = True
+        self.s.assign_modify_names = True
+        self.s.attr_chain_flattening = True
+        self.s.multiple_expression_support = True
 
         self.s.names.update({
             'a': 40,
@@ -1667,11 +1667,44 @@ class TestAssignModifyNames(DRYTest):
         self.assertEqual(self.s.names['a.c'], 50)
 
     def test_multiple_expression(self):
-        self.s.MULTIPLE_EXPRESSION_SUPPORT = True
-        self.s.ASSIGN_MODIFY_NAMES = True
+        self.s.multiple_expression_support = True
+        self.s.assign_modify_names = True
 
         self.t("a = 5\nb = 10\na + b", 15)  # with \n
         self.t("a = 5;b = 10;a + b", 15)  # with ;
+
+    def test_options(self):
+        ns = TestAttrChainFlattening.Namespace
+
+        # multiple_expression_support
+        self.assertEqual(simple_eval("5 * 2; 6 * 2"), 10)  # without
+        self.assertEqual(
+            simple_eval("5 * 2; 6 * 2", multiple_expression_support=True), 12
+        )  # with
+
+        # assign_modify_names
+        names = dict()
+        simple_eval("a = 10", names=names)
+        self.assertIsNone(names.get('a'))  # without
+
+        names = dict()
+        simple_eval("a = 10", names=names, assign_modify_names=True)
+        self.assertEqual(names.get('a'), 10)  # with
+
+        # attr_chain_flattening
+        names = {'a': ns(b=5), 'a.b': 10}
+        self.assertEqual(simple_eval("a.b", names=names), 5)  # without
+
+        names = {'a': ns(b=5), 'a.b': 10}
+        self.assertEqual(simple_eval("a.b", names=names, attr_chain_flattening=True), 10)  # with
+
+        # evaluator + all options
+        names = {'a': ns(b=5, d=1), 'a.b': 10, 'a.c': 2}
+        evaluator = SimpleEval(names=names, attr_chain_flattening=True, assign_modify_names=True,
+                               multiple_expression_support=True)
+        ret = evaluator.eval("c = a.b * a.c; d=a.d + c; d*=2")
+        self.assertEqual(ret, 42)
+        self.assertEqual(evaluator.results.get('d'), 42)
 
 
 if __name__ == "__main__":  # pragma: no cover

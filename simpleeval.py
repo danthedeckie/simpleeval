@@ -484,7 +484,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     expr = ""
 
-    def __init__(self, operators=None, functions=None, names=None, allowed_attrs=None):
+    def __init__(self, operators=None, functions=None, names=None, allowed_attrs=None, **options):
         """
         Create the evaluator instance.  Set up valid operators (+,-, etc)
         functions (add, random, get_val, whatever) and names."""
@@ -539,10 +539,10 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
         # Defaults:
 
-        self.ATTR_INDEX_FALLBACK = ATTR_INDEX_FALLBACK
-        self.ATTR_CHAIN_FLATTENING = ATTR_CHAIN_FLATTENING
-        self.ASSIGN_MODIFY_NAMES = ASSIGN_MODIFY_NAMES
-        self.MULTIPLE_EXPRESSION_SUPPORT = MULTIPLE_EXPRESSION_SUPPORT
+        self.ATTR_INDEX_FALLBACK = options.get('attr_index_fallback', ATTR_INDEX_FALLBACK)
+        self.attr_chain_flattening = options.get('attr_chain_flattening', ATTR_CHAIN_FLATTENING)
+        self.assign_modify_names = options.get('assign_modify_names', ASSIGN_MODIFY_NAMES)
+        self.multiple_expression_support = options.get('multiple_expression_support', MULTIPLE_EXPRESSION_SUPPORT)
 
         # Check for forbidden functions:
 
@@ -561,7 +561,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if not parsed.body:
             raise InvalidExpression("Sorry, cannot evaluate empty string")
 
-        if self.MULTIPLE_EXPRESSION_SUPPORT:
+        if self.multiple_expression_support:
             return parsed.body
         else:
             if len(parsed.body) > 1:
@@ -594,7 +594,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def _eval(self, node):
         """The internal evaluator used on each node in the parsed tree."""
 
-        if self.ATTR_CHAIN_FLATTENING and isinstance(node, ast.Attribute):
+        if self.attr_chain_flattening and isinstance(node, ast.Attribute):
             node = self._flatten_expr(node)
 
         try:
@@ -611,7 +611,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     def _eval_assign(self, node):
         evaluated_value = self._eval(node.value)
-        if self.ASSIGN_MODIFY_NAMES:
+        if self.assign_modify_names:
             for target in node.targets:
                 self._assign_value(target, evaluated_value)
         else:
@@ -622,7 +622,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     def _eval_aug_assign(self, node):
         evaluated_value = self._eval(node.value)
-        if self.ASSIGN_MODIFY_NAMES:
+        if self.assign_modify_names:
             evaluated_value = self._aug_assign_value(node.target, node.op, evaluated_value)
         else:
             warnings.warn(
@@ -880,7 +880,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             self._assign_update(target.id, value)
             return
 
-        if isinstance(target, ast.Attribute) and self.ATTR_CHAIN_FLATTENING:
+        if isinstance(target, ast.Attribute) and self.attr_chain_flattening:
             chain = self._get_attr_chain(target)
             if chain:
                 self._assign_update('.'.join(chain), value)
@@ -901,7 +901,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             self._assign_update(target.id, value)
             return value
 
-        if isinstance(target, ast.Attribute) and self.ATTR_CHAIN_FLATTENING:
+        if isinstance(target, ast.Attribute) and self.attr_chain_flattening:
             chain = self._get_attr_chain(target)
             if chain:
                 key = '.'.join(chain)
@@ -1031,12 +1031,13 @@ class EvalWithCompoundTypes(SimpleEval):
         return to_return
 
 
-def simple_eval(expr, operators=None, functions=None, names=None, allowed_attrs=None):
+def simple_eval(expr, operators=None, functions=None, names=None, allowed_attrs=None, **options):
     """Simply evaluate an expression"""
     s = SimpleEval(
         operators=operators,
         functions=functions,
         names=names,
         allowed_attrs=allowed_attrs,
+        **options
     )
     return s.eval(expr)
