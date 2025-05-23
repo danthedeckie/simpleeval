@@ -139,7 +139,7 @@ DISALLOW_METHODS = [
 # builtins is a dict in python >3.6 but a module before
 DISALLOW_FUNCTIONS = {type, isinstance, eval, getattr, setattr, repr, compile, open, exec}
 if hasattr(__builtins__, "help") or (
-        hasattr(__builtins__, "__contains__") and "help" in __builtins__  # type: ignore
+    hasattr(__builtins__, "__contains__") and "help" in __builtins__  # type: ignore
 ):
     # PyInstaller environment doesn't include this module.
     DISALLOW_FUNCTIONS.add(help)
@@ -385,7 +385,7 @@ def safe_power(a, b):  # pylint: disable=invalid-name
 
     if abs(a) > MAX_POWER or abs(b) > MAX_POWER:
         raise NumberTooHigh("Sorry! I don't want to evaluate {0} ** {1}".format(a, b))
-    return a ** b
+    return a**b
 
 
 def safe_mult(a, b):  # pylint: disable=invalid-name
@@ -540,10 +540,12 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
         # Defaults:
 
-        self.ATTR_INDEX_FALLBACK = options.get('attr_index_fallback', ATTR_INDEX_FALLBACK)
-        self.attr_chain_flattening = options.get('attr_chain_flattening', ATTR_CHAIN_FLATTENING)
-        self.assign_modify_names = options.get('assign_modify_names', ASSIGN_MODIFY_NAMES)
-        self.multiple_expression_support = options.get('multiple_expression_support', MULTIPLE_EXPRESSION_SUPPORT)
+        self.ATTR_INDEX_FALLBACK = options.get("attr_index_fallback", ATTR_INDEX_FALLBACK)
+        self.attr_chain_flattening = options.get("attr_chain_flattening", ATTR_CHAIN_FLATTENING)
+        self.assign_modify_names = options.get("assign_modify_names", ASSIGN_MODIFY_NAMES)
+        self.multiple_expression_support = options.get(
+            "multiple_expression_support", MULTIPLE_EXPRESSION_SUPPORT
+        )
 
         # Check for forbidden functions:
 
@@ -567,7 +569,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         else:
             if len(parsed.body) > 1:
                 warnings.warn(
-                    "'{}' contains multiple expressions. Only the first will be used.".format(expr),
+                    "'{}' contains multiple expressions. Only the first will be used.".format(
+                        expr
+                    ),
                     MultipleExpressions,
                 )
             return parsed.body[0]
@@ -614,7 +618,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         # Raise assignment attempt warnings before node evaluation to align with test case expectations
         if not self.assign_modify_names:
             warnings.warn(
-                "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
+                "Assignment ({}) attempted, but this is ignored".format(self.expr),
+                AssignmentAttempted,
             )
 
         evaluated_value = self._eval(node.value)
@@ -628,7 +633,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         # Raise assignment attempt warnings before node evaluation to align with test case expectations
         if not self.assign_modify_names:
             warnings.warn(
-                "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
+                "Assignment ({}) attempted, but this is ignored".format(self.expr),
+                AssignmentAttempted,
             )
 
         evaluated_value = self._eval(node.value)
@@ -890,7 +896,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if isinstance(target, ast.Attribute) and self.attr_chain_flattening:
             chain = self._get_attr_chain(target)
             if chain:
-                self._assign_update('.'.join(chain), value)
+                self._assign_update(".".join(chain), value)
                 return
 
         raise FeatureNotAvailable(f"Sorry, {type(target)} Assign is not available.")
@@ -911,7 +917,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if isinstance(target, ast.Attribute) and self.attr_chain_flattening:
             chain = self._get_attr_chain(target)
             if chain:
-                key = '.'.join(chain)
+                key = ".".join(chain)
                 value = calculate_new_value(self.names[key])
                 self._assign_update(key, value)
                 return value
@@ -1045,6 +1051,6 @@ def simple_eval(expr, operators=None, functions=None, names=None, allowed_attrs=
         functions=functions,
         names=names,
         allowed_attrs=allowed_attrs,
-        **options
+        **options,
     )
     return s.eval(expr)
