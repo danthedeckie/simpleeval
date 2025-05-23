@@ -607,7 +607,6 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return evaluated_value
 
     def _eval_aug_assign(self, node):
-        print(ast.dump(node, indent=3))
         evaluated_value = self._eval(node.value)
         if self.ASSIGN_MODIFY_NAMES:
             evaluated_value = self._aug_assign_value(node.target, node.op, evaluated_value)
@@ -894,7 +893,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 key = '.'.join(chain)
                 value = calculate_new_value(self.names[key])
                 self._assign_update(key, value)
-                return
+                return value
 
         raise FeatureNotAvailable(f"Sorry, {type(target)} Aug Assign is not available.")
 

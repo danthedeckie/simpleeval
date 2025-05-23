@@ -1644,9 +1644,9 @@ class TestAssignModifyNames(DRYTest):
         self.assertIn('a.b', self.s.results)
         self.assertEqual(self.s.results['a.b'], 140)
 
-        self.t("a.c += a.b * 2", 270)  # simple assign with flatten name in the expr
+        self.t("a.c += a.b * 2", 310)  # simple assign with flatten name in the expr
         self.assertIn('a.c', self.s.results)
-        self.assertEqual(self.s.results['a.c'], 270)
+        self.assertEqual(self.s.results['a.c'], 310)
 
         with self.assertRaises(FeatureNotAvailable):  # attribute assign
             self.s.eval("a.b.func().c += 70")
