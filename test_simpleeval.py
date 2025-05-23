@@ -930,6 +930,7 @@ class TestNames(DRYTest):
 
     def test_object(self):
         """using an object for name lookup"""
+
         # pylint: disable=attribute-defined-outside-init
 
         class TestObject(object):
@@ -1422,6 +1423,297 @@ class TestAllowedAttributes(DRYTest):
 
         with self.assertRaisesRegex(FeatureNotAvailable, r".*attempted to access `\.gi_frame`.*"):
             simple_eval(evil, names={"foo": Foo()}, allowed_attrs=extended_attrs)
+
+
+class TestAttrChainFlattening(DRYTest):
+    class Namespace:
+        def __init__(self, **kwargs):
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+
+    class Point:
+        def __init__(self, x, y):
+            self.x = x
+            self.y = y
+
+        def sum(self):
+            return self.x + self.y
+
+        def product(self):
+            return self.x * self.y
+
+        def sub(self):
+            return self.y - self.x
+
+    def _parse_flatten_expr(self, code):
+        tree = ast.parse(code)
+        return self.s._flatten_expr(tree.body[0].value)
+
+    def assertIsAttributeNode(self, r, attr=None):
+        self.assertIsInstance(r, ast.Attribute)
+        if attr is not None:
+            self.assertEqual(r.attr, attr)
+
+    def assertIsNameNode(self, r, name=None):
+        self.assertIsInstance(r, ast.Name)
+        if name is not None:
+            self.assertEqual(r.id, name)
+
+    def test_flatten_expr_func(self):
+        self.s.names.update(
+            {
+                "a": 40,
+                "a.b": 43,
+                "a.b.c": 44,
+            }
+        )
+        # 1 parts chain in self.names
+        result = self._parse_flatten_expr("a")
+        self.assertIsNameNode(result, "a")
+
+        # 2 parts chain in self.names
+        result = self._parse_flatten_expr("a.b")
+        self.assertIsNameNode(result, "a.b")
+
+        # 3 parts chain in self.names
+        result = self._parse_flatten_expr("a.b.c")
+        self.assertIsNameNode(result, "a.b.c")
+
+        # 3 parts chain, only 2 in self.names
+        result = self._parse_flatten_expr("a.b.d")
+        self.assertIsAttributeNode(result, "d")
+        self.assertIsNameNode(result.value, "a.b")
+
+        # Name that does not exist in self.names
+        result = self._parse_flatten_expr("x")
+        self.assertIsNameNode(result, "x")
+
+        # Ends with a chain that exist n self.names, should not be processed
+        result = self._parse_flatten_expr("x.a.b.c")
+        self.assertIsAttributeNode(result, "c")
+        self.assertIsAttributeNode(result.value, "b")
+        self.assertIsAttributeNode(result.value.value, "a")
+        self.assertIsNameNode(result.value.value.value, "x")
+
+    def test_attribute_flattening_simple(self):
+        self.s.attr_chain_flattening = True
+        ns = self.Namespace
+
+        self.s.names.update(
+            {"a": 40, "a.b": 43, "a.b.c": 44, "a.c": ns(d=46), "x": 45, "y": ns(a=ns(b=ns(c=47)))}
+        )
+
+        self.t("a", 40)
+        self.t("a.b", 43)
+        self.t("a.b.c", 44)
+        self.t("a.c.d", 46)
+        self.t("x", 45)
+        self.t("y.a.b.c", 47)
+
+    def test_attribute_flattening_complex(self):
+        self.s.attr_chain_flattening = True
+        ns = self.Namespace
+        pt = self.Point
+
+        self.s.names.update(
+            {
+                "a": 40,
+                "a.b": 43,
+                "a.b.c": 44,
+                "a.c": ns(d=46, pt1=pt(45, 46), pt2=pt(11, 13)),
+                "p": pt(14, 45),
+                "q": pt(78, 91),
+                "x": 45,
+                "y": ns(a=ns(b=ns(c=47, d=pt(47, 12))), b=pt(11, 12), c=pt(15, 44)),
+            }
+        )
+
+        self.t("a + a.b", 83)
+        self.t("a * a.b.c", 1760)
+        self.t("q.sum()", 169)
+        self.t("p.product()", 630)
+        self.t("a.c.pt1.product()", 2070)
+        self.t("y.a.b.d.sub()", -35)
+        self.t("a + a.b.c - a.c.d + a.c.pt1.x * a.c.pt2.sum() - x - y.c.y * y.a.b.d.sub()", 2613)
+
+
+class TestAssignModifyNames(DRYTest):
+    def test_assign_simple(self):
+        self.s.assign_modify_names = True
+
+        self.s.names.update(
+            {
+                "a": 40,
+                "b": 30,
+            }
+        )
+
+        self.t("c = a + b", 70)  # simple assign
+        self.assertIn("c", self.s.names)
+        self.assertIn("c", self.s.results)
+        self.assertEqual(self.s.names["c"], 70)
+        self.assertEqual(self.s.results["c"], 70)
+
+        self.t("x = y = a + b", 70)  # multiple targets
+        self.assertIn("x", self.s.names)
+        self.assertIn("x", self.s.results)
+        self.assertIn("y", self.s.names)
+        self.assertIn("y", self.s.results)
+        self.assertEqual(self.s.results["x"], 70)
+        self.assertEqual(self.s.results["y"], 70)
+
+        with self.assertRaises(FeatureNotAvailable):  # attribute assign
+            self.s.eval("obj.attr = a + b")
+
+        with self.assertRaises(FeatureNotAvailable):  # Tuple assign
+            self.s.eval("z, w = a + b")
+
+        self.t("a = a + b", 70)  # update value
+        self.assertIn("a", self.s.names)
+        self.assertIn("a", self.s.results)
+        self.assertEqual(self.s.results["a"], 70)
+
+    def test_assign_with_flatten_names(self):
+        self.s.assign_modify_names = True
+        self.s.attr_chain_flattening = True
+
+        self.t("a.b = 100", 100)  # simple assign
+        self.assertIn("a.b", self.s.names)
+        self.assertIn("a.b", self.s.results)
+        self.assertEqual(self.s.names["a.b"], 100)
+        self.assertEqual(self.s.results["a.b"], 100)
+
+        self.t("a.c = a.b * 2", 200)  # simple assign with flatten name in the expr
+        self.assertIn("a.c", self.s.results)
+        self.assertEqual(self.s.results["a.c"], 200)
+
+        self.t("b.a = c.a = y = 70", 70)  # multiple targets
+        self.assertIn("b.a", self.s.results)
+        self.assertIn("c.a", self.s.results)
+        self.assertIn("y", self.s.results)
+        self.assertEqual(self.s.results["b.a"], 70)
+        self.assertEqual(self.s.results["c.a"], 70)
+        self.assertEqual(self.s.results["y"], 70)
+
+        with self.assertRaises(FeatureNotAvailable):  # attribute assign
+            self.s.eval("a.b.func().c = 70")
+
+        with self.assertRaises(FeatureNotAvailable):  # Tuple assign
+            self.s.eval("z.y, w.x = 70")
+
+        self.t("a.b = a.b - 30", 70)  # update value
+        self.assertEqual(self.s.names["a.b"], 70)
+
+    def test_multiple_assigns(self):
+        self.s.assign_modify_names = True
+        self.s.attr_chain_flattening = True
+        self.s.multiple_expression_support = True
+
+        self.t("a = 10; a.b = 20;", 20)
+        self.assertEqual(self.s.names["a"], 10)
+        self.assertEqual(self.s.names["a.b"], 20)
+
+    def test_aug_assign_simple(self):
+        self.s.assign_modify_names = True
+
+        self.s.names.update(
+            {
+                "a": 40,
+                "b": 30,
+            }
+        )
+
+        self.t("a += b", 70)  # simple  aug assign
+        self.assertIn("a", self.s.results)
+        self.assertEqual(self.s.names["a"], 70)
+        self.assertEqual(self.s.results["a"], 70)
+
+        with self.assertRaises(FeatureNotAvailable):  # attribute assign
+            self.s.eval("obj.attr += a + b")
+
+        self.t("a += 30", 100)  # update value
+        self.assertIn("a", self.s.results)
+        self.assertEqual(self.s.results["a"], 100)
+
+    def test_aug_assign_with_flatten_names(self):
+        self.s.assign_modify_names = True
+        self.s.attr_chain_flattening = True
+
+        self.s.names.update(
+            {
+                "a.b": 40,
+                "a.c": 30,
+            }
+        )
+
+        self.t("a.b += 100", 140)  # simple aug assign
+        self.assertIn("a.b", self.s.results)
+        self.assertEqual(self.s.results["a.b"], 140)
+
+        self.t("a.c += a.b * 2", 310)  # simple assign with flatten name in the expr
+        self.assertIn("a.c", self.s.results)
+        self.assertEqual(self.s.results["a.c"], 310)
+
+        with self.assertRaises(FeatureNotAvailable):  # attribute assign
+            self.s.eval("a.b.func().c += 70")
+
+    def test_multiple_aug_assigns(self):
+        self.s.assign_modify_names = True
+        self.s.attr_chain_flattening = True
+        self.s.multiple_expression_support = True
+
+        self.s.names.update(
+            {
+                "a": 40,
+                "a.c": 30,
+            }
+        )
+
+        self.t("a += a.c + 10; a.c += 20;", 50)
+        self.assertEqual(self.s.names["a"], 80)
+        self.assertEqual(self.s.names["a.c"], 50)
+
+    def test_multiple_expression(self):
+        self.s.multiple_expression_support = True
+        self.s.assign_modify_names = True
+
+        self.t("a = 5\nb = 10\na + b", 15)  # with \n
+        self.t("a = 5;b = 10;a + b", 15)  # with ;
+
+    def test_options(self):
+        ns = TestAttrChainFlattening.Namespace
+
+        # multiple_expression_support
+        # self.assertEqual(simple_eval("5 * 2; 6 * 2"), 10)  # without
+        self.assertEqual(simple_eval("5 * 2; 6 * 2", multiple_expression_support=True), 12)  # with
+
+        # assign_modify_names
+        # names = dict()
+        # simple_eval("a = 10", names=names)
+        # self.assertIsNone(names.get('a'))  # without
+
+        names = dict()
+        simple_eval("a = 10", names=names, assign_modify_names=True)
+        self.assertEqual(names.get("a"), 10)  # with
+
+        # attr_chain_flattening
+        names = {"a": ns(b=5), "a.b": 10}
+        self.assertEqual(simple_eval("a.b", names=names), 5)  # without
+
+        names = {"a": ns(b=5), "a.b": 10}
+        self.assertEqual(simple_eval("a.b", names=names, attr_chain_flattening=True), 10)  # with
+
+        # evaluator + all options
+        names = {"a": ns(b=5, d=1), "a.b": 10, "a.c": 2}
+        evaluator = SimpleEval(
+            names=names,
+            attr_chain_flattening=True,
+            assign_modify_names=True,
+            multiple_expression_support=True,
+        )
+        ret = evaluator.eval("c = a.b * a.c; d=a.d + c; d*=2")
+        self.assertEqual(ret, 42)
+        self.assertEqual(evaluator.results.get("d"), 42)
 
 
 if __name__ == "__main__":  # pragma: no cover

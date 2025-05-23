@@ -43,7 +43,8 @@ Contributors:
 - impala2 (Kirill Stepanov) (massive _eval refactor)
 - gk (ugik) (Other iterables than str can DOS too, and can be made)
 - daveisfera (Dave Johansen) 'not' Boolean op, Pycharm, pep8, various other fixes
-- xaled (Khalid Grandi) method chaining correctly, double-eval bugfix.
+- xaled (Khalid Grandi) method chaining correctly, double-eval bugfix,
+    adding support for name assignments, multiple expressions and attribute chain flattening.
 - EdwardBetts (Edward Betts) spelling correction.
 - charlax (Charles-Axel Dein charlax) Makefile and cleanups
 - mommothazaz123 (Andrew Zhu) f"string" support, Python 3.8 support
@@ -466,6 +467,9 @@ DEFAULT_FUNCTIONS = {
 DEFAULT_NAMES = {"True": True, "False": False, "None": None}
 
 ATTR_INDEX_FALLBACK = True
+ATTR_CHAIN_FLATTENING = False
+ASSIGN_MODIFY_NAMES = False
+MULTIPLE_EXPRESSION_SUPPORT = False
 
 
 ########################################
@@ -481,7 +485,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     expr = ""
 
-    def __init__(self, operators=None, functions=None, names=None, allowed_attrs=None):
+    def __init__(self, operators=None, functions=None, names=None, allowed_attrs=None, **options):
         """
         Create the evaluator instance.  Set up valid operators (+,-, etc)
         functions (add, random, get_val, whatever) and names."""
@@ -492,6 +496,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             functions = DEFAULT_FUNCTIONS.copy()
         if names is None:
             names = DEFAULT_NAMES.copy()
+        self.results = dict()  # updated or set names
 
         self.operators = operators
         self.functions = functions
@@ -535,7 +540,12 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
         # Defaults:
 
-        self.ATTR_INDEX_FALLBACK = ATTR_INDEX_FALLBACK
+        self.ATTR_INDEX_FALLBACK = options.get("attr_index_fallback", ATTR_INDEX_FALLBACK)
+        self.attr_chain_flattening = options.get("attr_chain_flattening", ATTR_CHAIN_FLATTENING)
+        self.assign_modify_names = options.get("assign_modify_names", ASSIGN_MODIFY_NAMES)
+        self.multiple_expression_support = options.get(
+            "multiple_expression_support", MULTIPLE_EXPRESSION_SUPPORT
+        )
 
         # Check for forbidden functions:
 
@@ -546,32 +556,51 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def __del__(self):
         self.nodes = None
 
-    @staticmethod
-    def parse(expr):
+    def parse(self, expr):
         """parse an expression into a node tree"""
 
         parsed = ast.parse(expr.strip())
 
         if not parsed.body:
             raise InvalidExpression("Sorry, cannot evaluate empty string")
-        if len(parsed.body) > 1:
-            warnings.warn(
-                "'{}' contains multiple expressions. Only the first will be used.".format(expr),
-                MultipleExpressions,
-            )
-        return parsed.body[0]
+
+        if self.multiple_expression_support:
+            return parsed.body
+        else:
+            if len(parsed.body) > 1:
+                warnings.warn(
+                    "'{}' contains multiple expressions. Only the first will be used.".format(
+                        expr
+                    ),
+                    MultipleExpressions,
+                )
+            return parsed.body[0]
 
     def eval(self, expr, previously_parsed=None):
         """evaluate an expression, using the operators, functions and
         names previously set up."""
+        # clear results
+        self.results.clear()
 
         # set a copy of the expression aside, so we can give nice errors...
         self.expr = expr
 
-        return self._eval(previously_parsed or self.parse(expr))
+        # parse
+        parsed_expressions = previously_parsed or self.parse(expr)
+        if not isinstance(parsed_expressions, list):
+            parsed_expressions = [parsed_expressions]
+
+        ret = None
+        for parsed_expression in parsed_expressions:
+            ret = self._eval(parsed_expression)
+
+        return ret
 
     def _eval(self, node):
         """The internal evaluator used on each node in the parsed tree."""
+
+        if self.attr_chain_flattening and isinstance(node, ast.Attribute):
+            node = self._flatten_expr(node)
 
         try:
             handler = self.nodes[type(node)]
@@ -586,16 +615,33 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         return self._eval(node.value)
 
     def _eval_assign(self, node):
-        warnings.warn(
-            "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
-        )
-        return self._eval(node.value)
+        # Raise assignment attempt warnings before node evaluation to align with test case expectations
+        if not self.assign_modify_names:
+            warnings.warn(
+                "Assignment ({}) attempted, but this is ignored".format(self.expr),
+                AssignmentAttempted,
+            )
+
+        evaluated_value = self._eval(node.value)
+        if self.assign_modify_names:
+            for target in node.targets:
+                self._assign_value(target, evaluated_value)
+
+        return evaluated_value
 
     def _eval_aug_assign(self, node):
-        warnings.warn(
-            "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
-        )
-        return self._eval(node.value)
+        # Raise assignment attempt warnings before node evaluation to align with test case expectations
+        if not self.assign_modify_names:
+            warnings.warn(
+                "Assignment ({}) attempted, but this is ignored".format(self.expr),
+                AssignmentAttempted,
+            )
+
+        evaluated_value = self._eval(node.value)
+        if self.assign_modify_names:
+            evaluated_value = self._aug_assign_value(node.target, node.op, evaluated_value)
+
+        return evaluated_value
 
     @staticmethod
     def _eval_import(node):
@@ -804,6 +850,84 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             return fmt.format(self._eval(node.value))
         return self._eval(node.value)
 
+    def _flatten_expr(self, expr_node):
+        chain = self._get_attr_chain(expr_node)
+
+        if chain:
+            flattened = self._flatten_chain(chain, ctx=expr_node.ctx)
+            if flattened:
+                return flattened
+        return expr_node
+
+    @staticmethod
+    def _get_attr_chain(node):
+        """Recursively collect attribute chain from the AST node."""
+        chain = []
+        while isinstance(node, ast.Attribute):
+            chain.append(node.attr)
+            node = node.value
+        if isinstance(node, ast.Name):
+            chain.append(node.id)
+            chain.reverse()
+            return chain
+        return None
+
+    def _flatten_chain(self, chain, ctx=None):
+        """Try to find the longest prefix of the chain that exists in names"""
+        for i in range(len(chain), 0, -1):
+            prefix = ".".join(chain[:i])
+            if prefix in self.names:
+                if i == len(chain):
+                    # Fully matched
+                    return ast.Name(id=prefix, ctx=ctx)
+                else:
+                    # Partially matched
+                    base = ast.Name(id=prefix, ctx=ctx)
+                    for attr in chain[i:]:
+                        base = ast.Attribute(value=base, attr=attr, ctx=ctx)
+                    return base
+        return None  # No flattening
+
+    def _assign_value(self, target, value):
+        if isinstance(target, ast.Name):
+            self._assign_update(target.id, value)
+            return
+
+        if isinstance(target, ast.Attribute) and self.attr_chain_flattening:
+            chain = self._get_attr_chain(target)
+            if chain:
+                self._assign_update(".".join(chain), value)
+                return
+
+        raise FeatureNotAvailable(f"Sorry, {type(target)} Assign is not available.")
+
+    def _aug_assign_value(self, target, operation, value):
+        def calculate_new_value(_target_value):
+            try:
+                operator = self.operators[type(operation)]
+            except KeyError:
+                raise OperatorNotDefined(operation, self.expr)
+            return operator(_target_value, value)
+
+        if isinstance(target, ast.Name):
+            value = calculate_new_value(self.names[target.id])
+            self._assign_update(target.id, value)
+            return value
+
+        if isinstance(target, ast.Attribute) and self.attr_chain_flattening:
+            chain = self._get_attr_chain(target)
+            if chain:
+                key = ".".join(chain)
+                value = calculate_new_value(self.names[key])
+                self._assign_update(key, value)
+                return value
+
+        raise FeatureNotAvailable(f"Sorry, {type(target)} Aug Assign is not available.")
+
+    def _assign_update(self, name, value):
+        self.names[name] = value
+        self.results[name] = value
+
 
 class EvalWithCompoundTypes(SimpleEval):
     """
@@ -920,12 +1044,13 @@ class EvalWithCompoundTypes(SimpleEval):
         return to_return
 
 
-def simple_eval(expr, operators=None, functions=None, names=None, allowed_attrs=None):
+def simple_eval(expr, operators=None, functions=None, names=None, allowed_attrs=None, **options):
     """Simply evaluate an expression"""
     s = SimpleEval(
         operators=operators,
         functions=functions,
         names=names,
         allowed_attrs=allowed_attrs,
+        **options,
     )
     return s.eval(expr)
