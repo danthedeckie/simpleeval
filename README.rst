@@ -482,6 +482,86 @@ You can add your own classes & limit access to attrs:
 
 will now allow access to `foo.bar` but not allow anything else.
 
+Assignment Support
+------------------
+
+If you want to allow modification of the `names` dictionary using assignment or augmented assignment
+(`=`, `+=`, etc.), set `assign_modify_names=True`.
+
+.. code-block:: pycon
+
+    >>> names = dict()
+    >>> simple_eval("a = 10 * 2", names=names, assign_modify_names=True)
+    >>> print(names['a'])
+    20
+
+    >>> names = dict(a=10)
+    >>> simple_eval("a += 5", names=names, assign_modify_names=True)
+    >>> print(names['a'])
+    15
+
+When using the `SimpleEval` class, updated values are available in the `.results` attribute:
+
+.. code-block:: pycon
+
+    >>> s = SimpleEval(names=dict(a=10, b=5), assign_modify_names=True)
+    >>> s.eval("b += a")
+    >>> print(s.results)
+    {'b': 15}
+
+Note: Assignment to attributes (e.g., `a.b = 1`) or tuples (e.g., `a, b = (1, 2)`) is not supported.
+
+Multiple Expressions
+--------------------
+
+By default, only the first expression is evaluated. To evaluate multiple expressions separated
+by `;` or newlines and return the last expression's result, set `multiple_expression_support=True`.
+
+.. code-block:: pycon
+
+    >>> simple_eval("5 * 2; 6 * 2", multiple_expression_support=False)
+    10
+
+    >>> simple_eval("5 * 2\n 6 * 2", multiple_expression_support=True)
+    12
+
+Combined with assignment:
+
+.. code-block:: pycon
+
+    >>> simple_eval("a=5;b=2;a + b", multiple_expression_support=True, assign_modify_names=True)
+    7
+
+Attribute Chain Flattening
+--------------------------
+
+If `attr_chain_flattening=True`, then attributes can be treated as flat keys in `names`.
+
+.. code-block:: pycon
+
+    >>> simple_eval("a + a.b", names={"a": 1, "a.b": 2}, attr_chain_flattening=True)
+    3
+
+If both a flat key and an actual attribute exist, the flat key takes precedence:
+
+.. code-block:: pycon
+
+    >>> from types import SimpleNamespace
+    >>> simple_eval("a.attr", names={"a": SimpleNamespace(attr=True), "a.attr": False}, attr_chain_flattening=True)
+    False
+
+With assignment enabled, only flat keys are written, as attribute assignment is unsupported:
+
+.. code-block:: pycon
+
+    >>> from types import SimpleNamespace
+    >>> names = {"a": SimpleNamespace(b=1)}
+    >>> simple_eval("a.b = 10", names=names, attr_chain_flattening=True, assign_modify_names=True)
+    >>> print(names['a.b'])
+    10
+    >>> print(names['a'].b)
+    1
+
 
 Other...
 --------
