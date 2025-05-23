@@ -43,7 +43,8 @@ Contributors:
 - impala2 (Kirill Stepanov) (massive _eval refactor)
 - gk (ugik) (Other iterables than str can DOS too, and can be made)
 - daveisfera (Dave Johansen) 'not' Boolean op, Pycharm, pep8, various other fixes
-- xaled (Khalid Grandi) method chaining correctly, double-eval bugfix.
+- xaled (Khalid Grandi) method chaining correctly, double-eval bugfix,
+    adding support for name assignments, multiple expressions and attribute chain flattening.
 - EdwardBetts (Edward Betts) spelling correction.
 - charlax (Charles-Axel Dein charlax) Makefile and cleanups
 - mommothazaz123 (Andrew Zhu) f"string" support, Python 3.8 support
