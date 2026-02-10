@@ -524,3 +524,8 @@ BEWARE
 I've done the best I can with this library - but there's no warranty, no guarantee, nada.  A lot of
 very clever people think the whole idea of trying to sandbox CPython is impossible.  Read the code
 yourself, and use it at your own risk.
+
+The sandboxing / safety features of simpleeval *only apply to the expression* that is passed in to
+be evaluated, and rely on the python interpreter working as normal.  If you have monkey-patched
+the interpreter, or pass in objects/classes/functions with unsafe code in them, simpleeval cannot
+protect you.
