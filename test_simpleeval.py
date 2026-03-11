@@ -79,9 +79,7 @@ class TestBasic(DRYTest):
 
         self.s.names = {"out": True, "position": 3}
         self.t(
-            "(out and position <=6 and -10)"
-            " or (out and position > 6 and -5)"
-            " or (not out and 15)",
+            "(out and position <=6 and -10) or (out and position > 6 and -5) or (not out and 15)",
             -10,
         )
 

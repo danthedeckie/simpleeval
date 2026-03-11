@@ -1,5 +1,5 @@
 """
-SimpleEval - (C) 2013-2024 Daniel Fairhead
+SimpleEval - (C) 2013-2026 Daniel Fairhead
 -------------------------------------
 
 An short, easy to use, safe and reasonably extensible expression evaluator.
@@ -294,7 +294,7 @@ class FunctionNotDefined(InvalidExpression):
     """sorry! That function isn't defined!"""
 
     def __init__(self, func_name, expression):
-        self.message = "Function '{0}' not defined," " for expression '{1}'.".format(
+        self.message = "Function '{0}' not defined, for expression '{1}'.".format(
             func_name, expression
         )
         setattr(self, "func_name", func_name)  # bypass 2to3 confusion.
@@ -404,7 +404,7 @@ def safe_add(a, b):  # pylint: disable=invalid-name
     if hasattr(a, "__len__") and hasattr(b, "__len__"):
         if len(a) + len(b) > MAX_STRING_LENGTH:
             raise IterableTooLong(
-                "Sorry, adding those two together would" " make something too long."
+                "Sorry, adding those two together would make something too long."
             )
     return a + b
 
@@ -577,7 +577,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             handler = self.nodes[type(node)]
         except KeyError:
             raise FeatureNotAvailable(
-                "Sorry, {0} is not available in this " "evaluator".format(type(node).__name__)
+                "Sorry, {0} is not available in this evaluator".format(type(node).__name__)
             )
 
         return handler(node)
@@ -707,9 +707,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 pass
         elif not hasattr(self.names, "__getitem__"):
             raise InvalidExpression(
-                'Trying to use name (variable) "{0}"'
-                ' when no "names" defined for'
-                " evaluator".format(node.id)
+                'Trying to use name (variable) "{0}" when no "names" defined for evaluator'.format(
+                    node.id
+                )
             )
 
         if node.id in self.functions:
@@ -736,7 +736,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 )
         if node.attr in DISALLOW_METHODS:
             raise FeatureNotAvailable(
-                "Sorry, this method is not available. " "({0})".format(node.attr)
+                "Sorry, this method is not available. ({0})".format(node.attr)
             )
 
         # Evaluate "node" - the thing that we're trying to access an attr of first:

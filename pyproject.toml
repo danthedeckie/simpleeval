@@ -1,10 +1,10 @@
 [project]
 name = "simpleeval"
-version = "1.0.3"
+version = "1.0.4"
 requires-python = ">=3.9"
 readme = "README.rst"
 description = "A simple, safe single expression evaluator library."
-licence = "MIT"
+license = "MIT"
 authors = [
     { name = "Daniel Fairhead", email = "danthedeckie@gmail.com" }
 ]
@@ -41,9 +41,14 @@ include = [
     "README.rst",
     "LICENCE",
 ]
+core-metadata-version = "2.3"
 
 [tool.hatch.version]
 path = "simpleeval.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["simpleeval.py"]
+core-metadata-version = "2.3"
 
 [tool.hatch.envs.hatch-test]
 default-args = ["test_simpleeval.py"]

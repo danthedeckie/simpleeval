@@ -1,4 +1,4 @@
 ruff==0.6.9
 mypy==1.11.2
-hatch==1.12.0
+hatch==1.16.5
 twine==5.1.1
