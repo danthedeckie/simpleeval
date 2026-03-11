@@ -1,5 +1,5 @@
 """
-SimpleEval - (C) 2013-2024 Daniel Fairhead
+SimpleEval - (C) 2013-2026 Daniel Fairhead
 -------------------------------------
 
 An short, easy to use, safe and reasonably extensible expression evaluator.
