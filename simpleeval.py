@@ -104,6 +104,7 @@ well:
 
 import ast
 import operator as op
+import os
 import sys
 import warnings
 from random import random
@@ -136,7 +137,21 @@ DISALLOW_METHODS = [
 # their functionality is required, then please wrap them up in a safe container.  And think
 # very hard about it first.  And don't say I didn't warn you.
 # builtins is a dict in python >3.6 but a module before
-DISALLOW_FUNCTIONS = {type, isinstance, eval, getattr, setattr, repr, compile, open, exec}
+DISALLOW_FUNCTIONS = {
+    type,
+    isinstance,
+    eval,
+    getattr,
+    setattr,
+    repr,
+    compile,
+    open,
+    exec,
+    globals,
+    locals,
+    os.popen,
+    os.system,
+}
 if hasattr(__builtins__, "help") or (
     hasattr(__builtins__, "__contains__") and "help" in __builtins__  # type: ignore
 ):
