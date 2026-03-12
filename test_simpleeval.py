@@ -590,6 +590,34 @@ class TestTryingToBreakOut(DRYTest):
 
             simpleeval.DISALLOW_PREFIXES = dis
 
+    def test_breakout_via_module_access(self):
+        import os.path
+
+        s = SimpleEval(names={"path": os.path})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("path.os.popen('id').read()")
+
+    def test_breakout_via_module_access_attr(self):
+        import os.path
+
+        class Foo:
+            p = os.path
+
+        s = SimpleEval(names={"thing": Foo()})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("thing.p.os.popen('id').read()")
+
+    def test_breakout_via_disallowed_functions_as_attrs(self):
+        class Foo:
+            p = exec
+
+        s = SimpleEval(names={"thing": Foo()})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("thing.p('exit')")
+
 
 class TestCompoundTypes(DRYTest):
     """Test the compound-types edition of the library"""
@@ -1250,32 +1278,36 @@ class TestShortCircuiting(DRYTest):
 
 
 class TestDisallowedFunctions(DRYTest):
+    def test_functions_in_disallowed_functions_list(self):
+        # a bit of double-entry testing. probably pointless.
+        assert simpleeval.DISALLOW_FUNCTIONS.issuperset(
+            {
+                type,
+                isinstance,
+                eval,
+                getattr,
+                setattr,
+                help,
+                repr,
+                compile,
+                open,
+                exec,
+                os.popen,
+                os.system,
+            }
+        )
+
     def test_functions_are_disallowed_at_init(self):
-        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open, exec]
-
-        for f in simpleeval.DISALLOW_FUNCTIONS:
-            assert f in DISALLOWED
-
-        for x in DISALLOWED:
+        for dangerous_function in simpleeval.DISALLOW_FUNCTIONS:
             with self.assertRaises(FeatureNotAvailable):
-                SimpleEval(functions={"foo": x})
+                SimpleEval(functions={"foo": dangerous_function})
 
     def test_functions_are_disallowed_in_expressions(self):
-        DISALLOWED = [type, isinstance, eval, getattr, setattr, help, repr, compile, open, exec]
-
-        for f in simpleeval.DISALLOW_FUNCTIONS:
-            assert f in DISALLOWED
-
-        DF = simpleeval.DEFAULT_FUNCTIONS.copy()
-
-        for x in DISALLOWED:
-            simpleeval.DEFAULT_FUNCTIONS = DF.copy()
+        for dangerous_function in simpleeval.DISALLOW_FUNCTIONS:
             with self.assertRaises(FeatureNotAvailable):
                 s = SimpleEval()
-                s.functions["foo"] = x
+                s.functions["foo"] = dangerous_function
                 s.eval("foo(42)")
-
-        simpleeval.DEFAULT_FUNCTIONS = DF.copy()
 
     def test_breakout_via_generator(self):
         # Thanks decorator-factory

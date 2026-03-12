@@ -106,9 +106,10 @@ import ast
 import operator as op
 import os
 import sys
+import types
 import warnings
 from random import random
-from typing import Type, Dict, Set, Union
+from typing import Type, Dict, Set, Union, Hashable
 
 ########################################
 # Module wide 'globals'
@@ -382,6 +383,10 @@ class MultipleExpressions(UserWarning):
     """Only the first expression parsed will be used"""
 
     pass
+
+
+# Sentinal used during attr access
+_ATTR_NOT_FOUND = object()
 
 
 ########################################
@@ -774,18 +779,25 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                     f"Sorry, '.{node.attr}' access not allowed on '{type_to_check}'"
                 )
 
+        item = _ATTR_NOT_FOUND
+
         # Maybe the base object is an actual object, not just a dict
         try:
-            return getattr(node_evaluated, node.attr)
+            item = getattr(node_evaluated, node.attr)
         except (AttributeError, TypeError):
-            pass
+            # TODO: is this a good idea?  Try and look for [x] if .x doesn't work?
+            if self.ATTR_INDEX_FALLBACK:
+                try:
+                    item = node_evaluated[node.attr]
+                except (KeyError, TypeError):
+                    pass
 
-        # TODO: is this a good idea?  Try and look for [x] if .x doesn't work?
-        if self.ATTR_INDEX_FALLBACK:
-            try:
-                return node_evaluated[node.attr]
-            except (KeyError, TypeError):
-                pass
+        if item is not _ATTR_NOT_FOUND:
+            if isinstance(item, types.ModuleType):
+                raise FeatureNotAvailable("Sorry, modules are not allowed in attribute access")
+            if isinstance(item, Hashable) and item in DISALLOW_FUNCTIONS:
+                raise FeatureNotAvailable("This function is forbidden")
+            return item
 
         # If it is neither, raise an exception
         raise AttributeDoesNotExist(node.attr, self.expr)
