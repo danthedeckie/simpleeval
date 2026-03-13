@@ -110,7 +110,7 @@ import sys
 import types
 import warnings
 from random import random
-from typing import Type, Dict, Set, Union, Hashable
+from typing import Type, Dict, Set, Union
 
 ########################################
 # Module wide 'globals'
@@ -131,6 +131,17 @@ DISALLOW_METHODS = [
     "cr_frame",
     "exec",
 ]
+
+########################################
+# Tiny helpers:
+
+
+def is_hashable(value):
+    try:
+        return hash(value)
+    except TypeError:
+        return False
+
 
 # Disallow functions:
 # This, strictly speaking, is not necessary.  These /should/ never be accessible anyway,
@@ -623,7 +634,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
         if isinstance(item, types.ModuleType):
             raise FeatureNotAvailable("Sorry, modules are not allowed")
-        if isinstance(item, Hashable) and item in DISALLOW_FUNCTIONS:
+        if is_hashable(item) and item in DISALLOW_FUNCTIONS:
             raise FeatureNotAvailable("This function is forbidden")
 
         if isinstance(item, (list, tuple)):
@@ -864,7 +875,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if item is not _ATTR_NOT_FOUND:
             if isinstance(item, types.ModuleType):
                 raise FeatureNotAvailable("Sorry, modules are not allowed in attribute access")
-            if isinstance(item, Hashable) and item in DISALLOW_FUNCTIONS:
+            if is_hashable(item) and item in DISALLOW_FUNCTIONS:
                 raise FeatureNotAvailable("This function is forbidden")
             return item
 
