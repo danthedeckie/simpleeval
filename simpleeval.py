@@ -63,6 +63,7 @@ Contributors:
 - cedk (Cédric Krier) <ced@b2ck.com> Allow running tests with Werror
 - decorator-factory <decorator-factory@protonmail.com> More security fixes
 - lkruitwagen (Lucas Kruitwagen) Adding support for dict comprehensions
+- ByamB4 (Byambadalai) Reported breakout via module & disallowed functions as object attrs
 
 -------------------------------------
 Basic Usage:
@@ -104,10 +105,12 @@ well:
 
 import ast
 import operator as op
+import os
 import sys
+import types
 import warnings
 from random import random
-from typing import Type, Dict, Set, Union
+from typing import Type, Dict, Set, Union, Hashable
 
 ########################################
 # Module wide 'globals'
@@ -136,7 +139,21 @@ DISALLOW_METHODS = [
 # their functionality is required, then please wrap them up in a safe container.  And think
 # very hard about it first.  And don't say I didn't warn you.
 # builtins is a dict in python >3.6 but a module before
-DISALLOW_FUNCTIONS = {type, isinstance, eval, getattr, setattr, repr, compile, open, exec}
+DISALLOW_FUNCTIONS = {
+    type,
+    isinstance,
+    eval,
+    getattr,
+    setattr,
+    repr,
+    compile,
+    open,
+    exec,
+    globals,
+    locals,
+    os.popen,
+    os.system,
+}
 if hasattr(__builtins__, "help") or (
     hasattr(__builtins__, "__contains__") and "help" in __builtins__  # type: ignore
 ):
@@ -369,6 +386,54 @@ class MultipleExpressions(UserWarning):
     pass
 
 
+# Sentinal used during attr access
+_ATTR_NOT_FOUND = object()
+
+
+class ModuleWrapper:
+    """Wraps a module to safely expose it in expressions.
+
+    By default, modules are not allowed in simpleeval names to prevent
+    accidental or malicious access to dangerous functions. ModuleWrapper
+    allows explicit opt-in to module access while still enforcing
+    restrictions on dangerous methods and functions.
+
+    Example:
+        >>> from simpleeval import SimpleEval, ModuleWrapper
+        >>> import os.path
+        >>> s = SimpleEval(names={'path': ModuleWrapper(os.path)})
+        >>> s.eval('path.exists("/etc/passwd")')  # Works
+    """
+
+    def __init__(self, module, allowed_attrs=None):
+        """
+        Args:
+            module: The module to wrap
+            allowed_attrs: Optional set of allowed attribute names.
+                          If None, all public attributes are allowed
+                          (but still subject to DISALLOW_METHODS checks).
+        """
+        if not isinstance(module, types.ModuleType):
+            raise TypeError(f"ModuleWrapper requires a module, got {type(module)}")
+        self._module = module
+        self._allowed_attrs = allowed_attrs
+
+    def __getattr__(self, name):
+        # Block private/magic attributes
+        if name.startswith("_"):
+            raise FeatureNotAvailable(f"Access to private attribute '{name}' is not allowed")
+
+        # Check if attribute is in disallowed methods list
+        if name in DISALLOW_METHODS:
+            raise FeatureNotAvailable(f"Method '{name}' is not allowed on modules")
+
+        # Check allowed_attrs whitelist if specified
+        if self._allowed_attrs is not None and name not in self._allowed_attrs:
+            raise FeatureNotAvailable(f"Access to '{name}' is not allowed on this wrapped module")
+
+        return getattr(self._module, name)
+
+
 ########################################
 # Default simple functions to include:
 
@@ -546,6 +611,28 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def __del__(self):
         self.nodes = None
 
+    def _check_disallowed_items(self, item):
+        """Check if item contains disallowed functions or modules.
+        Recursively checks containers (list, dict, tuple).
+        Raises FeatureNotAvailable if forbidden content found.
+        ModuleWrapper instances are allowed (explicit opt-in to module access).
+        """
+        # Allow ModuleWrapper (explicit opt-in to module access)
+        if isinstance(item, ModuleWrapper):
+            return
+
+        if isinstance(item, types.ModuleType):
+            raise FeatureNotAvailable("Sorry, modules are not allowed")
+        if isinstance(item, Hashable) and item in DISALLOW_FUNCTIONS:
+            raise FeatureNotAvailable("This function is forbidden")
+
+        if isinstance(item, (list, tuple)):
+            for element in item:
+                self._check_disallowed_items(element)
+        elif isinstance(item, dict):
+            for value in item.values():
+                self._check_disallowed_items(value)
+
     @staticmethod
     def parse(expr):
         """parse an expression into a node tree"""
@@ -580,7 +667,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 "Sorry, {0} is not available in this evaluator".format(type(node).__name__)
             )
 
-        return handler(node)
+        result = handler(node)
+        self._check_disallowed_items(result)
+        return result
 
     def _eval_expr(self, node):
         return self._eval(node.value)
@@ -759,18 +848,25 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                     f"Sorry, '.{node.attr}' access not allowed on '{type_to_check}'"
                 )
 
+        item = _ATTR_NOT_FOUND
+
         # Maybe the base object is an actual object, not just a dict
         try:
-            return getattr(node_evaluated, node.attr)
+            item = getattr(node_evaluated, node.attr)
         except (AttributeError, TypeError):
-            pass
+            # TODO: is this a good idea?  Try and look for [x] if .x doesn't work?
+            if self.ATTR_INDEX_FALLBACK:
+                try:
+                    item = node_evaluated[node.attr]
+                except (KeyError, TypeError):
+                    pass
 
-        # TODO: is this a good idea?  Try and look for [x] if .x doesn't work?
-        if self.ATTR_INDEX_FALLBACK:
-            try:
-                return node_evaluated[node.attr]
-            except (KeyError, TypeError):
-                pass
+        if item is not _ATTR_NOT_FOUND:
+            if isinstance(item, types.ModuleType):
+                raise FeatureNotAvailable("Sorry, modules are not allowed in attribute access")
+            if isinstance(item, Hashable) and item in DISALLOW_FUNCTIONS:
+                raise FeatureNotAvailable("This function is forbidden")
+            return item
 
         # If it is neither, raise an exception
         raise AttributeDoesNotExist(node.attr, self.expr)

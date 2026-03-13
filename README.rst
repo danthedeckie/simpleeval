@@ -443,6 +443,11 @@ A few builtin functions are listed in ``simpleeval.DISALLOW_FUNCTIONS``.  ``type
 If you need to give access to this kind of functionality to your expressions, then be very
 careful.  You'd be better wrapping the functions in your own safe wrappers.
 
+Accessing modules as attributes is disallowed too.
+
+Allowlist recommendation
+------------------------
+
 There is an additional layer of protection you can add in by passing in ``allowed_attrs``, which
 makes all attribute access based opt-in rather than opt-out - which is a lot safer design:
 
@@ -460,8 +465,8 @@ reasonably sensible defaults with BASIC_ALLOWED_ATTRS:
 
 is fine - ``strip()`` should be safe on strings.
 
-It is recommended to add ``allowed_attrs=BASIC_ALLOWED_ATTRS``  whenever possible, and it will
-be the default for 2.x.
+It is strongly recommended to add ``allowed_attrs=BASIC_ALLOWED_ATTRS``  whenever possible,
+and it will be the default for 2.x.
 
 You can add your own classes & limit access to attrs:
 
@@ -482,6 +487,48 @@ You can add your own classes & limit access to attrs:
 
 will now allow access to `foo.bar` but not allow anything else.
 
+Module Access
+-------------
+
+By default, module access is not allowed in simpleeval to prevent accidental or
+malicious access to dangerous functions. However, if you need to expose modules,
+(eg. `numpy` or similar) you can use ``ModuleWrapper`` to do so safely.
+
+``ModuleWrapper`` allows explicit opt-in to module access while still enforcing
+restrictions on dangerous methods and private attributes:
+
+.. code-block:: pycon
+
+    >>> from simpleeval import SimpleEval, ModuleWrapper
+    >>> import os.path
+    >>> s = SimpleEval(names={'path': ModuleWrapper(os.path)})
+    >>> s.eval("path.exists('/etc/passwd')")
+    True
+
+You can also restrict which attributes are accessible by passing an
+``allowed_attrs`` set:
+
+.. code-block:: pycon
+
+    >>> s = SimpleEval(names={
+    ...     'path': ModuleWrapper(os.path, allowed_attrs={'exists', 'join'})
+    ... })
+    >>> s.eval("path.exists('/etc/passwd')")
+    True
+    >>> s.eval("path.dirname('/etc/passwd')")  # Not in allowed_attrs
+    simpleeval.FeatureNotAvailable: Access to 'dirname' is not allowed...
+
+Private attributes (starting with ``_``) and methods in ``DISALLOW_METHODS``
+are always blocked, even if not using an allowlist:
+
+.. code-block:: pycon
+
+    >>> s = SimpleEval(names={'path': ModuleWrapper(os.path)})
+    >>> s.eval("path.__file__")
+    simpleeval.FeatureNotAvailable: Access to private attribute '__file__'...
+
+If you really really need that - you can make your own wrappers and overrides.
+But I advise against it.
 
 Other...
 --------
