@@ -63,6 +63,7 @@ Contributors:
 - cedk (Cédric Krier) <ced@b2ck.com> Allow running tests with Werror
 - decorator-factory <decorator-factory@protonmail.com> More security fixes
 - lkruitwagen (Lucas Kruitwagen) Adding support for dict comprehensions
+- ByamB4 (Byambadalai) Reported breakout via module & disallowed functions as object attrs
 
 -------------------------------------
 Basic Usage:
