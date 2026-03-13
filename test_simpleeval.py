@@ -25,6 +25,7 @@ from simpleeval import (
     FeatureNotAvailable,
     FunctionNotDefined,
     InvalidExpression,
+    ModuleWrapper,
     NameNotDefined,
     OperatorNotDefined,
     SimpleEval,
@@ -617,6 +618,499 @@ class TestTryingToBreakOut(DRYTest):
 
         with self.assertRaises(FeatureNotAvailable):
             s.eval("thing.p('exit')")
+
+    def test_breakout_forbidden_function_in_list(self):
+        """Disallowed functions in lists should be blocked"""
+        s = SimpleEval(names={"funcs": [exec, eval]})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("funcs[0]('exit')")
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("funcs[1]('1+1')")
+
+    def test_breakout_module_in_list(self):
+        """Modules in lists should be blocked"""
+        import os.path
+
+        s = SimpleEval(names={"things": [os.path, os.system]})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("things[0].os.popen('id').read()")
+
+    def test_breakout_forbidden_function_in_dict_value(self):
+        """Disallowed functions as dict values should be blocked"""
+        s = SimpleEval(names={"funcs": {"bad": exec, "evil": eval}})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("funcs['bad']('exit')")
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("funcs['evil']('1+1')")
+
+    def test_breakout_module_in_dict_value(self):
+        """Modules as dict values should be blocked"""
+        import os.path
+
+        s = SimpleEval(names={"things": {"p": os.path, "s": os.system}})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("things['p'].os.popen('id').read()")
+
+    def test_breakout_function_returning_forbidden_function(self):
+        """Functions returning disallowed functions should be blocked"""
+
+        def get_evil():
+            return exec
+
+        s = SimpleEval(names={}, functions={"get_evil": get_evil})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("get_evil()('exit')")
+
+    def test_breakout_function_returning_module(self):
+        """Functions returning modules should be blocked"""
+        import os.path
+
+        def get_module():
+            return os.path
+
+        s = SimpleEval(names={}, functions={"get_module": get_module})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("get_module().os.popen('id').read()")
+
+    def test_dunder_all_in_module(self):
+        """__all__ should be blocked (starts with _)"""
+        import os
+
+        s = SimpleEval(names={"os": os})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("os.__all__")
+
+    def test_dunder_dict_in_module(self):
+        """__dict__ should be blocked (starts with _)"""
+        import os
+
+        s = SimpleEval(names={"os": os})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("os.__dict__")
+
+    def test_forbidden_method_in_tuple(self):
+        """Disallowed functions in tuples should be blocked"""
+        s = SimpleEval(names={"funcs": (exec, eval)})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("funcs[0]('exit')")
+
+    def test_module_in_tuple(self):
+        """Modules in tuples should be blocked"""
+        import os
+
+        s = SimpleEval(names={"mods": (os.path, os.system)})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("mods[0].os.popen('id').read()")
+
+    def test_breakout_via_nested_container_forbidden_func(self):
+        """Disallowed functions nested in containers should be blocked"""
+        s = SimpleEval(names={"data": {"nested": {"funcs": [exec]}}})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("data['nested']['funcs'][0]('exit')")
+
+    def test_breakout_via_nested_container_module(self):
+        """Modules nested in containers should be blocked"""
+        import os
+
+        s = SimpleEval(names={"data": {"mods": {"p": os.path}}})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("data['mods']['p'].os.popen('id').read()")
+
+    def test_forbidden_methods_on_allowed_attrs(self):
+        """Disallowed methods listed in DISALLOW_METHODS should be
+        blocked"""
+        s = SimpleEval()
+
+        # format and format_map are in DISALLOW_METHODS
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("'test {0}'.format")
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("'test'.format_map({0: 'x'})")
+
+        # __mro__ is in DISALLOW_METHODS
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("'test'.mro")
+
+    def test_function_returning_forbidden_method(self):
+        """Functions returning disallowed methods should be blocked"""
+
+        def get_exec_module():
+            import os
+
+            return os
+
+        s = SimpleEval(names={}, functions={"get_os": get_exec_module})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("get_os().__name__")
+
+    def test_compound_module_submodule_access(self):
+        """Accessing submodules of a passed module should be blocked"""
+        import os.path
+
+        s = SimpleEval(names={"path": os.path})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("path.os")
+
+    def test_forbidden_func_via_class_method(self):
+        """Accessing forbidden functions via class methods should be
+        blocked"""
+
+        class Container:
+            @staticmethod
+            def get_exec():
+                return exec
+
+        s = SimpleEval(names={"c": Container()})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("c.get_exec()('exit')")
+
+    def test_module_via_class_method(self):
+        """Accessing modules via class methods should be blocked"""
+        import os
+
+        class Container:
+            @staticmethod
+            def get_os():
+                return os
+
+        s = SimpleEval(names={"c": Container()})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("c.get_os().popen('id').read()")
+
+    def test_forbidden_func_via_property(self):
+        """Accessing forbidden functions via properties should be
+        blocked"""
+
+        class Container:
+            @property
+            def evil(self):
+                return exec
+
+        s = SimpleEval(names={"c": Container()})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("c.evil('exit')")
+
+    def test_module_via_property(self):
+        """Accessing modules via properties should be blocked"""
+        import os
+
+        class Container:
+            @property
+            def mod(self):
+                return os
+
+        s = SimpleEval(names={"c": Container()})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("c.mod.popen('id').read()")
+
+    def test_forbidden_function_direct_from_names(self):
+        """Forbidden functions passed directly in names should
+        be blocked when accessed"""
+        s = SimpleEval(names={"evil": exec})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("evil")
+
+    def test_module_direct_from_names(self):
+        """Modules passed directly in names should be blocked
+        when accessed"""
+        import os
+
+        s = SimpleEval(names={"m": os})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("m")
+
+    def test_forbidden_function_via_callable_name_handler(self):
+        """Forbidden functions from callable name handlers should
+        be blocked"""
+
+        def name_handler(node):
+            if node.id == "evil":
+                return exec
+            raise simpleeval.NameNotDefined(node.id, "")
+
+        s = SimpleEval(names=name_handler)
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("evil")
+
+    def test_module_via_callable_name_handler(self):
+        """Modules from callable name handlers should be blocked"""
+        import os
+
+        def name_handler(node):
+            if node.id == "m":
+                return os
+            raise simpleeval.NameNotDefined(node.id, "")
+
+        s = SimpleEval(names=name_handler)
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("m")
+
+    def test_forbidden_function_passed_to_custom_function(self):
+        """Passing forbidden functions to custom functions should be
+        blocked - they can be executed by the custom function"""
+
+        def evil_caller(func):
+            return func("print('pwned')")
+
+        s = SimpleEval(names={"evil": exec}, functions={"evil_caller": evil_caller})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("evil_caller(evil)")
+
+    def test_module_passed_to_custom_function(self):
+        """Passing modules to custom functions should be blocked - they
+        can be used by the custom function"""
+        import os
+
+        def os_caller(mod):
+            return mod.system("id")
+
+        s = SimpleEval(names={"m": os}, functions={"os_caller": os_caller})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("os_caller(m)")
+
+    def test_forbidden_function_in_list_passed_to_custom_function(self):
+        """Forbidden functions in containers passed to custom functions
+        should be blocked"""
+
+        def extract_and_call(items):
+            return items[0]("print('pwned')")
+
+        s = SimpleEval(names={"funcs": [exec, eval]}, functions={"extract": extract_and_call})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("extract(funcs)")
+
+    def test_module_in_list_passed_to_custom_function(self):
+        """Modules in containers passed to custom functions should be
+        blocked"""
+        import os
+
+        def extract_and_use(items):
+            return items[0].system("id")
+
+        s = SimpleEval(names={"mods": [os.path, os]}, functions={"extract": extract_and_use})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("extract(mods)")
+
+    def test_forbidden_function_in_dict_passed_to_custom_function(self):
+        """Forbidden functions in dicts passed to custom functions should
+        be blocked"""
+
+        def extract_and_call(d):
+            return d["bad"]("print('pwned')")
+
+        s = SimpleEval(
+            names={"funcs": {"bad": exec, "good": print}}, functions={"extract": extract_and_call}
+        )
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("extract(funcs)")
+
+    def test_module_in_dict_passed_to_custom_function(self):
+        """Modules in dicts passed to custom functions should be blocked"""
+        import os
+
+        def extract_and_use(d):
+            return d["m"].system("id")
+
+        s = SimpleEval(
+            names={"mods": {"m": os, "p": os.path}}, functions={"extract": extract_and_use}
+        )
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("extract(mods)")
+
+
+class TestModuleWrapper(unittest.TestCase):
+    """Test the ModuleWrapper class itself"""
+
+    def test_module_wrapper_requires_module(self):
+        """ModuleWrapper should reject non-module types"""
+        with self.assertRaises(TypeError):
+            ModuleWrapper("not a module")
+
+        with self.assertRaises(TypeError):
+            ModuleWrapper(42)
+
+        with self.assertRaises(TypeError):
+            ModuleWrapper({})
+
+    def test_module_wrapper_allows_valid_module(self):
+        """ModuleWrapper should accept valid modules"""
+        import os.path
+
+        wrapper = ModuleWrapper(os.path)
+        self.assertIsNotNone(wrapper)
+
+    def test_module_wrapper_blocks_private_attrs(self):
+        """ModuleWrapper should block access to private attributes"""
+        import os.path
+
+        wrapper = ModuleWrapper(os.path)
+
+        with self.assertRaises(FeatureNotAvailable):
+            wrapper.__all__
+
+        with self.assertRaises(FeatureNotAvailable):
+            wrapper._internal
+
+    def test_module_wrapper_allows_public_attrs(self):
+        """ModuleWrapper should allow access to public attributes"""
+        import os.path
+
+        wrapper = ModuleWrapper(os.path)
+        # Should not raise
+        _ = wrapper.exists
+
+    def test_module_wrapper_blocks_disallowed_methods(self):
+        """ModuleWrapper should block access to methods in DISALLOW_METHODS"""
+        import os
+
+        wrapper = ModuleWrapper(os)
+
+        with self.assertRaises(FeatureNotAvailable):
+            wrapper.mro
+
+    def test_module_wrapper_with_allowed_attrs_allows_whitelisted(self):
+        """ModuleWrapper with allowed_attrs should allow whitelisted
+        attributes"""
+        import os.path
+
+        wrapper = ModuleWrapper(os.path, allowed_attrs={"exists", "join"})
+
+        # Should not raise
+        _ = wrapper.exists
+        _ = wrapper.join
+
+    def test_module_wrapper_with_allowed_attrs_blocks_non_whitelisted(self):
+        """ModuleWrapper with allowed_attrs should block non-whitelisted
+        attributes"""
+        import os.path
+
+        wrapper = ModuleWrapper(os.path, allowed_attrs={"exists"})
+
+        with self.assertRaises(FeatureNotAvailable):
+            wrapper.join
+
+    def test_module_wrapper_getattr_returns_actual_attribute(self):
+        """ModuleWrapper.__getattr__ should return the actual module
+        attribute"""
+        import os.path
+
+        wrapper = ModuleWrapper(os.path)
+        result = wrapper.exists
+
+        # Should be the actual function
+        self.assertEqual(result, os.path.exists)
+
+
+class TestModuleWrapperAccess(DRYTest):
+    """Test ModuleWrapper integration with SimpleEval"""
+
+    def test_unwrapped_module_blocked(self):
+        """Unwrapped modules in names should be blocked"""
+        import os.path
+
+        s = SimpleEval(names={"path": os.path})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("path")
+
+    def test_wrapped_module_allowed(self):
+        """ModuleWrapper should allow module access in eval"""
+        import os.path
+
+        s = SimpleEval(names={"path": ModuleWrapper(os.path)})
+
+        result = s.eval("path.exists('/etc/passwd')")
+        self.assertTrue(isinstance(result, bool))
+
+    def test_wrapped_module_private_attrs_blocked(self):
+        """ModuleWrapper should block private attrs in eval"""
+        import os.path
+
+        s = SimpleEval(names={"path": ModuleWrapper(os.path)})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("path.__all__")
+
+    def test_wrapped_module_with_whitelist(self):
+        """ModuleWrapper with whitelist should allow whitelisted attrs"""
+        import os.path
+
+        s = SimpleEval(names={"path": ModuleWrapper(os.path, allowed_attrs={"exists"})})
+
+        result = s.eval("path.exists('/etc/passwd')")
+        self.assertTrue(isinstance(result, bool))
+
+    def test_wrapped_module_with_whitelist_blocks_others(self):
+        """ModuleWrapper with whitelist should block non-whitelisted
+        attrs"""
+        import os.path
+
+        s = SimpleEval(names={"path": ModuleWrapper(os.path, allowed_attrs={"exists"})})
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval("path.join('a', 'b')")
+
+    def test_wrapped_module_passed_to_function(self):
+        """ModuleWrapper can be passed to custom functions"""
+
+        def process_path(path_mod):
+            return path_mod.exists("/etc/passwd")
+
+        import os.path
+
+        s = SimpleEval(names={"path": ModuleWrapper(os.path)}, functions={"process": process_path})
+
+        result = s.eval("process(path)")
+        self.assertTrue(isinstance(result, bool))
+
+    def test_wrapped_module_in_container(self):
+        """ModuleWrapper can be stored in containers"""
+        import os.path
+
+        s = SimpleEval(names={"items": [ModuleWrapper(os.path), 1, 2]})
+
+        result = s.eval("items")
+        self.assertEqual(len(result), 3)
+
+    def test_wrapped_module_in_dict_container(self):
+        """ModuleWrapper can be stored in dicts"""
+        import os.path
+
+        s = SimpleEval(names={"data": {"path": ModuleWrapper(os.path), "value": 42}})
+
+        result = s.eval("data['value']")
+        self.assertEqual(result, 42)
 
 
 class TestCompoundTypes(DRYTest):

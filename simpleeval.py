@@ -390,6 +390,50 @@ class MultipleExpressions(UserWarning):
 _ATTR_NOT_FOUND = object()
 
 
+class ModuleWrapper:
+    """Wraps a module to safely expose it in expressions.
+
+    By default, modules are not allowed in simpleeval names to prevent
+    accidental or malicious access to dangerous functions. ModuleWrapper
+    allows explicit opt-in to module access while still enforcing
+    restrictions on dangerous methods and functions.
+
+    Example:
+        >>> from simpleeval import SimpleEval, ModuleWrapper
+        >>> import os.path
+        >>> s = SimpleEval(names={'path': ModuleWrapper(os.path)})
+        >>> s.eval('path.exists("/etc/passwd")')  # Works
+    """
+
+    def __init__(self, module, allowed_attrs=None):
+        """
+        Args:
+            module: The module to wrap
+            allowed_attrs: Optional set of allowed attribute names.
+                          If None, all public attributes are allowed
+                          (but still subject to DISALLOW_METHODS checks).
+        """
+        if not isinstance(module, types.ModuleType):
+            raise TypeError(f"ModuleWrapper requires a module, got {type(module)}")
+        self._module = module
+        self._allowed_attrs = allowed_attrs
+
+    def __getattr__(self, name):
+        # Block private/magic attributes
+        if name.startswith("_"):
+            raise FeatureNotAvailable(f"Access to private attribute '{name}' is not allowed")
+
+        # Check if attribute is in disallowed methods list
+        if name in DISALLOW_METHODS:
+            raise FeatureNotAvailable(f"Method '{name}' is not allowed on modules")
+
+        # Check allowed_attrs whitelist if specified
+        if self._allowed_attrs is not None and name not in self._allowed_attrs:
+            raise FeatureNotAvailable(f"Access to '{name}' is not allowed on this wrapped module")
+
+        return getattr(self._module, name)
+
+
 ########################################
 # Default simple functions to include:
 
@@ -567,6 +611,28 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def __del__(self):
         self.nodes = None
 
+    def _check_disallowed_items(self, item):
+        """Check if item contains disallowed functions or modules.
+        Recursively checks containers (list, dict, tuple).
+        Raises FeatureNotAvailable if forbidden content found.
+        ModuleWrapper instances are allowed (explicit opt-in to module access).
+        """
+        # Allow ModuleWrapper (explicit opt-in to module access)
+        if isinstance(item, ModuleWrapper):
+            return
+
+        if isinstance(item, types.ModuleType):
+            raise FeatureNotAvailable("Sorry, modules are not allowed")
+        if isinstance(item, Hashable) and item in DISALLOW_FUNCTIONS:
+            raise FeatureNotAvailable("This function is forbidden")
+
+        if isinstance(item, (list, tuple)):
+            for element in item:
+                self._check_disallowed_items(element)
+        elif isinstance(item, dict):
+            for value in item.values():
+                self._check_disallowed_items(value)
+
     @staticmethod
     def parse(expr):
         """parse an expression into a node tree"""
@@ -601,7 +667,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 "Sorry, {0} is not available in this evaluator".format(type(node).__name__)
             )
 
-        return handler(node)
+        result = handler(node)
+        self._check_disallowed_items(result)
+        return result
 
     def _eval_expr(self, node):
         return self._eval(node.value)
