@@ -349,6 +349,15 @@ class TestFunctions(DRYTest):
         self.t("foo(mult=2, to_return=4)", 8)
         self.t("foo(2, 10)", 20)
 
+    def test_function_with_list_args(self):
+        # Regression test, makes sure we can pass lists (non-hashable) items as
+        # kwargs to functions.
+
+        def func(*args, **kwargs):
+            return 42
+
+        simple_eval("test(boo=x)", functions={"test": func}, names={"x": [1, 2]})
+
 
 class TestOperators(DRYTest):
     """Test adding in new operators, removing them, make sure it works."""
