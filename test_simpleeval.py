@@ -670,7 +670,7 @@ class TestTryingToBreakOut(DRYTest):
         """Functions returning disallowed functions should be blocked"""
 
         def get_evil():
-            return exec
+            return exec  # pragma: no cover
 
         s = SimpleEval(names={}, functions={"get_evil": get_evil})
 
@@ -759,9 +759,9 @@ class TestTryingToBreakOut(DRYTest):
         """Functions returning disallowed methods should be blocked"""
 
         def get_exec_module():
-            import os
+            import os  # pragma: no cover
 
-            return os
+            return os  # pragma: no cover
 
         s = SimpleEval(names={}, functions={"get_os": get_exec_module})
 
@@ -784,7 +784,7 @@ class TestTryingToBreakOut(DRYTest):
         class Container:
             @staticmethod
             def get_exec():
-                return exec
+                return exec  # pragma: no cover
 
         s = SimpleEval(names={"c": Container()})
 
@@ -858,7 +858,6 @@ class TestTryingToBreakOut(DRYTest):
         def name_handler(node):
             if node.id == "evil":
                 return exec
-            raise simpleeval.NameNotDefined(node.id, "")
 
         s = SimpleEval(names=name_handler)
 
@@ -872,7 +871,6 @@ class TestTryingToBreakOut(DRYTest):
         def name_handler(node):
             if node.id == "m":
                 return os
-            raise simpleeval.NameNotDefined(node.id, "")
 
         s = SimpleEval(names=name_handler)
 
@@ -884,7 +882,7 @@ class TestTryingToBreakOut(DRYTest):
         blocked - they can be executed by the custom function"""
 
         def evil_caller(func):
-            return func("print('pwned')")
+            return func("print('pwned')")  # pragma: no cover
 
         s = SimpleEval(names={"evil": exec}, functions={"evil_caller": evil_caller})
 
@@ -897,19 +895,19 @@ class TestTryingToBreakOut(DRYTest):
         import os
 
         def os_caller(mod):
-            return mod.system("id")
+            return mod.system("id")  # pragma: no cover
 
         s = SimpleEval(names={"m": os}, functions={"os_caller": os_caller})
 
         with self.assertRaises(FeatureNotAvailable):
-            s.eval("os_caller(m)")
+            s.eval("os_caller(m)")  # pragma: no cover
 
     def test_forbidden_function_in_list_passed_to_custom_function(self):
         """Forbidden functions in containers passed to custom functions
         should be blocked"""
 
         def extract_and_call(items):
-            return items[0]("print('pwned')")
+            return items[0]("print('pwned')")  # pragma: no cover
 
         s = SimpleEval(names={"funcs": [exec, eval]}, functions={"extract": extract_and_call})
 
@@ -922,7 +920,7 @@ class TestTryingToBreakOut(DRYTest):
         import os
 
         def extract_and_use(items):
-            return items[0].system("id")
+            return items[0].system("id")  # pragma: no cover
 
         s = SimpleEval(names={"mods": [os.path, os]}, functions={"extract": extract_and_use})
 
@@ -934,7 +932,7 @@ class TestTryingToBreakOut(DRYTest):
         be blocked"""
 
         def extract_and_call(d):
-            return d["bad"]("print('pwned')")
+            return d["bad"]("print('pwned')")  # pragma: no cover
 
         s = SimpleEval(
             names={"funcs": {"bad": exec, "good": print}}, functions={"extract": extract_and_call}
@@ -948,7 +946,7 @@ class TestTryingToBreakOut(DRYTest):
         import os
 
         def extract_and_use(d):
-            return d["m"].system("id")
+            return d["m"].system("id")  # pragma: no cover
 
         s = SimpleEval(
             names={"mods": {"m": os, "p": os.path}}, functions={"extract": extract_and_use}
