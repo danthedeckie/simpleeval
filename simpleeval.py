@@ -135,12 +135,9 @@ DISALLOW_METHODS = [
 ########################################
 # Tiny helpers:
 
-
-def is_hashable(value):
-    try:
-        return hash(value)
-    except TypeError:
-        return False
+# Primitive types that are always safe: can't be modules, can't be in DISALLOW_FUNCTIONS,
+# and don't need recursive container checks. Used as a fast path in _check_disallowed_items.
+_PRIMITIVE_TYPES = frozenset({int, float, str, bool, type(None), bytes, complex})
 
 
 # Disallow functions:
@@ -628,14 +625,16 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         Raises FeatureNotAvailable if forbidden content found.
         ModuleWrapper instances are allowed (explicit opt-in to module access).
         """
+        # Fast path: primitive scalars are always safe (most common case)
+        if type(item) in _PRIMITIVE_TYPES:
+            return
+
         # Allow ModuleWrapper (explicit opt-in to module access)
         if isinstance(item, ModuleWrapper):
             return
 
         if isinstance(item, types.ModuleType):
             raise FeatureNotAvailable("Sorry, modules are not allowed")
-        if is_hashable(item) and item in DISALLOW_FUNCTIONS:
-            raise FeatureNotAvailable("This function is forbidden")
 
         if isinstance(item, (list, tuple)):
             for element in item:
@@ -643,6 +642,8 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         elif isinstance(item, dict):
             for value in item.values():
                 self._check_disallowed_items(value)
+        elif callable(item) and item in DISALLOW_FUNCTIONS:
+            raise FeatureNotAvailable("This function is forbidden")
 
     @staticmethod
     def parse(expr):
@@ -875,7 +876,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if item is not _ATTR_NOT_FOUND:
             if isinstance(item, types.ModuleType):
                 raise FeatureNotAvailable("Sorry, modules are not allowed in attribute access")
-            if is_hashable(item) and item in DISALLOW_FUNCTIONS:
+            if callable(item) and item in DISALLOW_FUNCTIONS:
                 raise FeatureNotAvailable("This function is forbidden")
             return item
 
