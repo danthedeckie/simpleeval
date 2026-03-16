@@ -387,7 +387,6 @@ class TestTryingToBreakOut(DRYTest):
         """Functions returning disallowed methods should be blocked"""
 
         def get_exec_module():
-
             return os  # pragma: no cover
 
         s = SimpleEval(names={}, functions={"get_os": get_exec_module})
