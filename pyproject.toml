@@ -37,7 +37,7 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.sdist]
 include = [
     "simpleeval.py",
-    "test_simpleeval.py",
+    "tests/*.py",
     "README.rst",
     "LICENCE",
 ]
