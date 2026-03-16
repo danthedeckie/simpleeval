@@ -59,7 +59,8 @@ Contributors:
 - smurfix (Matthias Urlichs) Allow clearing functions / operators / etc completely
 - koenigsley (Mikhail Yeremeyev) documentation typos correction.
 - kurtmckee (Kurt McKee) Infrastructure updates
-- edgarrmondragon (Edgar Ramírez-Mondragón) Address Python 3.12+ deprecation warnings
+- edgarrmondragon (Edgar Ramírez-Mondragón) Address Python 3.12+ deprecation warnings,
+  performance fixes
 - cedk (Cédric Krier) <ced@b2ck.com> Allow running tests with Werror
 - decorator-factory <decorator-factory@protonmail.com> More security fixes
 - lkruitwagen (Lucas Kruitwagen) Adding support for dict comprehensions
