@@ -1,5 +1,5 @@
 test:
-	python -Werror test_simpleeval.py
+	python -Werror -m unittest
 
 autotest:
 	find . -name \*.py -not -path .\/.v\* | entr make test
@@ -19,13 +19,13 @@ clean:
 	rm -rf dist
 
 coverage:
-	coverage run test_simpleeval.py
+	coverage run python -m unittest
 
 lint:
-	ruff check simpleeval.py test_simpleeval.py
-	ruff format --check simpleeval.py test_simpleeval.py
-	mypy simpleeval.py test_simpleeval.py
+	ruff check simpleeval.py tests/
+	ruff format --check simpleeval.py tests/
+	mypy simpleeval.py tests/
 
 format:
-	ruff check --fix-only simpleeval.py test_simpleeval.py
-	ruff format simpleeval.py test_simpleeval.py
+	ruff check --fix-only simpleeval.py tests/
+	ruff format simpleeval.py tests/
