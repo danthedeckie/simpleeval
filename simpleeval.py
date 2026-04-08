@@ -680,9 +680,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 "Sorry, {0} is not available in this evaluator".format(type(node).__name__)
             )
 
-        result = handler(node)
-        self._check_disallowed_items(result)
-        return result
+        return handler(node)
 
     def _eval_expr(self, node):
         return self._eval(node.value)
@@ -797,14 +795,18 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             # that there is a true expression assigning to none
             # (the compiler rejects it, so you can't even
             # pass that to ast.parse)
-            return self.names[node.id]
+            val = self.names[node.id]
+            self._check_disallowed_items(val)
+            return val
 
         except (TypeError, KeyError):
             pass
 
         if callable(self.names):
             try:
-                return self.names(node)
+                val = self.names(node)
+                self._check_disallowed_items(val)
+                return val
             except NameNotDefined:
                 pass
         elif not hasattr(self.names, "__getitem__"):
@@ -815,7 +817,9 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             )
 
         if node.id in self.functions:
-            return self.functions[node.id]
+            val = self.functions[node.id]
+            self._check_disallowed_items(val)
+            return val
 
         raise NameNotDefined(node.id, self.expr)
 
