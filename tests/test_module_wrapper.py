@@ -2,6 +2,7 @@ import os
 import unittest
 
 from simpleeval import (
+    EvalWithCompoundTypes,
     FeatureNotAvailable,
     ModuleWrapper,
     SimpleEval,
@@ -171,3 +172,31 @@ class TestModuleWrapperAccess(DRYTest):
 
         result = s.eval("data['value']")
         self.assertEqual(result, 42)
+
+    def test_wrapped_module_with_compound_types(self):
+        """ModuleWrapper can be used with EvalWithCompoundTypes."""
+        import datetime
+
+        s = EvalWithCompoundTypes(names={"dt": ModuleWrapper(datetime)})
+
+        result = s.eval("tuple(dt.date(2024, 1, 1).timetuple())")
+        self.assertEqual(result, (2024, 1, 1, 0, 0, 0, 0, 1, -1))
+
+
+class TestModuleNeedsWrapping(unittest.TestCase):
+    """Modules must still be blocked even when supplied via nested values."""
+
+    def test_unwrapped_module(self):
+        s = SimpleEval(names={"mymod": os})
+        with self.assertRaisesRegex(FeatureNotAvailable, "Sorry, modules are not allowed"):
+            s.eval("mymod.name")
+
+    def test_unwrapped_module_in_list_is_blocked(self):
+        s = SimpleEval(names={"items": [os, 1]})
+        with self.assertRaisesRegex(FeatureNotAvailable, "Sorry, modules are not allowed"):
+            s.eval("items")
+
+    def test_unwrapped_module_in_dict_value_is_blocked(self):
+        s = SimpleEval(names={"d": {"m": os}})
+        with self.assertRaisesRegex(FeatureNotAvailable, "Sorry, modules are not allowed"):
+            s.eval("d")
