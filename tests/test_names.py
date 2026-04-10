@@ -237,6 +237,7 @@ class TestNames(DRYTest):
         d["self"] = d
         self.s.names = d
         self.t("x", 1)
+        self.t("self['self']['x']", 1)
 
     def test_cyclical_list_in_names(self):
         """A list that contains itself should not cause RecursionError (issue #180)"""
@@ -244,3 +245,4 @@ class TestNames(DRYTest):
         lst.append(lst)
         self.s.names = {"lst": lst}
         self.t("lst[0]", 1)
+        self.t("lst[-1][-1][0]", 1)
