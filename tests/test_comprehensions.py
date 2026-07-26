@@ -46,9 +46,9 @@ class TestComprehensions(DRYTest):
         with self.assertRaises(FeatureNotAvailable):
             self.t("[x for x in (1,) for x.imag in (15,)]", None)
 
-    def test_self_referential_target_blocked(self):
-        # The subscript-target path could otherwise build a self-referential
-        # list (a potential DoS vector); it must be rejected, not constructed.
+    def test_self_referential_target_fails_cleanly(self):
+        # The variant from the issue thread; same subscript-target path, so it
+        # raises FeatureNotAvailable rather than a raw AttributeError.
         with self.assertRaises(FeatureNotAvailable):
             self.t("[x for x in ([None],) for x[0] in (x,)]", None)
 
