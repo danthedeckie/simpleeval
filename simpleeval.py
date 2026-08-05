@@ -2,7 +2,7 @@
 SimpleEval - (C) 2013-2026 Daniel Fairhead
 -------------------------------------
 
-An short, easy to use, safe and reasonably extensible expression evaluator.
+A short, easy to use, safe and reasonably extensible expression evaluator.
 Designed for things like in a website where you want to allow the user to
 generate a string, or a number from some other input, without allowing full
 eval() or other unsafe or needlessly complex linguistics.
