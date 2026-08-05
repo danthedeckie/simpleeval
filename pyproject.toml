@@ -58,9 +58,6 @@ path = "simpleeval.py"
 packages = ["simpleeval.py"]
 core-metadata-version = "2.3"
 
-[tool.hatch.envs.hatch-test]
-default-args = ["test_simpleeval.py"]
-
 [tool.black]
 line-length = 99
 target-version = ['py310']
