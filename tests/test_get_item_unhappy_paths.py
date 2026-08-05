@@ -6,7 +6,7 @@ class TestGetItemUnhappy(DRYTest):
     # expected types...
 
     def test_getitem_not_implemented(self):
-        class Meh(object):
+        class Meh:
             def __getitem__(self, key):
                 raise NotImplementedError("booya!")
 

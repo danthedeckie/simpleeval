@@ -1,3 +1,4 @@
+# ruff: noqa: B018
 import os
 import unittest
 

@@ -1,5 +1,4 @@
 import os
-import sys
 
 import simpleeval
 from simpleeval import (
@@ -104,12 +103,11 @@ class TestTryingToBreakOut(DRYTest):
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'" + (50000 * "stuff") + "'", 0)
 
-        if sys.version_info >= (3, 6, 0):
-            with self.assertRaises(simpleeval.IterableTooLong):
-                self.t("f'{\"foo\"*50000}'", 0)
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.t("f'{\"foo\"*50000}'", 0)
 
     def test_bytes_array_test(self):
-        self.t("'20000000000000000000'.encode() * 5000", "20000000000000000000".encode() * 5000)
+        self.t("'20000000000000000000'.encode() * 5000", b"20000000000000000000" * 5000)
 
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'123121323123131231223'.encode() * 5000", 20)
@@ -130,7 +128,7 @@ class TestTryingToBreakOut(DRYTest):
         with self.assertRaises(simpleeval.FeatureNotAvailable):
             self.t("x.__globals__", None)
 
-        class EscapeArtist(object):
+        class EscapeArtist:
             @staticmethod
             def trapdoor():
                 return 42
@@ -163,7 +161,7 @@ class TestTryingToBreakOut(DRYTest):
         simpleeval.DISALLOW_PREFIXES = dis
 
     def test_mro_breakout(self):
-        class Blah(object):
+        class Blah:
             x = 42
 
         self.s.names["b"] = Blah
@@ -189,48 +187,47 @@ class TestTryingToBreakOut(DRYTest):
             self.s.names["x"] = {"a": 1}
             self.t('"{a.__class__}".format_map(x)', 0)
 
-        if sys.version_info >= (3, 6, 0):
-            self.s.names["x"] = 42
+        self.s.names["x"] = 42
 
-            with self.assertRaises(simpleeval.FeatureNotAvailable):
-                self.t('f"{x.__class__}"', 0)
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('f"{x.__class__}"', 0)
 
-            self.s.names["x"] = lambda y: y
+        self.s.names["x"] = lambda y: y
 
-            with self.assertRaises(simpleeval.FeatureNotAvailable):
-                self.t('f"{x.__globals__}"', 0)
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('f"{x.__globals__}"', 0)
 
-            class EscapeArtist(object):
-                @staticmethod
-                def trapdoor():
-                    return 42
+        class EscapeArtist:
+            @staticmethod
+            def trapdoor():
+                return 42
 
-                @staticmethod
-                def _quasi_private():
-                    return 84
+            @staticmethod
+            def _quasi_private():
+                return 84
 
-            self.s.names["houdini"] = EscapeArtist()  # let's just retest this, but in a f-string
+        self.s.names["houdini"] = EscapeArtist()  # let's just retest this, but in a f-string
 
-            with self.assertRaises(simpleeval.FeatureNotAvailable):
-                self.t('f"{houdini.trapdoor.__globals__}"', 0)
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('f"{houdini.trapdoor.__globals__}"', 0)
 
-            with self.assertRaises(simpleeval.FeatureNotAvailable):
-                self.t('f"{houdini.trapdoor.func_globals}"', 0)
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('f"{houdini.trapdoor.func_globals}"', 0)
 
-            with self.assertRaises(simpleeval.FeatureNotAvailable):
-                self.t('f"{houdini._quasi_private()}"', 0)
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('f"{houdini._quasi_private()}"', 0)
 
-            # and test for changing '_' to '__':
+        # and test for changing '_' to '__':
 
-            dis = simpleeval.DISALLOW_PREFIXES
-            simpleeval.DISALLOW_PREFIXES = ["func_"]
+        dis = simpleeval.DISALLOW_PREFIXES
+        simpleeval.DISALLOW_PREFIXES = ["func_"]
 
-            self.t('f"{houdini.trapdoor()}"', "42")
-            self.t('f"{houdini._quasi_private()}"', "84")
+        self.t('f"{houdini.trapdoor()}"', "42")
+        self.t('f"{houdini._quasi_private()}"', "84")
 
-            # and return things to normal
+        # and return things to normal
 
-            simpleeval.DISALLOW_PREFIXES = dis
+        simpleeval.DISALLOW_PREFIXES = dis
 
     def test_breakout_via_module_access(self):
         import os.path
