@@ -11,7 +11,7 @@ class TestMethodChaining(unittest.TestCase):
         Contributed by Khalid Grandi (xaled).
         """
 
-        class A(object):
+        class A:
             def __init__(self):
                 self.a = "0"
 

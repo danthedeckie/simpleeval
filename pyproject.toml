@@ -27,6 +27,14 @@ dependencies = []
 [project.urls]
 "Source code" = "https://github.com/danthedeckie/simpleeval"
 
+[dependency-groups]
+dev = [
+    "hatch>=1.15.1",
+    "mypy>=1.19.1",
+    "ruff>=0.16.1",
+    "twine>=6.2.0",
+]
+
 [pycodestyle]
 max_line_length = 99
 
@@ -49,9 +57,6 @@ path = "simpleeval.py"
 [tool.hatch.build.targets.wheel]
 packages = ["simpleeval.py"]
 core-metadata-version = "2.3"
-
-[tool.hatch.envs.hatch-test]
-default-args = ["test_simpleeval.py"]
 
 [tool.black]
 line-length = 99
@@ -81,3 +86,6 @@ disable = [
     "unnecessary-pass",
     "bad-super-call",
 ]
+
+[tool.uv]
+required-version = ">=0.12.1"

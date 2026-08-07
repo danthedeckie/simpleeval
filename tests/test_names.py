@@ -21,10 +21,9 @@ class TestNames(DRYTest):
         self.s.names["s"] = 21
 
         # or if you attempt to assign an unknown name to another
-        with self.assertRaises(NameNotDefined):
-            with warnings.catch_warnings(record=True) as ws:
-                warnings.simplefilter("always")
-                self.t("s += a", 21)
+        with self.assertRaises(NameNotDefined), warnings.catch_warnings(record=True) as ws:
+            warnings.simplefilter("always")
+            self.t("s += a", 21)
         self.assertIsInstance(ws[0].message, simpleeval.AssignmentAttempted)
 
         self.s.names = None
@@ -144,7 +143,7 @@ class TestNames(DRYTest):
         """using an object for name lookup"""
         # pylint: disable=attribute-defined-outside-init
 
-        class TestObject(object):
+        class TestObject:
             @staticmethod
             def method_thing():
                 return 42

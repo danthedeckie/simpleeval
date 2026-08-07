@@ -539,7 +539,7 @@ The initial idea came from J.F. Sebastian on Stack Overflow
 ( http://stackoverflow.com/a/9558001/1973500 ) with modifications and many improvements,
 see the head of the main file for contributors list.
 
-Please read the ``test_simpleeval.py`` file for other potential gotchas or
+Please read the ``tests/`` for other potential gotchas or
 details.  I'm very happy to accept pull requests, suggestions, or other issues.
 Enjoy!
 
