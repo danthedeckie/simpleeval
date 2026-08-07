@@ -974,9 +974,14 @@ class EvalWithCompoundTypes(SimpleEval):
             """
             if isinstance(target, ast.Name):
                 extra_names[target.id] = value
-            else:
+            elif isinstance(target, (ast.Tuple, ast.List)):
                 for t, v in zip(target.elts, value):
                     recurse_targets(t, v)
+            else:
+                raise FeatureNotAvailable(
+                    "Only names and tuple/list unpacking are supported as "
+                    "comprehension assignment targets"
+                )
 
         def do_generator(gi=0):
             g = node.generators[gi]
