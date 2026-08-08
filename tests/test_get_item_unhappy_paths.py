@@ -20,14 +20,16 @@ class TestGetItemUnhappy(DRYTest):
             m["nothing"]  # pylint: disable=pointless-statement
 
         self.s.names = {"m": m}
-        self.t("m.anything", 42)
+        with self.assertWarns(DeprecationWarning):
+            self.t("m.anything", 42)
 
         with self.assertRaises(NotImplementedError):
             self.t("m['nothing']", None)
 
         self.s.ATTR_INDEX_FALLBACK = False
 
-        self.t("m.anything", 42)
+        with self.assertWarns(DeprecationWarning):
+            self.t("m.anything", 42)
 
         with self.assertRaises(NotImplementedError):
             self.t("m['nothing']", None)
