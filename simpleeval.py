@@ -629,7 +629,7 @@ class SimpleEval:  # pylint: disable=too-few-public-methods
         if isinstance(item, types.ModuleType):
             raise FeatureNotAvailable("Sorry, modules are not allowed")
 
-        if isinstance(item, (list, tuple)):
+        if isinstance(item, (list, tuple, set, frozenset)):
             for element in item:
                 self._check_disallowed_items(element)
         elif isinstance(item, dict):

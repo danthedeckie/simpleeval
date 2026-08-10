@@ -527,12 +527,33 @@ class TestTryingToBreakOut(DRYTest):
         should be blocked"""
 
         def extract_and_call(items):
-            return items[0]("print('pwned')")  # pragma: no cover
+            return next(iter(items))("print('pwned')")  # pragma: no cover
 
-        s = SimpleEval(names={"funcs": [exec, eval]}, functions={"extract": extract_and_call})
+        with self.subTest("list"):
+            s = SimpleEval(names={"funcs": [exec, eval]}, functions={"extract": extract_and_call})
 
-        with self.assertRaises(FeatureNotAvailable):
-            s.eval("extract(funcs)")
+            with self.assertRaises(FeatureNotAvailable):
+                s.eval("extract(funcs)")
+
+        with self.subTest("tuple"):
+            s = SimpleEval(names={"funcs": (exec, eval)}, functions={"extract": extract_and_call})
+
+            with self.assertRaises(FeatureNotAvailable):
+                s.eval("extract(funcs)")
+
+        with self.subTest("set"):
+            s = SimpleEval(names={"funcs": {exec, eval}}, functions={"extract": extract_and_call})
+
+            with self.assertRaises(FeatureNotAvailable):
+                s.eval("extract(funcs)")
+
+        with self.subTest("frozenset"):
+            s = SimpleEval(
+                names={"funcs": frozenset([exec, eval])}, functions={"extract": extract_and_call}
+            )
+
+            with self.assertRaises(FeatureNotAvailable):
+                s.eval("extract(funcs)")
 
     def test_module_in_list_passed_to_custom_function(self):
         """Modules in containers passed to custom functions should be
