@@ -65,6 +65,9 @@ Contributors:
 - decorator-factory <decorator-factory@protonmail.com> More security fixes
 - lkruitwagen (Lucas Kruitwagen) Adding support for dict comprehensions
 - ByamB4 (Byambadalai) Reported breakout via module & disallowed functions as object attrs
+- Charles Vosburgh Reported & tested dangerous functions in `os`
+- Tradi3 (github.com/krutftw) Reported escape via operator module functions
+- arpitjain099 (Arpit Jain) Reported missing set & frozenset for names
 
 -------------------------------------
 Basic Usage:
@@ -163,6 +166,7 @@ DISALLOW_FUNCTIONS = {
     locals,
     os.popen,
     os.system,
+    *(getattr(os, func) for func in dir(os) if func.startswith(("exec", "spawn", "posix_spawn"))),
 }
 if hasattr(__builtins__, "help") or (
     hasattr(__builtins__, "__contains__") and "help" in __builtins__  # type: ignore
