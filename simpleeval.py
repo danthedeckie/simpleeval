@@ -167,12 +167,18 @@ DISALLOW_FUNCTIONS = {
     os.popen,
     os.system,
     *(getattr(os, func) for func in dir(os) if func.startswith(("exec", "spawn", "posix_spawn"))),
+    op.attrgetter,
+    op.itemgetter,
+    op.methodcaller,
 }
 if hasattr(__builtins__, "help") or (
     hasattr(__builtins__, "__contains__") and "help" in __builtins__  # type: ignore
 ):
     # PyInstaller environment doesn't include this module.
     DISALLOW_FUNCTIONS.add(help)
+
+if hasattr(op, "call"):
+    DISALLOW_FUNCTIONS.add(op.call)
 
 # Opt-in type safety experiment. Will be opt-out in 2.x
 

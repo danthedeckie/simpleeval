@@ -1,4 +1,6 @@
+import operator
 import os
+import unittest
 
 import simpleeval
 from simpleeval import (
@@ -570,3 +572,45 @@ class TestTryingToBreakOut(DRYTest):
 
         with self.assertRaises(FeatureNotAvailable):
             s.eval("extract(mods)")
+
+    @unittest.skipUnless(hasattr(operator, "call"), reason="Old python")
+    def test_breakout_via_op(self):
+        """Original method pioneered by Tradi3"""
+
+        op = simpleeval.ModuleWrapper(
+            operator, allowed_attrs={"call", "methodcaller", "attrgetter"}
+        )
+        s = simpleeval.EvalWithCompoundTypes(names={"op": op})
+
+        expr = """
+            op.call(
+                op.methodcaller("__next__"),
+                op.call(
+                    op.call(
+                        op.call(op.attrgetter("__class__.__init__.__builtins__.__getitem__"), op),
+                        "map",
+                    ),
+                    op.call,
+                    op.call(
+                        op.call(
+                            op.call(op.attrgetter("__class__.__init__.__builtins__.__getitem__"), op),
+                            "map",
+                        ),
+                        op.attrgetter("system"),
+                        op.call(
+                            op.call(
+                                op.call(
+                                    op.attrgetter("__class__.__init__.__builtins__.__getitem__"), op
+                                ),
+                                "map",
+                            ),
+                            op.call(op.attrgetter("__class__.__init__.__globals__.__getitem__"), op),
+                            "os".split("|"),
+                        ),
+                    ),
+                    ["echo WE ESCAPED!"]
+                ),
+            )"""
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval(expr)
