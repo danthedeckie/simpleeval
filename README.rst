@@ -556,7 +556,7 @@ Or to set the tests running on every file change:
 
 (requires ``entr``) 
 
-I'm trying to keep the codebase relatively clean with Black, isort, pylint & mypy.
+I'm trying to keep the codebase relatively clean with ruff, & mypy.
 See::
 
     $ make format
@@ -564,6 +564,8 @@ See::
 and::
 
     $ make lint
+
+You can run tests against python versions 3.9-3.14 via `tox` (if you have them installed)
 
 BEWARE
 ------
