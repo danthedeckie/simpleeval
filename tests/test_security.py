@@ -1,4 +1,6 @@
+import operator
 import os
+import unittest
 
 import simpleeval
 from simpleeval import (
@@ -525,12 +527,33 @@ class TestTryingToBreakOut(DRYTest):
         should be blocked"""
 
         def extract_and_call(items):
-            return items[0]("print('pwned')")  # pragma: no cover
+            return next(iter(items))("print('pwned')")  # pragma: no cover
 
-        s = SimpleEval(names={"funcs": [exec, eval]}, functions={"extract": extract_and_call})
+        with self.subTest("list"):
+            s = SimpleEval(names={"funcs": [exec, eval]}, functions={"extract": extract_and_call})
 
-        with self.assertRaises(FeatureNotAvailable):
-            s.eval("extract(funcs)")
+            with self.assertRaises(FeatureNotAvailable):
+                s.eval("extract(funcs)")
+
+        with self.subTest("tuple"):
+            s = SimpleEval(names={"funcs": (exec, eval)}, functions={"extract": extract_and_call})
+
+            with self.assertRaises(FeatureNotAvailable):
+                s.eval("extract(funcs)")
+
+        with self.subTest("set"):
+            s = SimpleEval(names={"funcs": {exec, eval}}, functions={"extract": extract_and_call})
+
+            with self.assertRaises(FeatureNotAvailable):
+                s.eval("extract(funcs)")
+
+        with self.subTest("frozenset"):
+            s = SimpleEval(
+                names={"funcs": frozenset([exec, eval])}, functions={"extract": extract_and_call}
+            )
+
+            with self.assertRaises(FeatureNotAvailable):
+                s.eval("extract(funcs)")
 
     def test_module_in_list_passed_to_custom_function(self):
         """Modules in containers passed to custom functions should be
@@ -570,3 +593,45 @@ class TestTryingToBreakOut(DRYTest):
 
         with self.assertRaises(FeatureNotAvailable):
             s.eval("extract(mods)")
+
+    @unittest.skipUnless(hasattr(operator, "call"), reason="Old python")
+    def test_breakout_via_op(self):
+        """Original method pioneered by Tradi3"""
+
+        op = simpleeval.ModuleWrapper(
+            operator, allowed_attrs={"call", "methodcaller", "attrgetter"}
+        )
+        s = simpleeval.EvalWithCompoundTypes(names={"op": op})
+
+        expr = """
+            op.call(
+                op.methodcaller("__next__"),
+                op.call(
+                    op.call(
+                        op.call(op.attrgetter("__class__.__init__.__builtins__.__getitem__"), op),
+                        "map",
+                    ),
+                    op.call,
+                    op.call(
+                        op.call(
+                            op.call(op.attrgetter("__class__.__init__.__builtins__.__getitem__"), op),
+                            "map",
+                        ),
+                        op.attrgetter("system"),
+                        op.call(
+                            op.call(
+                                op.call(
+                                    op.attrgetter("__class__.__init__.__builtins__.__getitem__"), op
+                                ),
+                                "map",
+                            ),
+                            op.call(op.attrgetter("__class__.__init__.__globals__.__getitem__"), op),
+                            "os".split("|"),
+                        ),
+                    ),
+                    ["echo WE ESCAPED!"]
+                ),
+            )"""
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval(expr)
