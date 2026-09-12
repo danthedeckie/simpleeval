@@ -492,21 +492,10 @@ Module Access
 
 By default, module access is not allowed in simpleeval to prevent accidental or
 malicious access to dangerous functions. However, if you need to expose modules,
-(eg. `numpy` or similar) you can use ``ModuleWrapper`` to do so safely.
+(eg. `numpy` or similar) you can use ``ModuleWrapper`` to do so (slightly more) safely.
 
 ``ModuleWrapper`` allows explicit opt-in to module access while still enforcing
-restrictions on dangerous methods and private attributes:
-
-.. code-block:: pycon
-
-    >>> from simpleeval import SimpleEval, ModuleWrapper
-    >>> import os.path
-    >>> s = SimpleEval(names={'path': ModuleWrapper(os.path)})
-    >>> s.eval("path.exists('/etc/passwd')")
-    True
-
-You can also restrict which attributes are accessible by passing an
-``allowed_attrs`` set:
+restrictions on some dangerous methods and private attributes:
 
 .. code-block:: pycon
 
@@ -518,12 +507,27 @@ You can also restrict which attributes are accessible by passing an
     >>> s.eval("path.dirname('/etc/passwd')")  # Not in allowed_attrs
     simpleeval.FeatureNotAvailable: Access to 'dirname' is not allowed...
 
-Private attributes (starting with ``_``) and methods in ``DISALLOW_METHODS``
-are always blocked, even if not using an allowlist:
+
+Since SimpleEval 1.1.0, use of `allowed_attrs` is expected, and using ModuleWrapper without,
+with cause a Deprecation Warning, as there are far too many dangerous functions or ways to
+escape in the stdlib alone.
+
+SimpleEval 2.x will make it required.
+
+If you need to allow access to *all* things inside a module, you could use something like:
 
 .. code-block:: pycon
 
-    >>> s = SimpleEval(names={'path': ModuleWrapper(os.path)})
+    >>> ModuleWrapper(os.path, allowed_attrs=dir(os.path))
+
+But I strongly discourage that.
+
+Private attributes (starting with ``_``) and methods in ``DISALLOW_METHODS``
+are always blocked, even if specified in the allowed_attrs:
+
+.. code-block:: pycon
+
+    >>> s = SimpleEval(names={'path': ModuleWrapper(os.path, allowed_attrs={"__file__"})})
     >>> s.eval("path.__file__")
     simpleeval.FeatureNotAvailable: Access to private attribute '__file__'...
 

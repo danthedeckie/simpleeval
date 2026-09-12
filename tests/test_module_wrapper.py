@@ -17,26 +17,26 @@ class TestModuleWrapper(unittest.TestCase):
     def test_module_wrapper_requires_module(self):
         """ModuleWrapper should reject non-module types"""
         with self.assertRaises(TypeError):
-            ModuleWrapper("not a module")
+            ModuleWrapper("not a module", allowed_attrs=[])
 
         with self.assertRaises(TypeError):
-            ModuleWrapper(42)
+            ModuleWrapper(42, allowed_attrs=[])
 
         with self.assertRaises(TypeError):
-            ModuleWrapper({})
+            ModuleWrapper({}, allowed_attrs=[])
 
     def test_module_wrapper_allows_valid_module(self):
         """ModuleWrapper should accept valid modules"""
         import os.path
 
-        wrapper = ModuleWrapper(os.path)
+        wrapper = ModuleWrapper(os.path, allowed_attrs=[])
         self.assertIsNotNone(wrapper)
 
     def test_module_wrapper_blocks_private_attrs(self):
         """ModuleWrapper should block access to private attributes"""
         import os.path
 
-        wrapper = ModuleWrapper(os.path)
+        wrapper = ModuleWrapper(os.path, allowed_attrs=dir(os.path))
 
         with self.assertRaises(FeatureNotAvailable):
             wrapper.__all__
@@ -48,14 +48,14 @@ class TestModuleWrapper(unittest.TestCase):
         """ModuleWrapper should allow access to public attributes"""
         import os.path
 
-        wrapper = ModuleWrapper(os.path)
+        wrapper = ModuleWrapper(os.path, allowed_attrs=dir(os.path))
         # Should not raise
         _ = wrapper.exists
 
     def test_module_wrapper_blocks_disallowed_methods(self):
         """ModuleWrapper should block access to methods in DISALLOW_METHODS"""
 
-        wrapper = ModuleWrapper(os)
+        wrapper = ModuleWrapper(os, allowed_attrs=dir(os))
 
         with self.assertRaises(FeatureNotAvailable):
             wrapper.mro
@@ -86,7 +86,7 @@ class TestModuleWrapper(unittest.TestCase):
         attribute"""
         import os.path
 
-        wrapper = ModuleWrapper(os.path)
+        wrapper = ModuleWrapper(os.path, allowed_attrs={"exists"})
         result = wrapper.exists
 
         # Should be the actual function
@@ -109,16 +109,17 @@ class TestModuleWrapperAccess(DRYTest):
         """ModuleWrapper should allow module access in eval"""
         import os.path
 
-        s = SimpleEval(names={"path": ModuleWrapper(os.path)})
+        s = SimpleEval(names={"path": ModuleWrapper(os.path, allowed_attrs={"exists"})})
 
-        result = s.eval("path.exists('/etc/passwd')")
+        with self.assertWarns(DeprecationWarning):
+            result = s.eval("path.exists('/etc/passwd')")
         self.assertTrue(isinstance(result, bool))
 
     def test_wrapped_module_private_attrs_blocked(self):
         """ModuleWrapper should block private attrs in eval"""
         import os.path
 
-        s = SimpleEval(names={"path": ModuleWrapper(os.path)})
+        s = SimpleEval(names={"path": ModuleWrapper(os.path, allowed_attrs=dir(os.path))})
 
         with self.assertRaises(FeatureNotAvailable):
             s.eval("path.__all__")
@@ -129,7 +130,8 @@ class TestModuleWrapperAccess(DRYTest):
 
         s = SimpleEval(names={"path": ModuleWrapper(os.path, allowed_attrs={"exists"})})
 
-        result = s.eval("path.exists('/etc/passwd')")
+        with self.assertWarns(DeprecationWarning):
+            result = s.eval("path.exists('/etc/passwd')")
         self.assertTrue(isinstance(result, bool))
 
     def test_wrapped_module_with_whitelist_blocks_others(self):
@@ -139,7 +141,7 @@ class TestModuleWrapperAccess(DRYTest):
 
         s = SimpleEval(names={"path": ModuleWrapper(os.path, allowed_attrs={"exists"})})
 
-        with self.assertRaises(FeatureNotAvailable):
+        with self.assertWarns(DeprecationWarning), self.assertRaises(FeatureNotAvailable):
             s.eval("path.join('a', 'b')")
 
     def test_wrapped_module_passed_to_function(self):
@@ -150,7 +152,10 @@ class TestModuleWrapperAccess(DRYTest):
 
         import os.path
 
-        s = SimpleEval(names={"path": ModuleWrapper(os.path)}, functions={"process": process_path})
+        s = SimpleEval(
+            names={"path": ModuleWrapper(os.path, allowed_attrs={"exists"})},
+            functions={"process": process_path},
+        )
 
         result = s.eval("process(path)")
         self.assertTrue(isinstance(result, bool))
@@ -159,16 +164,29 @@ class TestModuleWrapperAccess(DRYTest):
         """ModuleWrapper can be stored in containers"""
         import os.path
 
-        s = SimpleEval(names={"items": [ModuleWrapper(os.path), 1, 2]})
+        s = SimpleEval(names={"items": [ModuleWrapper(os.path, allowed_attrs={"exists"}), 1, 2]})
 
         result = s.eval("items")
         self.assertEqual(len(result), 3)
+        with self.assertWarns(DeprecationWarning), self.assertRaises(FeatureNotAvailable):
+            s.eval('items[0].join("a", "b")')
 
     def test_wrapped_module_in_dict_container(self):
         """ModuleWrapper can be stored in dicts"""
         import os.path
 
-        s = SimpleEval(names={"data": {"path": ModuleWrapper(os.path), "value": 42}})
+        s = SimpleEval(
+            names={"data": {"path": ModuleWrapper(os.path, allowed_attrs=[]), "value": 42}}
+        )
 
         result = s.eval("data['value']")
         self.assertEqual(result, 42)
+
+    def test_wrapped_module_blocks_submodule_access(self):
+        """ModuleWrapper should block access to submodules even if in allowed_attrs"""
+        import os
+
+        s = SimpleEval(names={"os": ModuleWrapper(os, allowed_attrs={"path", "getcwd"})})
+
+        with self.assertWarns(DeprecationWarning), self.assertRaises(FeatureNotAvailable):
+            s.eval("os.path.exists('/etc/passwd')")

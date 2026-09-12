@@ -33,7 +33,7 @@ class TestNames(DRYTest):
 
         self.s.names = {"a": {"b": {"c": 42}}}
 
-        with self.assertRaises(AttributeDoesNotExist):
+        with self.assertWarns(DeprecationWarning), self.assertRaises(AttributeDoesNotExist):
             self.t("a.b.d**2", 42)
 
     def test_dict(self):
@@ -107,7 +107,8 @@ class TestNames(DRYTest):
 
         self.s.names = {"a": {"b": {"c": 42}}}
 
-        self.t("a.b.c*2", 84)
+        with self.assertWarns(DeprecationWarning):
+            self.t("a.b.c*2", 84)
 
         with warnings.catch_warnings(record=True) as ws:
             warnings.simplefilter("always")
@@ -132,7 +133,10 @@ class TestNames(DRYTest):
 
         self.s.names = {"a": {"b": {"c": 42}}}
 
-        with self.assertRaises(simpleeval.AttributeDoesNotExist):
+        with (
+            self.assertWarns(DeprecationWarning),
+            self.assertRaises(simpleeval.AttributeDoesNotExist),
+        ):
             self.t("a.b.c * 2", 84)
 
         self.t("a['b']['c'] * 2", 84)
@@ -157,12 +161,15 @@ class TestNames(DRYTest):
         self.s.names = {"o": o}
 
         self.t("o", o)
-        self.t("o.a", 23)
-        self.t("o.b + o.c.d", 9043)
+        with self.assertWarns(DeprecationWarning):
+            self.t("o.a", 23)
+        with self.assertWarns(DeprecationWarning):
+            self.t("o.b + o.c.d", 9043)
 
-        self.t("o.method_thing()", 42)
+        with self.assertWarns(DeprecationWarning):
+            self.t("o.method_thing()", 42)
 
-        with self.assertRaises(AttributeDoesNotExist):
+        with self.assertWarns(DeprecationWarning), self.assertRaises(AttributeDoesNotExist):
             self.t("o.d", None)
 
     def test_func(self):
