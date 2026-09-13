@@ -1,3 +1,4 @@
+import operator
 import os
 
 import simpleeval
@@ -27,6 +28,9 @@ class TestDisallowedFunctions(DRYTest):
                 exec,
                 os.popen,
                 os.system,
+                operator.attrgetter,
+                operator.itemgetter,
+                operator.methodcaller,
             }
         )
 

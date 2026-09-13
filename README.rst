@@ -539,7 +539,7 @@ The initial idea came from J.F. Sebastian on Stack Overflow
 ( http://stackoverflow.com/a/9558001/1973500 ) with modifications and many improvements,
 see the head of the main file for contributors list.
 
-Please read the ``test_simpleeval.py`` file for other potential gotchas or
+Please read the ``tests/`` for other potential gotchas or
 details.  I'm very happy to accept pull requests, suggestions, or other issues.
 Enjoy!
 
@@ -556,7 +556,7 @@ Or to set the tests running on every file change:
 
 (requires ``entr``) 
 
-I'm trying to keep the codebase relatively clean with Black, isort, pylint & mypy.
+I'm trying to keep the codebase relatively clean with ruff, & mypy.
 See::
 
     $ make format
@@ -564,6 +564,8 @@ See::
 and::
 
     $ make lint
+
+You can run tests against python versions 3.9-3.14 via `tox` (if you have them installed)
 
 BEWARE
 ------

@@ -2,7 +2,7 @@
 SimpleEval - (C) 2013-2026 Daniel Fairhead
 -------------------------------------
 
-An short, easy to use, safe and reasonably extensible expression evaluator.
+A short, easy to use, safe and reasonably extensible expression evaluator.
 Designed for things like in a website where you want to allow the user to
 generate a string, or a number from some other input, without allowing full
 eval() or other unsafe or needlessly complex linguistics.
@@ -65,6 +65,9 @@ Contributors:
 - decorator-factory <decorator-factory@protonmail.com> More security fixes
 - lkruitwagen (Lucas Kruitwagen) Adding support for dict comprehensions
 - ByamB4 (Byambadalai) Reported breakout via module & disallowed functions as object attrs
+- Charles Vosburgh Reported & tested dangerous functions in `os`
+- Tradi3 (github.com/krutftw) Reported escape via operator module functions
+- arpitjain099 (Arpit Jain) Reported missing set & frozenset for names
 
 -------------------------------------
 Basic Usage:
@@ -104,14 +107,17 @@ well:
 
 """
 
+from __future__ import annotations
+
 import ast
 import operator as op
 import os
 import sys
 import types
 import warnings
+from collections.abc import Mapping
+from collections.abc import Set as AbstractSet
 from random import random
-from typing import Type, Dict, Set, Union
 
 ########################################
 # Module wide 'globals'
@@ -162,6 +168,10 @@ DISALLOW_FUNCTIONS = {
     locals,
     os.popen,
     os.system,
+    *(getattr(os, func) for func in dir(os) if func.startswith(("exec", "spawn", "posix_spawn"))),
+    op.attrgetter,
+    op.itemgetter,
+    op.methodcaller,
 }
 if hasattr(__builtins__, "help") or (
     hasattr(__builtins__, "__contains__") and "help" in __builtins__  # type: ignore
@@ -169,9 +179,12 @@ if hasattr(__builtins__, "help") or (
     # PyInstaller environment doesn't include this module.
     DISALLOW_FUNCTIONS.add(help)
 
+if hasattr(op, "call"):
+    DISALLOW_FUNCTIONS.add(op.call)
+
 # Opt-in type safety experiment. Will be opt-out in 2.x
 
-BASIC_ALLOWED_ATTRS: Dict[Union[Type, None], Set] = {
+BASIC_ALLOWED_ATTRS: dict[type | None, set] = {
     int: {
         "as_integer_ratio",
         "bit_length",
@@ -313,17 +326,13 @@ class TypeNotSpecified(Exception):
 class InvalidExpression(Exception):
     """Generic Exception"""
 
-    pass
-
 
 class FunctionNotDefined(InvalidExpression):
     """sorry! That function isn't defined!"""
 
     def __init__(self, func_name, expression):
-        self.message = "Function '{0}' not defined, for expression '{1}'.".format(
-            func_name, expression
-        )
-        setattr(self, "func_name", func_name)  # bypass 2to3 confusion.
+        self.message = f"Function '{func_name}' not defined, for expression '{expression}'."
+        self.func_name = func_name  # bypass 2to3 confusion.
         self.expression = expression
 
         super(InvalidExpression, self).__init__(self.message)
@@ -334,7 +343,7 @@ class NameNotDefined(InvalidExpression):
 
     def __init__(self, name, expression):
         self.name = name
-        self.message = "'{0}' is not defined for expression '{1}'".format(name, expression)
+        self.message = f"'{name}' is not defined for expression '{expression}'"
         self.expression = expression
 
         super(InvalidExpression, self).__init__(self.message)
@@ -344,9 +353,7 @@ class AttributeDoesNotExist(InvalidExpression):
     """attribute does not exist"""
 
     def __init__(self, attr, expression):
-        self.message = "Attribute '{0}' does not exist in expression '{1}'".format(
-            attr, expression
-        )
+        self.message = f"Attribute '{attr}' does not exist in expression '{expression}'"
         self.attr = attr
         self.expression = expression
 
@@ -357,7 +364,7 @@ class OperatorNotDefined(InvalidExpression):
     """operator does not exist"""
 
     def __init__(self, attr, expression):
-        self.message = "Operator '{0}' does not exist in expression '{1}'".format(attr, expression)
+        self.message = f"Operator '{attr}' does not exist in expression '{expression}'"
         self.attr = attr
         self.expression = expression
 
@@ -367,32 +374,22 @@ class OperatorNotDefined(InvalidExpression):
 class FeatureNotAvailable(InvalidExpression):
     """What you're trying to do is not allowed."""
 
-    pass
-
 
 class NumberTooHigh(InvalidExpression):
     """Sorry! That number is too high. I don't want to spend the
     next 10 years evaluating this expression!"""
 
-    pass
-
 
 class IterableTooLong(InvalidExpression):
     """That iterable is **way** too long, baby."""
-
-    pass
 
 
 class AssignmentAttempted(UserWarning):
     """Assignment not allowed in SimpleEval"""
 
-    pass
-
 
 class MultipleExpressions(UserWarning):
     """Only the first expression parsed will be used"""
-
-    pass
 
 
 # Sentinal used during attr access
@@ -457,7 +454,7 @@ def safe_power(a, b):  # pylint: disable=invalid-name
     """a limited exponent/to-the-power-of function, for safety reasons"""
 
     if abs(a) > MAX_POWER or abs(b) > MAX_POWER:
-        raise NumberTooHigh("Sorry! I don't want to evaluate {0} ** {1}".format(a, b))
+        raise NumberTooHigh(f"Sorry! I don't want to evaluate {a} ** {b}")
     return a**b
 
 
@@ -475,25 +472,22 @@ def safe_mult(a, b):  # pylint: disable=invalid-name
 def safe_add(a, b):  # pylint: disable=invalid-name
     """iterable length limit again"""
 
-    if hasattr(a, "__len__") and hasattr(b, "__len__"):
-        if len(a) + len(b) > MAX_STRING_LENGTH:
-            raise IterableTooLong(
-                "Sorry, adding those two together would make something too long."
-            )
+    if hasattr(a, "__len__") and hasattr(b, "__len__") and len(a) + len(b) > MAX_STRING_LENGTH:
+        raise IterableTooLong("Sorry, adding those two together would make something too long.")
     return a + b
 
 
 def safe_rshift(a, b):  # pylint: disable=invalid-name
     """rshift, but with input limits"""
     if abs(b) > MAX_SHIFT or abs(a) > MAX_SHIFT_BASE:
-        raise NumberTooHigh("Sorry! I don't want to evaluate {0} >> {1}".format(a, b))
+        raise NumberTooHigh(f"Sorry! I don't want to evaluate {a} >> {b}")
     return a >> b
 
 
 def safe_lshift(a, b):  # pylint: disable=invalid-name
     """lshift, but with input limits"""
     if abs(b) > MAX_SHIFT or abs(a) > MAX_SHIFT_BASE:
-        raise NumberTooHigh("Sorry! I don't want to evaluate {0} << {1}".format(a, b))
+        raise NumberTooHigh(f"Sorry! I don't want to evaluate {a} << {b}")
     return a << b
 
 
@@ -546,7 +540,7 @@ ATTR_INDEX_FALLBACK = True
 # And the actual evaluator:
 
 
-class SimpleEval(object):  # pylint: disable=too-few-public-methods
+class SimpleEval:  # pylint: disable=too-few-public-methods
     """A very simple expression parser.
     >>> s = SimpleEval()
     >>> s.eval("20 + 30 - ( 10 * 5)")
@@ -615,12 +609,12 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
         for f in self.functions.values():
             if f in DISALLOW_FUNCTIONS:
-                raise FeatureNotAvailable("This function {} is a really bad idea.".format(f))
+                raise FeatureNotAvailable(f"This function {f} is a really bad idea.")
 
     def __del__(self):
         self.nodes = None
 
-    def _check_disallowed_items(self, item, _visited: Union[Set[int], None] = None):
+    def _check_disallowed_items(self, item, _visited: AbstractSet[int] | None = None):
         """Check if item contains disallowed functions or modules.
         Recursively checks containers (list, dict, tuple).
         Raises FeatureNotAvailable if forbidden content found.
@@ -637,19 +631,19 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
         if isinstance(item, types.ModuleType):
             raise FeatureNotAvailable("Sorry, modules are not allowed")
 
-        if isinstance(item, (list, tuple, dict)):
+        if isinstance(item, (list, tuple, AbstractSet, Mapping)):
             if _visited is None:
                 _visited = set()
             item_id = id(item)
             if item_id in _visited:
                 return
             _visited.add(item_id)
-            if isinstance(item, (list, tuple)):
-                for element in item:
-                    self._check_disallowed_items(element, _visited)
-            else:
+            if isinstance(item, Mapping):
                 for value in item.values():
                     self._check_disallowed_items(value, _visited)
+            else:
+                for element in item:
+                    self._check_disallowed_items(element, _visited)
         elif callable(item) and item in DISALLOW_FUNCTIONS:
             raise FeatureNotAvailable("This function is forbidden")
 
@@ -663,7 +657,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             raise InvalidExpression("Sorry, cannot evaluate empty string")
         if len(parsed.body) > 1:
             warnings.warn(
-                "'{}' contains multiple expressions. Only the first will be used.".format(expr),
+                f"'{expr}' contains multiple expressions. Only the first will be used.",
                 MultipleExpressions,
             )
         return parsed.body[0]
@@ -684,7 +678,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
             handler = self.nodes[type(node)]
         except KeyError:
             raise FeatureNotAvailable(
-                "Sorry, {0} is not available in this evaluator".format(type(node).__name__)
+                f"Sorry, {type(node).__name__} is not available in this evaluator"
             )
 
         result = handler(node)
@@ -696,13 +690,13 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
 
     def _eval_assign(self, node):
         warnings.warn(
-            "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
+            f"Assignment ({self.expr}) attempted, but this is ignored", AssignmentAttempted
         )
         return self._eval(node.value)
 
     def _eval_aug_assign(self, node):
         warnings.warn(
-            "Assignment ({}) attempted, but this is ignored".format(self.expr), AssignmentAttempted
+            f"Assignment ({self.expr}) attempted, but this is ignored", AssignmentAttempted
         )
         return self._eval(node.value)
 
@@ -718,9 +712,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def _eval_str(node):
         if len(node.s) > MAX_STRING_LENGTH:
             raise IterableTooLong(
-                "String Literal in statement is too long! ({0}, when {1} is max)".format(
-                    len(node.s), MAX_STRING_LENGTH
-                )
+                f"String Literal in statement is too long! ({len(node.s)}, when {MAX_STRING_LENGTH} is max)"
             )
         return node.s
 
@@ -728,9 +720,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
     def _eval_constant(node):
         if hasattr(node.value, "__len__") and len(node.value) > MAX_STRING_LENGTH:
             raise IterableTooLong(
-                "Literal in statement is too long! ({0}, when {1} is max)".format(
-                    len(node.value), MAX_STRING_LENGTH
-                )
+                f"Literal in statement is too long! ({len(node.value)}, when {MAX_STRING_LENGTH} is max)"
             )
         return node.value
 
@@ -816,9 +806,7 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 pass
         elif not hasattr(self.names, "__getitem__"):
             raise InvalidExpression(
-                'Trying to use name (variable) "{0}" when no "names" defined for evaluator'.format(
-                    node.id
-                )
+                f'Trying to use name (variable) "{node.id}" when no "names" defined for evaluator'
             )
 
         if node.id in self.functions:
@@ -841,12 +829,10 @@ class SimpleEval(object):  # pylint: disable=too-few-public-methods
                 raise FeatureNotAvailable(
                     "Sorry, access to __attributes "
                     " or func_ attributes is not available. "
-                    "({0})".format(node.attr)
+                    f"({node.attr})"
                 )
         if node.attr in DISALLOW_METHODS:
-            raise FeatureNotAvailable(
-                "Sorry, this method is not available. ({0})".format(node.attr)
-            )
+            raise FeatureNotAvailable(f"Sorry, this method is not available. ({node.attr})")
 
         # Evaluate "node" - the thing that we're trying to access an attr of first:
         node_evaluated = self._eval(node.value)
@@ -930,7 +916,7 @@ class EvalWithCompoundTypes(SimpleEval):
     _max_count = 0
 
     def __init__(self, operators=None, functions=None, names=None, allowed_attrs=None):
-        super(EvalWithCompoundTypes, self).__init__(operators, functions, names, allowed_attrs)
+        super().__init__(operators, functions, names, allowed_attrs)
 
         self.functions.update(list=list, tuple=tuple, dict=dict, set=set)
 
@@ -949,7 +935,7 @@ class EvalWithCompoundTypes(SimpleEval):
     def eval(self, expr, previously_parsed=None):
         # reset _max_count for each eval run
         self._max_count = 0
-        return super(EvalWithCompoundTypes, self).eval(expr, previously_parsed)
+        return super().eval(expr, previously_parsed)
 
     def _eval_dict(self, node):
         result = {}
@@ -978,7 +964,7 @@ class EvalWithCompoundTypes(SimpleEval):
         return tuple(self._eval(x) for x in node.elts)
 
     def _eval_set(self, node):
-        return set(self._eval(x) for x in node.elts)
+        return {self._eval(x) for x in node.elts}
 
     def _eval_comprehension(self, node):
         if isinstance(node, ast.DictComp):

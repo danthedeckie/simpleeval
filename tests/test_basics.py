@@ -1,6 +1,7 @@
+# ruff: noqa: PLR0133
+
 import ast
 import operator
-import sys
 
 from simpleeval import (
     FeatureNotAvailable,
@@ -152,12 +153,11 @@ class TestBasic(DRYTest):
         self.t("None is not None", False)
 
     def test_fstring(self):
-        if sys.version_info >= (3, 6, 0):
-            self.t('f""', "")
-            self.t('f"stuff"', "stuff")
-            self.t('f"one is {1} and two is {2}"', "one is 1 and two is 2")
-            self.t('f"1+1 is {1+1}"', "1+1 is 2")
-            self.t("f\"{'dramatic':!<11}\"", "dramatic!!!")
+        self.t('f""', "")
+        self.t('f"stuff"', "stuff")
+        self.t('f"one is {1} and two is {2}"', "one is 1 and two is 2")
+        self.t('f"1+1 is {1+1}"', "1+1 is 2")
+        self.t("f\"{'dramatic':!<11}\"", "dramatic!!!")
 
     def test_set_not_allowed(self):
         with self.assertRaises(FeatureNotAvailable):

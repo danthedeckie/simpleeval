@@ -1,5 +1,6 @@
+import operator
 import os
-import sys
+import unittest
 
 import simpleeval
 from simpleeval import (
@@ -104,12 +105,11 @@ class TestTryingToBreakOut(DRYTest):
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'" + (50000 * "stuff") + "'", 0)
 
-        if sys.version_info >= (3, 6, 0):
-            with self.assertRaises(simpleeval.IterableTooLong):
-                self.t("f'{\"foo\"*50000}'", 0)
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.t("f'{\"foo\"*50000}'", 0)
 
     def test_bytes_array_test(self):
-        self.t("'20000000000000000000'.encode() * 5000", "20000000000000000000".encode() * 5000)
+        self.t("'20000000000000000000'.encode() * 5000", b"20000000000000000000" * 5000)
 
         with self.assertRaises(simpleeval.IterableTooLong):
             self.t("'123121323123131231223'.encode() * 5000", 20)
@@ -130,7 +130,7 @@ class TestTryingToBreakOut(DRYTest):
         with self.assertRaises(simpleeval.FeatureNotAvailable):
             self.t("x.__globals__", None)
 
-        class EscapeArtist(object):
+        class EscapeArtist:
             @staticmethod
             def trapdoor():
                 return 42
@@ -163,7 +163,7 @@ class TestTryingToBreakOut(DRYTest):
         simpleeval.DISALLOW_PREFIXES = dis
 
     def test_mro_breakout(self):
-        class Blah(object):
+        class Blah:
             x = 42
 
         self.s.names["b"] = Blah
@@ -189,48 +189,47 @@ class TestTryingToBreakOut(DRYTest):
             self.s.names["x"] = {"a": 1}
             self.t('"{a.__class__}".format_map(x)', 0)
 
-        if sys.version_info >= (3, 6, 0):
-            self.s.names["x"] = 42
+        self.s.names["x"] = 42
 
-            with self.assertRaises(simpleeval.FeatureNotAvailable):
-                self.t('f"{x.__class__}"', 0)
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('f"{x.__class__}"', 0)
 
-            self.s.names["x"] = lambda y: y
+        self.s.names["x"] = lambda y: y
 
-            with self.assertRaises(simpleeval.FeatureNotAvailable):
-                self.t('f"{x.__globals__}"', 0)
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('f"{x.__globals__}"', 0)
 
-            class EscapeArtist(object):
-                @staticmethod
-                def trapdoor():
-                    return 42
+        class EscapeArtist:
+            @staticmethod
+            def trapdoor():
+                return 42
 
-                @staticmethod
-                def _quasi_private():
-                    return 84
+            @staticmethod
+            def _quasi_private():
+                return 84
 
-            self.s.names["houdini"] = EscapeArtist()  # let's just retest this, but in a f-string
+        self.s.names["houdini"] = EscapeArtist()  # let's just retest this, but in a f-string
 
-            with self.assertRaises(simpleeval.FeatureNotAvailable):
-                self.t('f"{houdini.trapdoor.__globals__}"', 0)
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('f"{houdini.trapdoor.__globals__}"', 0)
 
-            with self.assertRaises(simpleeval.FeatureNotAvailable):
-                self.t('f"{houdini.trapdoor.func_globals}"', 0)
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('f"{houdini.trapdoor.func_globals}"', 0)
 
-            with self.assertRaises(simpleeval.FeatureNotAvailable):
-                self.t('f"{houdini._quasi_private()}"', 0)
+        with self.assertRaises(simpleeval.FeatureNotAvailable):
+            self.t('f"{houdini._quasi_private()}"', 0)
 
-            # and test for changing '_' to '__':
+        # and test for changing '_' to '__':
 
-            dis = simpleeval.DISALLOW_PREFIXES
-            simpleeval.DISALLOW_PREFIXES = ["func_"]
+        dis = simpleeval.DISALLOW_PREFIXES
+        simpleeval.DISALLOW_PREFIXES = ["func_"]
 
-            self.t('f"{houdini.trapdoor()}"', "42")
-            self.t('f"{houdini._quasi_private()}"', "84")
+        self.t('f"{houdini.trapdoor()}"', "42")
+        self.t('f"{houdini._quasi_private()}"', "84")
 
-            # and return things to normal
+        # and return things to normal
 
-            simpleeval.DISALLOW_PREFIXES = dis
+        simpleeval.DISALLOW_PREFIXES = dis
 
     def test_breakout_via_module_access(self):
         import os.path
@@ -528,12 +527,33 @@ class TestTryingToBreakOut(DRYTest):
         should be blocked"""
 
         def extract_and_call(items):
-            return items[0]("print('pwned')")  # pragma: no cover
+            return next(iter(items))("print('pwned')")  # pragma: no cover
 
-        s = SimpleEval(names={"funcs": [exec, eval]}, functions={"extract": extract_and_call})
+        with self.subTest("list"):
+            s = SimpleEval(names={"funcs": [exec, eval]}, functions={"extract": extract_and_call})
 
-        with self.assertRaises(FeatureNotAvailable):
-            s.eval("extract(funcs)")
+            with self.assertRaises(FeatureNotAvailable):
+                s.eval("extract(funcs)")
+
+        with self.subTest("tuple"):
+            s = SimpleEval(names={"funcs": (exec, eval)}, functions={"extract": extract_and_call})
+
+            with self.assertRaises(FeatureNotAvailable):
+                s.eval("extract(funcs)")
+
+        with self.subTest("set"):
+            s = SimpleEval(names={"funcs": {exec, eval}}, functions={"extract": extract_and_call})
+
+            with self.assertRaises(FeatureNotAvailable):
+                s.eval("extract(funcs)")
+
+        with self.subTest("frozenset"):
+            s = SimpleEval(
+                names={"funcs": frozenset([exec, eval])}, functions={"extract": extract_and_call}
+            )
+
+            with self.assertRaises(FeatureNotAvailable):
+                s.eval("extract(funcs)")
 
     def test_module_in_list_passed_to_custom_function(self):
         """Modules in containers passed to custom functions should be
@@ -573,3 +593,45 @@ class TestTryingToBreakOut(DRYTest):
 
         with self.assertRaises(FeatureNotAvailable):
             s.eval("extract(mods)")
+
+    @unittest.skipUnless(hasattr(operator, "call"), reason="Old python")
+    def test_breakout_via_op(self):
+        """Original method pioneered by Tradi3"""
+
+        op = simpleeval.ModuleWrapper(
+            operator, allowed_attrs={"call", "methodcaller", "attrgetter"}
+        )
+        s = simpleeval.EvalWithCompoundTypes(names={"op": op})
+
+        expr = """
+            op.call(
+                op.methodcaller("__next__"),
+                op.call(
+                    op.call(
+                        op.call(op.attrgetter("__class__.__init__.__builtins__.__getitem__"), op),
+                        "map",
+                    ),
+                    op.call,
+                    op.call(
+                        op.call(
+                            op.call(op.attrgetter("__class__.__init__.__builtins__.__getitem__"), op),
+                            "map",
+                        ),
+                        op.attrgetter("system"),
+                        op.call(
+                            op.call(
+                                op.call(
+                                    op.attrgetter("__class__.__init__.__builtins__.__getitem__"), op
+                                ),
+                                "map",
+                            ),
+                            op.call(op.attrgetter("__class__.__init__.__globals__.__getitem__"), op),
+                            "os".split("|"),
+                        ),
+                    ),
+                    ["echo WE ESCAPED!"]
+                ),
+            )"""
+
+        with self.assertRaises(FeatureNotAvailable):
+            s.eval(expr)

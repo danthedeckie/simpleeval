@@ -1,6 +1,6 @@
 [project]
 name = "simpleeval"
-version = "1.0.7"
+version = "1.0.8"
 requires-python = ">=3.9"
 readme = "README.rst"
 description = "A simple, safe single expression evaluator library."
@@ -27,6 +27,15 @@ dependencies = []
 [project.urls]
 "Source code" = "https://github.com/danthedeckie/simpleeval"
 
+[dependency-groups]
+dev = [
+    "hatch>=1.15.1",
+    "mypy>=1.19.1",
+    "ruff>=0.16.1",
+    "tox>=4.30.3",
+    "twine>=6.2.0",
+]
+
 [pycodestyle]
 max_line_length = 99
 
@@ -49,9 +58,6 @@ path = "simpleeval.py"
 [tool.hatch.build.targets.wheel]
 packages = ["simpleeval.py"]
 core-metadata-version = "2.3"
-
-[tool.hatch.envs.hatch-test]
-default-args = ["test_simpleeval.py"]
 
 [tool.black]
 line-length = 99
@@ -81,3 +87,16 @@ disable = [
     "unnecessary-pass",
     "bad-super-call",
 ]
+
+[tool.uv]
+required-version = ">=0.12.1"
+
+[tool.tox]
+env_list = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "lint"]
+
+[tool.tox.env_run_base]
+commands = [["python", "-Werror", "-m", "unittest"]]
+
+[tool.tox.env.lint]
+commands = [["make", "lint"]]
+allowlist_externals = ["make"]
