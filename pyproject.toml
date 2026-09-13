@@ -92,11 +92,13 @@ disable = [
 required-version = ">=0.12.1"
 
 [tool.tox]
-env_list = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15", "lint"]
+env_list = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14", "3.15", "pypy3.11", "lint"]
 
 [tool.tox.env_run_base]
+description = "run tests on {py_impl} {py_dot_ver}"
 commands = [["python", "-Werror", "-m", "unittest"]]
 
 [tool.tox.env.lint]
+description = "lint code"
 commands = [["make", "lint"]]
 allowlist_externals = ["make"]
