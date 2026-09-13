@@ -614,7 +614,7 @@ class SimpleEval:  # pylint: disable=too-few-public-methods
     def __del__(self):
         self.nodes = None
 
-    def _check_disallowed_items(self, item, _visited: AbstractSet[int] | None = None):
+    def _check_disallowed_items(self, item, _visited: set[int] | None = None):
         """Check if item contains disallowed functions or modules.
         Recursively checks containers (list, dict, tuple).
         Raises FeatureNotAvailable if forbidden content found.
