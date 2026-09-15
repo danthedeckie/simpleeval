@@ -13,7 +13,7 @@ simpleeval (Simple Eval)
    :target: https://badge.fury.io/py/simpleeval
    :alt: PyPI - Version
 
-.. |python-versions| image:: https://img.shields.io/badge/python-3.9_%7C_3.10_%7C_3.11_%7C_3.12_%7C_3.13_%7C_PyPy3.9_%7C_PyPy3.10-blue
+.. |python-versions| image:: https://img.shields.io/badge/python-3.9_%7C_3.10_%7C_3.11_%7C_3.12_%7C_3.13_%7C_3.14_%7C_3.15_%7C_PyPy3.9_%7C_PyPy3.10_%7C_PyPy3.11-blue
    :alt: Static Badge
 
 .. |pypi-monthly-downloads| image:: https://img.shields.io/pypi/dm/SimpleEval
