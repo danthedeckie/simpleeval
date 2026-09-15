@@ -35,6 +35,23 @@ class TestComprehensions(DRYTest):
     def test_nested_unpack(self):
         self.t("[a+b+c for a, (b, c) in ((1,(1,1)),(3,(2,2)))]", [3, 7])
 
+    def test_subscript_target_fails_cleanly(self):
+        # https://github.com/danthedeckie/simpleeval/issues/76 - a subscript
+        # assignment target used to raise a raw AttributeError instead of a
+        # SimpleEval exception.
+        with self.assertRaises(FeatureNotAvailable):
+            self.t("[x for x in ([None],) for x[0] in (15,)]", None)
+
+    def test_attribute_target_fails_cleanly(self):
+        with self.assertRaises(FeatureNotAvailable):
+            self.t("[x for x in (1,) for x.imag in (15,)]", None)
+
+    def test_self_referential_target_fails_cleanly(self):
+        # The variant from the issue thread; same subscript-target path, so it
+        # raises FeatureNotAvailable rather than a raw AttributeError.
+        with self.assertRaises(FeatureNotAvailable):
+            self.t("[x for x in ([None],) for x[0] in (x,)]", None)
+
     def test_dictcomp_basic(self):
         self.t("{a:a + 1 for a in [1,2,3]}", {1: 2, 2: 3, 3: 4})
 
