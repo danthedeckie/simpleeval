@@ -228,3 +228,20 @@ class TestNames(DRYTest):
 
         with self.assertRaises(KeyError):
             self.t("c", None)
+
+    def test_cyclical_names_dict(self):
+        """Cyclical containers in names should not cause RecursionError (issue #180)"""
+        # A dict that contains a reference to itself
+        d: dict = {"x": 1}
+        d["self"] = d
+        self.s.names = d
+        self.t("x", 1)
+        self.t("self['self']['x']", 1)
+
+    def test_cyclical_list_in_names(self):
+        """A list that contains itself should not cause RecursionError (issue #180)"""
+        lst: list = [1, 2, 3]
+        lst.append(lst)
+        self.s.names = {"lst": lst}
+        self.t("lst[0]", 1)
+        self.t("lst[-1][-1][0]", 1)
