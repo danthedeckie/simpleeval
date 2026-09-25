@@ -115,6 +115,7 @@ import os
 import sys
 import types
 import warnings
+from collections.abc import Iterable
 from random import random
 
 ########################################
@@ -390,6 +391,10 @@ class MultipleExpressions(UserWarning):
     """Only the first expression parsed will be used"""
 
 
+class ModuleWrapperRequiresAllowlist(Exception):
+    """You must explicitly set ModuleWrapper allowed_attrs"""
+
+
 # Sentinal used during attr access
 _ATTR_NOT_FOUND = object()
 
@@ -405,20 +410,32 @@ class ModuleWrapper:
     Example:
         >>> from simpleeval import SimpleEval, ModuleWrapper
         >>> import os.path
-        >>> s = SimpleEval(names={'path': ModuleWrapper(os.path)})
+        >>> s = SimpleEval(names={'path': ModuleWrapper(os.path, allowed_attrs={"exists"})})
         >>> s.eval('path.exists("/etc/passwd")')  # Works
     """
 
-    def __init__(self, module, allowed_attrs=None):
+    def __init__(
+        self, module: types.ModuleType, allowed_attrs: Iterable[str] | None = None
+    ) -> None:
         """
         Args:
             module: The module to wrap
-            allowed_attrs: Optional set of allowed attribute names.
-                          If None, all public attributes are allowed
-                          (but still subject to DISALLOW_METHODS checks).
+            allowed_attrs: Required set of allowed attribute names.
+                          (even if set, still subject to DISALLOW_METHODS checks).
         """
         if not isinstance(module, types.ModuleType):
             raise TypeError(f"ModuleWrapper requires a module, got {type(module)}")
+
+        if allowed_attrs is None:
+            warnings.warn(
+                "Using ModuleWrapper without specifying allowed_attrs is not a good idea"
+                " and will be removed in simpleeval 2.0.",
+                category=DeprecationWarning,
+            )
+            # raise ModuleWrapperRequiresAllowlist(
+            #     f"ModuleWrapper({module.__name__}) must specify allowed_attrs. "
+            # )
+
         self._module = module
         self._allowed_attrs = allowed_attrs
 
@@ -432,7 +449,7 @@ class ModuleWrapper:
             raise FeatureNotAvailable(f"Method '{name}' is not allowed on modules")
 
         # Check allowed_attrs whitelist if specified
-        if self._allowed_attrs is not None and name not in self._allowed_attrs:
+        if self._allowed_attrs and name not in self._allowed_attrs:
             raise FeatureNotAvailable(f"Access to '{name}' is not allowed on this wrapped module")
 
         return getattr(self._module, name)
@@ -831,9 +848,9 @@ class SimpleEval:  # pylint: disable=too-few-public-methods
         # If we've opted in to the 'allowed_attrs' checking per type, then since we now
         # know what kind of node we've got, we can check if we're permitted to access this
         # attr name on this node:
-        if self.allowed_attrs is not None:
-            type_to_check = type(node_evaluated)
+        type_to_check = type(node_evaluated)
 
+        if self.allowed_attrs is not None:
             allowed_attrs = self.allowed_attrs.get(type_to_check, TypeNotSpecified)
             if allowed_attrs == TypeNotSpecified:
                 raise FeatureNotAvailable(
@@ -844,6 +861,11 @@ class SimpleEval:  # pylint: disable=too-few-public-methods
                 raise FeatureNotAvailable(
                     f"Sorry, '.{node.attr}' access not allowed on '{type_to_check}'"
                 )
+        else:
+            allowed_attrs = BASIC_ALLOWED_ATTRS.get(type_to_check, TypeNotSpecified)
+            if allowed_attrs == TypeNotSpecified or node.attr not in allowed_attrs:
+                message = f"Accessing `{type_to_check.__name__}.{node.attr}` without specifying `allowed_attrs`."
+                warnings.warn(message, category=DeprecationWarning)
 
         item = _ATTR_NOT_FOUND
 

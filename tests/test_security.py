@@ -5,6 +5,7 @@ import unittest
 import simpleeval
 from simpleeval import (
     FeatureNotAvailable,
+    ModuleWrapper,
     SimpleEval,
 )
 
@@ -155,8 +156,10 @@ class TestTryingToBreakOut(DRYTest):
         dis = simpleeval.DISALLOW_PREFIXES
         simpleeval.DISALLOW_PREFIXES = ["func_"]
 
-        self.t("houdini.trapdoor()", 42)
-        self.t("houdini._quasi_private()", 84)
+        with self.assertWarns(DeprecationWarning):
+            self.t("houdini.trapdoor()", 42)
+        with self.assertWarns(DeprecationWarning):
+            self.t("houdini._quasi_private()", 84)
 
         # and return things to normal
 
@@ -224,8 +227,11 @@ class TestTryingToBreakOut(DRYTest):
         dis = simpleeval.DISALLOW_PREFIXES
         simpleeval.DISALLOW_PREFIXES = ["func_"]
 
-        self.t('f"{houdini.trapdoor()}"', "42")
-        self.t('f"{houdini._quasi_private()}"', "84")
+        with self.assertWarns(DeprecationWarning):
+            self.t('f"{houdini.trapdoor()}"', "42")
+
+        with self.assertWarns(DeprecationWarning):
+            self.t('f"{houdini._quasi_private()}"', "84")
 
         # and return things to normal
 
@@ -247,7 +253,7 @@ class TestTryingToBreakOut(DRYTest):
 
         s = SimpleEval(names={"thing": Foo()})
 
-        with self.assertRaises(FeatureNotAvailable):
+        with self.assertRaises(FeatureNotAvailable), self.assertWarns(DeprecationWarning):
             s.eval("thing.p.os.popen('id').read()")
 
     def test_breakout_via_disallowed_functions_as_attrs(self):
@@ -256,7 +262,7 @@ class TestTryingToBreakOut(DRYTest):
 
         s = SimpleEval(names={"thing": Foo()})
 
-        with self.assertRaises(FeatureNotAvailable):
+        with self.assertRaises(FeatureNotAvailable), self.assertWarns(DeprecationWarning):
             s.eval("thing.p('exit')")
 
     def test_breakout_forbidden_function_in_list(self):
@@ -426,8 +432,14 @@ class TestTryingToBreakOut(DRYTest):
 
         s = SimpleEval(names={"c": Container()})
 
-        with self.assertRaises(FeatureNotAvailable):
+        with self.assertRaises(FeatureNotAvailable), self.assertWarns(DeprecationWarning):
             s.eval("c.get_os().popen('id').read()")
+
+    def test_forbidden_access_via_modulewrapper(self):
+        s = SimpleEval(names={"os": ModuleWrapper(os, allowed_attrs=dir(os))})
+
+        with self.assertRaises(FeatureNotAvailable), self.assertWarns(DeprecationWarning):
+            s.eval("os.execl('/bin/ps', '-ef')")
 
     def test_forbidden_func_via_property(self):
         """Accessing forbidden functions via properties should be
@@ -440,7 +452,7 @@ class TestTryingToBreakOut(DRYTest):
 
         s = SimpleEval(names={"c": Container()})
 
-        with self.assertRaises(FeatureNotAvailable):
+        with self.assertRaises(FeatureNotAvailable), self.assertWarns(DeprecationWarning):
             s.eval("c.evil('exit')")
 
     def test_module_via_property(self):
@@ -453,7 +465,7 @@ class TestTryingToBreakOut(DRYTest):
 
         s = SimpleEval(names={"c": Container()})
 
-        with self.assertRaises(FeatureNotAvailable):
+        with self.assertRaises(FeatureNotAvailable), self.assertWarns(DeprecationWarning):
             s.eval("c.mod.popen('id').read()")
 
     def test_forbidden_function_direct_from_names(self):
@@ -633,5 +645,5 @@ class TestTryingToBreakOut(DRYTest):
                 ),
             )"""
 
-        with self.assertRaises(FeatureNotAvailable):
+        with self.assertWarns(DeprecationWarning), self.assertRaises(FeatureNotAvailable):
             s.eval(expr)
