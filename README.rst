@@ -165,7 +165,7 @@ replace the operator like this:
 .. code-block:: pycon
 
     >>> import ast
-    >>> from simpleeval import safe_power
+    >>> from simpleeval import SimpleEval, safe_power
 
     >>> s = SimpleEval()
     >>> s.operators[ast.BitXor] = safe_power
@@ -259,6 +259,7 @@ then you can do a normal python ``.copy()`` & ``.update``:
 
 .. code-block:: pycon
 
+    >>> import simpleeval
     >>> my_functions = simpleeval.DEFAULT_FUNCTIONS.copy()
     >>> my_functions.update(
             square=(lambda x:x*x),
@@ -283,7 +284,7 @@ You can also hand the handling of names over to a function, if you prefer:
 .. code-block:: pycon
 
     >>> def name_handler(node):
-            return ord(node.id[0].lower(a))-96
+            return ord(node.id[0].lower())-96
 
     >>> simple_eval('a + b', names=name_handler)
     3
@@ -298,13 +299,13 @@ exception. Eg:
 
 .. code-block:: pycon
 
+   >>> from simpleeval import NameNotDefined
    >>> def name_handler(node):
    ...     if node.id[0] == 'a':
    ...         return 21
    ...     raise NameNotDefined(node.id[0], "Not found")
    ...
-   ... simple_eval('a + a', names=name_handler, functions={"b": 100})
-
+   >>> simple_eval('a + a', names=name_handler, functions={"b": 100})
    42
 
    >>> simple_eval('a + b', names=name_handler, functions={'b': 100})
@@ -378,8 +379,8 @@ really feel so inclined:
 
     s = SimpleEval()
     def set_val(name, value):
-        s.names[name.value] = value.value
-        return value.value
+        s.names[name] = value
+        return value
 
     s.functions = {'set': set_val}
 
@@ -407,7 +408,7 @@ enabled by default.  You can access a dict (or similar's) keys using the .attr s
 
 .. code-block:: pycon
 
-    >>>  simple_eval("foo.bar", names={"foo": {"bar": 42}})
+    >>> simple_eval("foo.bar", names={"foo": {"bar": 42}})
     42
 
 for instance.  You can turn this off either by setting the module global `ATTR_INDEX_FALLBACK`
@@ -453,15 +454,15 @@ makes all attribute access based opt-in rather than opt-out - which is a lot saf
 
 .. code-block:: pycon
 
-    >>> simpleeval("' hello   '.strip()", allowed_attrs={})
+    >>> simple_eval("' hello   '.strip()", allowed_attrs={})
 
 will throw FeatureNotAvailable - as we've now disabled all attribute access.  You can enable some
 reasonably sensible defaults with BASIC_ALLOWED_ATTRS:
 
 .. code-block:: pycon
 
-    >>> from simpleeval import simpleeval, BASIC_ALLOWED_ATTRS
-    >>> simpleeval("'  hello   '.strip()", allowed_attrs=BASIC_ALLOWED_ATTRS)
+    >>> from simpleeval import simple_eval, BASIC_ALLOWED_ATTRS
+    >>> simple_eval("'  hello   '.strip()", allowed_attrs=BASIC_ALLOWED_ATTRS)
 
 is fine - ``strip()`` should be safe on strings.
 
@@ -472,17 +473,17 @@ You can add your own classes & limit access to attrs:
 
 .. code-block:: pycon
 
-    >>> from simpleeval import simpleeval, BASIC_ALLOWED_ATTRS
+    >>> from simpleeval import simple_eval, BASIC_ALLOWED_ATTRS
     >>> class Foo:
     >>>     bar = 42
     >>>     hidden = "secret"
     >>>
     >>> our_attributes = BASIC_ALLOWED_ATTRS.copy()
     >>> our_attributes[Foo] = {'bar'}
-    >>> simpleeval("foo.bar", names={"foo": Foo()}, allowed_attrs=our_attributes)
+    >>> simple_eval("foo.bar", names={"foo": Foo()}, allowed_attrs=our_attributes)
     42
 
-    >>> simpleeval("foo.hidden", names={"foo": Foo()}, allowed_attrs=our_attributes)
+    >>> simple_eval("foo.hidden", names={"foo": Foo()}, allowed_attrs=our_attributes)
     simpleeval.FeatureNotAvailable: Sorry, 'hidden' access not allowed on 'Foo'
 
 will now allow access to `foo.bar` but not allow anything else.
