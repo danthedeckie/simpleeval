@@ -920,6 +920,7 @@ class EvalWithCompoundTypes(SimpleEval):
                 ast.ListComp: self._eval_comprehension,
                 ast.GeneratorExp: self._eval_comprehension,
                 ast.DictComp: self._eval_comprehension,
+                ast.SetComp: self._eval_comprehension,
             }
         )
 
@@ -960,6 +961,8 @@ class EvalWithCompoundTypes(SimpleEval):
     def _eval_comprehension(self, node):
         if isinstance(node, ast.DictComp):
             to_return = {}
+        elif isinstance(node, ast.SetComp):
+            to_return = set()
         else:
             to_return = []
 
@@ -1002,7 +1005,9 @@ class EvalWithCompoundTypes(SimpleEval):
                     else:
                         if isinstance(to_return, dict):
                             to_return[self._eval(node.key)] = self._eval(node.value)
-                        elif isinstance(to_return, list):
+                        elif isinstance(to_return, set):
+                            to_return.add(self._eval(node.elt))
+                        else:
                             to_return.append(self._eval(node.elt))
 
         try:

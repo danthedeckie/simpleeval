@@ -53,6 +53,42 @@ class TestComprehensions(DRYTest):
     def test_dictcomp_nested_unpack(self):
         self.t("{a:a+b+c for a, (b, c) in ((1,(1,1)),(3,(2,2)))}", {1: 3, 3: 7})
 
+    def test_setcomp(self):
+        self.t("{a % 3 for a in [1, 2, 3, 4, 5]}", {0, 1, 2})
+        self.t("{a for a in []}", set())
+
+    def test_setcomp_filters_and_generators(self):
+        self.t(
+            "{a + b for a in [1, 2, 3] if a > 1 for b in [3, 4] if b > a}",
+            {5, 6, 7},
+        )
+        self.t("{a + b for a, b in [(1, 2), (2, 1), (3, 4)]}", {3, 7})
+        self.t("{a for a in [1, 2, 3] if a in {b for b in [2, 3]}}", {2, 3})
+
+    def test_setcomp_evaluates_duplicate_results(self):
+        visited = []
+        self.s.functions["visit"] = lambda value: visited.append(value) or value
+        self.t("{visit(a) for a in [1, 1, 2]}", {1, 2})
+        self.assertEqual(visited, [1, 1, 2])
+
+    def test_setcomp_restrictions(self):
+        with self.assertRaises(FeatureNotAvailable):
+            self.s.eval("{a.__class__ for a in [1, 2]}")
+        with self.assertRaises(TypeError):
+            self.s.eval("{[a] for a in [1, 2]}")
+        with self.assertRaises(simpleeval.NameNotDefined):
+            self.s.eval("a")
+        with self.assertRaises(FeatureNotAvailable):
+            simpleeval.SimpleEval().eval("{a for a in [1, 2]}")
+
+    def test_setcomp_iteration_limit_counts_duplicates(self):
+        self.s.names = {"items": [1] * (simpleeval.MAX_COMPREHENSION_LENGTH + 1)}
+        with self.assertRaises(simpleeval.IterableTooLong):
+            self.s.eval("{a for a in items}")
+        with self.assertRaises(simpleeval.NameNotDefined):
+            self.s.eval("a")
+        self.t("{a for a in [1, 2]}", {1, 2})
+
     def test_other_places(self):
         self.s.functions = {"sum": sum}
         self.t("sum([a+1 for a in [1,2,3,4,5]])", 20)
