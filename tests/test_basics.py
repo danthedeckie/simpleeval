@@ -159,6 +159,36 @@ class TestBasic(DRYTest):
         self.t('f"1+1 is {1+1}"', "1+1 is 2")
         self.t("f\"{'dramatic':!<11}\"", "dramatic!!!")
 
+    def test_fstring_conversions(self):
+        self.s.names = {"text": "caf\u00e9", "number": 42}
+        for expression, expected in (
+            ('f"{text!s}"', "caf\u00e9"),
+            ('f"{text!r}"', "'caf\u00e9'"),
+            ('f"{text!a}"', "'caf\\xe9'"),
+            ('f"{number!s:>5s}"', "   42"),
+            ('f"{text!r:>8}"', "  'caf\u00e9'"),
+            ('f"{text!a:>12}"', "   'caf\\xe9'"),
+            ('f"{text=}"', "text='caf\u00e9'"),
+        ):
+            with self.subTest(expression=expression):
+                self.t(expression, expected)
+
+    def test_fstring_conversion_before_formatting(self):
+        class Formattable:
+            def __str__(self):
+                return "string"
+
+            def __repr__(self):
+                return "repr"
+
+            def __format__(self, spec):
+                return "custom:" + spec
+
+        self.s.names = {"value": Formattable()}
+        self.t('f"{value:>8}"', "custom:>8")
+        self.t('f"{value!s:>8}"', "  string")
+        self.t('f"{value!r:>8}"', "    repr")
+
     def test_set_not_allowed(self):
         with self.assertRaises(FeatureNotAvailable):
             self.t("{22}", False)
