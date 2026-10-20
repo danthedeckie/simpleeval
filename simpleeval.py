@@ -68,6 +68,7 @@ Contributors:
 - Charles Vosburgh Reported & tested dangerous functions in `os`
 - Tradi3 (github.com/krutftw) Reported escape via operator module functions
 - arpitjain099 (Arpit Jain) Reported missing set & frozenset for names
+- pacocartones Honor f-string conversion flags
 
 -------------------------------------
 Basic Usage:
@@ -892,10 +893,19 @@ class SimpleEval:  # pylint: disable=too-few-public-methods
         return "".join(evaluated_values)
 
     def _eval_formattedvalue(self, node):
+        fmt = None
         if node.format_spec:
             fmt = "{:" + self._eval(node.format_spec) + "}"
-            return fmt.format(self._eval(node.value))
-        return self._eval(node.value)
+        value = self._eval(node.value)
+        if node.conversion == ord("s"):
+            value = str(value)
+        elif node.conversion == ord("r"):
+            value = repr(value)
+        elif node.conversion == ord("a"):
+            value = ascii(value)
+        if fmt is not None:
+            return fmt.format(value)
+        return value
 
 
 class EvalWithCompoundTypes(SimpleEval):
