@@ -936,7 +936,8 @@ class EvalWithCompoundTypes(SimpleEval):
                 # "{**x}" gets parsed as a key-value pair of (None, Name(x))
                 result.update(self._eval(value))
             else:
-                result[self._eval(key)] = self._eval(value)
+                evaluated_key = self._eval(key)
+                result[evaluated_key] = self._eval(value)
 
         return result
 
@@ -1001,7 +1002,8 @@ class EvalWithCompoundTypes(SimpleEval):
                         do_generator(gi + 1)
                     else:
                         if isinstance(to_return, dict):
-                            to_return[self._eval(node.key)] = self._eval(node.value)
+                            evaluated_key = self._eval(node.key)
+                            to_return[evaluated_key] = self._eval(node.value)
                         elif isinstance(to_return, list):
                             to_return.append(self._eval(node.elt))
 
