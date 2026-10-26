@@ -173,7 +173,12 @@ replace the operator like this:
     >>> s.eval("3 ^ 2")
     9
 
-for example.
+This changes the operation performed by ``^``, but not its precedence or
+associativity. Expressions are still parsed using Python's operator rules:
+``5 ^ 1 + 1`` is parsed as ``5 ^ (1 + 1)`` and evaluates to ``25`` with the
+override above, whereas ``5 ** 1 + 1`` evaluates to ``6``. Use ``**`` when
+you need Python's exponentiation precedence and right-associative grouping,
+or add explicit parentheses when using an overridden operator.
 
 Limited Power
 ~~~~~~~~~~~~~
