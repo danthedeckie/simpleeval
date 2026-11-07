@@ -35,6 +35,34 @@ class TestComprehensions(DRYTest):
     def test_nested_unpack(self):
         self.t("[a+b+c for a, (b, c) in ((1,(1,1)),(3,(2,2)))]", [3, 7])
 
+    def test_unpack_requires_matching_number_of_values(self):
+        expressions = [
+            "[a for a,b in [(1,2,3)]]",
+            "[a for a,b in [(1,)]]",
+            "[a for [a,b] in [[1,2,3]]]",
+            "[a for [a,b] in [[1]]]",
+            "[a for a,(b,c) in [(1,(2,3,4))]]",
+            "[a for a,(b,c) in [(1,(2,))]]",
+            "{a:b for a,b in [(1,2,3)]}",
+            "{a:b for a,b in [(1,2),(3,)]}",
+            "[b for a,b in [(1,2),(3,)]]",
+            "[a for a,b in [()]]",
+        ]
+        for expression in expressions:
+            with self.subTest(expression=expression):
+                with self.assertRaises(ValueError):
+                    self.s.eval(expression)
+                # Failed comprehensions must restore the normal name handler.
+                self.s.names = {"a": 99}
+                self.t("a", 99)
+
+    def test_unpack_requires_matching_number_of_iterator_values(self):
+        self.s.functions["iter"] = iter
+        for values in ("(1,)", "(1,2,3)"):
+            with self.subTest(values=values), self.assertRaises(ValueError):
+                self.s.eval("[a for a,b in [iter(" + values + ")]]")
+        self.t("[a+b for a,b in [iter((1,2))]]", [3])
+
     def test_dictcomp_basic(self):
         self.t("{a:a + 1 for a in [1,2,3]}", {1: 2, 2: 3, 3: 4})
 

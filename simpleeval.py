@@ -68,6 +68,7 @@ Contributors:
 - Charles Vosburgh Reported & tested dangerous functions in `os`
 - Tradi3 (github.com/krutftw) Reported escape via operator module functions
 - arpitjain099 (Arpit Jain) Reported missing set & frozenset for names
+- Mrun25 (Mrunmayee Daware) Comprehension unpacking length checks
 
 -------------------------------------
 Basic Usage:
@@ -115,6 +116,7 @@ import os
 import sys
 import types
 import warnings
+from itertools import zip_longest
 from random import random
 
 ########################################
@@ -985,7 +987,10 @@ class EvalWithCompoundTypes(SimpleEval):
             if isinstance(target, ast.Name):
                 extra_names[target.id] = value
             else:
-                for t, v in zip(target.elts, value):
+                missing = object()
+                for t, v in zip_longest(target.elts, value, fillvalue=missing):
+                    if t is missing or v is missing:
+                        raise ValueError("Cannot unpack values into comprehension target")
                     recurse_targets(t, v)
 
         def do_generator(gi=0):
